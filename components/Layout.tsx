@@ -233,13 +233,25 @@ const Layout: React.FC<LayoutProps> = ({
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', color: 'text.primary' }}>
-      <AppBar position="sticky" sx={{ bgcolor: 'background.paper', borderBottom: 1, borderColor: 'rgba(197, 160, 89, 0.3)', backdropFilter: 'blur(10px)' }}>
+      <AppBar position="sticky" sx={{ bgcolor: 'background.paper', borderBottom: 2, borderColor: 'secondary.dark', backdropFilter: 'blur(10px)', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}>
         <Container maxWidth="xl">
           <Toolbar disableGutters>
             {/* Logo / Home */}
             <Button
               onClick={() => setView(ViewState.HOME)}
-              sx={{ color: 'secondary.main', display: 'flex', alignItems: 'center', gap: 1, '&:hover': { color: 'primary.main', bgcolor: 'transparent' } }}
+              sx={{
+                color: 'secondary.main',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                transition: 'color 0.3s ease, filter 0.3s ease',
+                '&:hover': {
+                  color: 'secondary.light',
+                  bgcolor: 'transparent',
+                  filter: 'drop-shadow(0 0 8px rgba(197, 160, 89, 0.5))',
+                  transform: 'none', // Override theme button transform
+                }
+              }}
             >
               {isCheckout ? <TokenIcon fontSize="large" /> : (
                 <Box component="div" sx={{ width: 32, height: 32 }}>
@@ -258,14 +270,38 @@ const Layout: React.FC<LayoutProps> = ({
               <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' }, ml: 4, gap: 2 }}>
                 <Button
                   onClick={() => setView(ViewState.CATALOG)}
-                  sx={{ my: 2, color: currentView === ViewState.CATALOG ? 'primary.main' : 'text.primary', display: 'block', letterSpacing: 2, borderBottom: currentView === ViewState.CATALOG ? 2 : 0 }}
+                  sx={{
+                    my: 2,
+                    color: currentView === ViewState.CATALOG ? 'primary.main' : 'common.white',
+                    display: 'block',
+                    letterSpacing: 2,
+                    borderBottom: currentView === ViewState.CATALOG ? 2 : 0,
+                    borderColor: 'primary.main',
+                    '&:hover': {
+                      color: 'secondary.main',
+                      bgcolor: 'transparent',
+                      transform: 'none',
+                    }
+                  }}
                 >
                   Catálogo
                 </Button>
                 <Button
                   onClick={() => setView(ViewState.ADMIN)}
                   startIcon={<ConstructionIcon />}
-                  sx={{ my: 2, color: currentView === ViewState.ADMIN ? 'primary.main' : 'text.primary', display: 'flex', letterSpacing: 2, borderBottom: currentView === ViewState.ADMIN ? 2 : 0 }}
+                  sx={{
+                    my: 2,
+                    color: currentView === ViewState.ADMIN ? 'primary.main' : 'common.white',
+                    display: 'flex',
+                    letterSpacing: 2,
+                    borderBottom: currentView === ViewState.ADMIN ? 2 : 0,
+                    borderColor: 'primary.main',
+                    '&:hover': {
+                      color: 'secondary.main',
+                      bgcolor: 'transparent',
+                      transform: 'none',
+                    }
+                  }}
                 >
                   Admin
                 </Button>

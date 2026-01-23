@@ -72,33 +72,20 @@ export const fantasyTheme = createTheme({
         root: {
           borderRadius: 2,
           textTransform: 'uppercase',
-          position: 'relative',
-          overflow: 'hidden',
-          '&::before': {
-            content: '""',
-            position: 'absolute',
-            top: 0,
-            left: '-100%',
-            width: '100%',
-            height: '100%',
-            background: 'linear-gradient(90deg, transparent, rgba(197, 160, 89, 0.2), transparent)',
-            transition: 'left 0.5s ease',
-          },
-          '&:hover::before': {
-            left: '100%',
-          },
+          transition: 'all 0.25s ease',
         },
         contained: {
-          boxShadow: '0 4px 15px rgba(212, 17, 17, 0.3), inset 0 1px 0 rgba(255,255,255,0.1)',
+          boxShadow: '0 4px 12px rgba(212, 17, 17, 0.25)',
           '&:hover': {
-            boxShadow: '0 6px 20px rgba(212, 17, 17, 0.4), 0 0 30px rgba(197, 160, 89, 0.2)',
+            boxShadow: '0 6px 16px rgba(212, 17, 17, 0.35), 0 0 20px rgba(197, 160, 89, 0.15)',
+            transform: 'translateY(-2px)',
           },
         },
         outlined: {
           borderWidth: 2,
           '&:hover': {
             borderWidth: 2,
-            boxShadow: '0 0 20px rgba(197, 160, 89, 0.3)',
+            backgroundColor: 'rgba(197, 160, 89, 0.08)',
           },
         },
       },
@@ -109,17 +96,6 @@ export const fantasyTheme = createTheme({
         body: {
           backgroundImage: "url('https://www.transparenttextures.com/patterns/dark-leather.png')",
           backgroundBlendMode: 'overlay',
-          '&::before': {
-            content: '""',
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.4) 100%)',
-            pointerEvents: 'none',
-            zIndex: 9999,
-          },
         },
         '::selection': {
           backgroundColor: '#c5a059',
@@ -278,33 +254,20 @@ export const warhammerTheme = createTheme({
         root: {
           borderRadius: 2,
           textTransform: 'uppercase',
-          position: 'relative',
-          overflow: 'hidden',
-          '&::before': {
-            content: '""',
-            position: 'absolute',
-            top: 0,
-            left: '-100%',
-            width: '100%',
-            height: '100%',
-            background: 'linear-gradient(90deg, transparent, rgba(14, 165, 233, 0.3), transparent)',
-            transition: 'left 0.5s ease',
-          },
-          '&:hover::before': {
-            left: '100%',
-          },
+          transition: 'all 0.25s ease',
         },
         contained: {
-          boxShadow: '0 4px 15px rgba(14, 165, 233, 0.3), inset 0 1px 0 rgba(255,255,255,0.1)',
+          boxShadow: '0 4px 12px rgba(14, 165, 233, 0.25)',
           '&:hover': {
-            boxShadow: '0 6px 20px rgba(14, 165, 233, 0.5), 0 0 30px rgba(14, 165, 233, 0.3)',
+            boxShadow: '0 6px 16px rgba(14, 165, 233, 0.4), 0 0 20px rgba(14, 165, 233, 0.2)',
+            transform: 'translateY(-2px)',
           },
         },
         outlined: {
           borderWidth: 2,
           '&:hover': {
             borderWidth: 2,
-            boxShadow: '0 0 20px rgba(14, 165, 233, 0.4)',
+            backgroundColor: 'rgba(14, 165, 233, 0.08)',
           },
         },
       },
@@ -315,17 +278,6 @@ export const warhammerTheme = createTheme({
         body: {
           backgroundImage: "url('https://www.transparenttextures.com/patterns/carbon-fibre.png')",
           backgroundBlendMode: 'screen',
-          '&::before': {
-            content: '""',
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.5) 100%)',
-            pointerEvents: 'none',
-            zIndex: 9999,
-          },
         },
         '::selection': {
           backgroundColor: '#0ea5e9',
