@@ -1,9 +1,10 @@
 /// <reference lib="dom" />
 import React, { useEffect, useRef, useState } from 'react';
 import { ViewState } from '../types';
-import { Box, Typography, Button, Container, Grid, Paper, IconButton } from '@mui/material';
-import { styled, keyframes } from '@mui/material/styles';
+import { Box, Typography, Button, Container, Grid, Paper, IconButton, alpha } from '@mui/material';
+import { styled, keyframes, useTheme } from '@mui/material/styles';
 import { ChevronLeft, ChevronRight, MenuBook, AutoAwesome, Straighten, Science, Hub } from '@mui/icons-material';
+import { RuneDivider, CornerFlourish } from '../components/StyledComponents';
 
 interface HomeProps {
   setView: (view: ViewState) => void;
@@ -52,6 +53,21 @@ const sparkleAnim = keyframes`
 const logoFade = keyframes`
   0%, 100% { opacity: 0.1; }
   50% { opacity: 0.3; }
+`;
+
+const borderGlow = keyframes`
+  0%, 100% { box-shadow: 0 0 20px rgba(197, 160, 89, 0.3), inset 0 0 20px rgba(0,0,0,0.3); }
+  50% { box-shadow: 0 0 40px rgba(197, 160, 89, 0.5), inset 0 0 30px rgba(0,0,0,0.4); }
+`;
+
+const textReveal = keyframes`
+  0% { opacity: 0; transform: translateY(30px); filter: blur(10px); }
+  100% { opacity: 1; transform: translateY(0); filter: blur(0); }
+`;
+
+const floatParticle = keyframes`
+  0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.3; }
+  50% { transform: translateY(-20px) rotate(180deg); opacity: 0.7; }
 `;
 
 // Helper component for scroll animations
@@ -141,8 +157,36 @@ const Home: React.FC<HomeProps> = ({ setView }) => {
             borderColor: 'secondary.main', // Gold border
             minHeight: '560px',
             bgcolor: 'common.black',
-            boxShadow: '0 0 20px rgba(197, 160, 89, 0.3)'
+            animation: `${borderGlow} 4s ease-in-out infinite`,
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              inset: 0,
+              background: 'radial-gradient(ellipse at 30% 70%, rgba(197, 160, 89, 0.1) 0%, transparent 50%)',
+              pointerEvents: 'none',
+              zIndex: 2,
+            },
           }}>
+            {/* Floating Particles */}
+            {[...Array(6)].map((_, i) => (
+              <Box
+                key={i}
+                sx={{
+                  position: 'absolute',
+                  width: 4,
+                  height: 4,
+                  bgcolor: 'secondary.main',
+                  borderRadius: '50%',
+                  top: `${20 + i * 12}%`,
+                  left: `${10 + i * 15}%`,
+                  animation: `${floatParticle} ${3 + i * 0.5}s ease-in-out infinite`,
+                  animationDelay: `${i * 0.3}s`,
+                  zIndex: 3,
+                  pointerEvents: 'none',
+                  boxShadow: '0 0 10px rgba(197, 160, 89, 0.5)',
+                }}
+              />
+            ))}
 
             {/* Slides Carousel */}
             {HERO_SLIDES.map((slide, idx) => (
@@ -187,11 +231,31 @@ const Home: React.FC<HomeProps> = ({ setView }) => {
                   opacity: heroLoaded && idx === currentSlide ? 1 : 0,
                   transform: heroLoaded && idx === currentSlide ? 'translateY(0)' : 'translateY(48px)'
                 }}>
-                  <Typography variant="h6" sx={{ fontStyle: 'italic', color: 'secondary.main', mb: 1 }}>
+                  <Typography variant="h6" sx={{
+                      fontStyle: 'italic',
+                      color: 'secondary.main',
+                      mb: 1,
+                      letterSpacing: 3,
+                      textTransform: 'uppercase',
+                      animation: heroLoaded && idx === currentSlide ? `${textReveal} 0.8s ease-out forwards` : 'none',
+                      animationDelay: '0.2s',
+                      opacity: 0,
+                    }}>
                     {slide.subtitle}
                   </Typography>
-                  <Typography variant="h2" sx={{ fontWeight: 900, color: 'common.white', mb: 3, textShadow: '0 4px 6px rgba(0,0,0,0.5)' }}>
-                    {slide.title}<Typography component="span" variant="inherit" color="primary" sx={{ fontStyle: 'italic' }}>{slide.titleHighlight}</Typography>{slide.titleSuffix}
+                  <Typography variant="h2" sx={{
+                      fontWeight: 900,
+                      color: 'common.white',
+                      mb: 3,
+                      textShadow: '0 4px 20px rgba(0,0,0,0.7), 0 0 40px rgba(197, 160, 89, 0.2)',
+                      animation: heroLoaded && idx === currentSlide ? `${textReveal} 0.8s ease-out forwards` : 'none',
+                      animationDelay: '0.4s',
+                      opacity: 0,
+                    }}>
+                    {slide.title}<Typography component="span" variant="inherit" color="primary" sx={{
+                      fontStyle: 'italic',
+                      textShadow: '0 0 30px rgba(212, 17, 17, 0.5)',
+                    }}>{slide.titleHighlight}</Typography>{slide.titleSuffix}
                   </Typography>
                   <Typography variant="h5" sx={{ color: 'grey.300', mb: 5, maxWidth: 600 }}>
                     {slide.description}
@@ -251,12 +315,8 @@ const Home: React.FC<HomeProps> = ({ setView }) => {
       </Box>
 
       {/* Decorative Divider */}
-      <ScrollReveal className="flex items-center justify-center gap-4 py-8 opacity-40">
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, py: 4, opacity: 0.6 }}>
-          <Box sx={{ height: 1, width: 96, background: 'linear-gradient(to right, transparent, #c5a059)' }} />
-          <MenuBook sx={{ color: 'secondary.main' }} />
-          <Box sx={{ height: 1, width: 96, background: 'linear-gradient(to left, transparent, #c5a059)' }} />
-        </Box>
+      <ScrollReveal>
+        <RuneDivider variant="section" glowing />
       </ScrollReveal>
 
       {/* Featured Collections */}
@@ -312,9 +372,11 @@ const Home: React.FC<HomeProps> = ({ setView }) => {
                         {col.sub}
                       </Typography>
                     </Box>
-                    {/* Corner Accents */}
-                    <Box sx={{ position: 'absolute', top: -10, left: -10, color: 'secondary.main', bgcolor: 'background.default', p: 1, borderRadius: 1 }}>✦</Box>
-                    <Box sx={{ position: 'absolute', bottom: -10, right: -10, color: 'secondary.main', bgcolor: 'background.default', p: 1, borderRadius: 1 }}>✦</Box>
+                    {/* Corner Flourishes */}
+                    <CornerFlourish position="top-left" animated />
+                    <CornerFlourish position="top-right" animated />
+                    <CornerFlourish position="bottom-left" animated />
+                    <CornerFlourish position="bottom-right" animated />
                   </Box>
                 </ScrollReveal>
               </Grid>
