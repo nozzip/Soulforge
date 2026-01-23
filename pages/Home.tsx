@@ -12,30 +12,30 @@ interface HomeProps {
 const HERO_SLIDES = [
   {
     image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCOt5aQZidteyosgKEH6adeFrjY70HvrEfGe899g00U3xAIYG56c8fgeqBKxO8l7H88pIM9fvKCjOFj31ZRGXSNJMm0amjBByouYk2tQS9cJlO5tRXVypnfYTl4GOedXMMTeHteiT4YEek0yhThUIU-I3adq46F_jGdWXWA81N4fXwHAGu-qCKql3q3IOj_6RX7xJ3VDGhUy-IG7TOmabJh_2bG_B3XyQLiG6dKr1cd6iFYDBbZoCfADZlGEJy_eQT0j1kbKsuRM9c",
-    subtitle: "2024 Legacy Series",
-    title: "Bring Your ",
-    titleHighlight: "Legend",
-    titleSuffix: " to Life",
-    description: "High-quality resin prints inspired by the latest sourcebooks. Precision engineering meets mythical artistry.",
-    cta: "Enter the Forge"
+    subtitle: "Serie de Legado 2024",
+    title: "Haz que tu ",
+    titleHighlight: "Leyenda",
+    titleSuffix: " Cobre Vida",
+    description: "Impresiones de resina de alta calidad inspiradas en los últimos manuales. La ingeniería de precisión se une al arte mítico.",
+    cta: "Entrar en la Forja"
   },
   {
     image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAk61FuYDjWAsNtu247-7UQnKD10MRF9FJclnImLSqjn4IV_svngmRGCH5VwHKU4F08LykO4cLSTZjd7PuG9JIqbAISQ8nYCiKO-jK3rG3FEzPVpdOES5vtmUXNCm8gvJ8Rgu_FRc_G4TCYlUMy4NcNsDAj_WUMdNcZZMwWi216xu4wMg54xqhfj3aiFvnT6MQGPfVSpQIT2qPrSJc-rcpRtaEmdk7-ZP_6pl9muFYAhogMHTm1eN1z3FgfVSDNejNMKnVe_KwTVGw",
-    subtitle: "From the Deep Void",
-    title: "Unleash the ",
+    subtitle: "Desde el Vacío Profundo",
+    title: "Desata el ",
     titleHighlight: "Horror",
-    titleSuffix: " Within",
-    description: "Gargantuan aberrations sculpted with maddening detail. Perfect for your next TPK.",
-    cta: "View Monsters"
+    titleSuffix: " Interior",
+    description: "Aberraciones gargantuescas esculpidas con un detalle enloquecedor. Perfectas para tu próximo TPK.",
+    cta: "Ver Monstruos"
   },
   {
     image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCOoJ1jIOn4jPLgzNAvKwwkCQE2_iPHMNTRmJnKwTVe1s16Y3IsWqDCLNtw58ig-nCjvDy9n0viSYpTjKSLiE0rVLs2R08qTyRGA9JmI5Jnt1qJYFJFLndBNbemc8FMbL7eNtue4wI5brNfS4WCKcSI55sF40XAguH8xExwk6LL0xnzivEaNUiUCKQgnyl5zuT-bylNbyOoz--wt1re7DbF7JMqODxHf2_ymsFXG8tWfQW1mFrD7L17j3w_G4V3nuEinQqugO-5iSo",
-    subtitle: "Grimdark Future",
-    title: "Deploy the ",
-    titleHighlight: "Iron Legions",
+    subtitle: "Futuro Sombrío",
+    title: "Despliega las ",
+    titleHighlight: "Legiones de Hierro",
     titleSuffix: "",
-    description: "Squad-based bundles and heavy support units ready for the eternal war.",
-    cta: "Equip Your Army"
+    description: "Paquetes basados en escuadrones y unidades de apoyo pesado listos para la guerra eterna.",
+    cta: "Equipa a tu Ejército"
   }
 ];
 
@@ -265,20 +265,20 @@ const Home: React.FC<HomeProps> = ({ setView }) => {
           <ScrollReveal>
             <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', mb: 5, pb: 2, borderBottom: 1, borderColor: 'rgba(197, 160, 89, 0.1)' }}>
               <Box>
-                <Typography variant="subtitle2" sx={{ color: 'secondary.main', letterSpacing: '0.2em', fontWeight: 'bold', mb: 1 }}>CURATED VAULTS</Typography>
-                <Typography variant="h3" sx={{ fontWeight: 'bold', color: 'common.white' }}>Featured Collections</Typography>
+                <Typography variant="subtitle2" sx={{ color: 'secondary.main', letterSpacing: '0.2em', fontWeight: 'bold', mb: 1 }}>BÓVEDAS CURADAS</Typography>
+                <Typography variant="h3" sx={{ fontWeight: 'bold', color: 'common.white' }}>Colecciones Destacadas</Typography>
               </Box>
               <Button onClick={() => setView(ViewState.CATALOG)} sx={{ color: 'secondary.main', letterSpacing: 2, fontWeight: 'bold' }}>
-                View Catalog
+                Ver Catálogo
               </Button>
             </Box>
           </ScrollReveal>
 
           <Grid container spacing={4}>
             {[
-              { title: "Fantasy Heroes", sub: "Dwarves, Elves, and the Defenders of Light.", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuB3o4U20eQujlqlLivp6dfCAP5GGzSX_QIVGCsZjAW44J4Cn5dH3fh--dQTkyhXBkrF8FhFqEkEYr9RQT-DUD067sGwueG54R6I2D9AWpl0SZeHcNNNBlpw-hJcGf44E_evb6KJAvH1iUIbN3XlyqFqu1eAkxpckNTqSho97MfodGIWlijVtftnohk4UDHDDFQLMabvPPyGlPuNecTztgQfAeFoes10LMhaiBmRzvnS1bSmrAv4HZDh04MXIr9oLJX0zf3HFw_Us5E" },
-              { title: "Sci-Fi Warriors", sub: "Mechanical terrors and stellar voyagers.", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCOoJ1jIOn4jPLgzNAvKwwkCQE2_iPHMNTRmJnKwTVe1s16Y3IsWqDCLNtw58ig-nCjvDy9n0viSYpTjKSLiE0rVLs2R08qTyRGA9JmI5Jnt1qJYFJFLndBNbemc8FMbL7eNtue4wI5brNfS4WCKcSI55sF40XAguH8xExwk6LL0xnzivEaNUiUCKQgnyl5zuT-bylNbyOoz--wt1re7DbF7JMqODxHf2_ymsFXG8tWfQW1mFrD7L17j3w_G4V3nuEinQqugO-5iSo" },
-              { title: "Monster Manual", sub: "Abominations, Beasts, and the Great Dragons.", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAk61FuYDjWAsNtu247-7UQnKD10MRF9FJclnImLSqjn4IV_svngmRGCH5VwHKU4F08LykO4cLSTZjd7PuG9JIqbAISQ8nYCiKO-jK3rG3FEzPVpdOES5vtmUXNCm8gvJ8Rgu_FRc_G4TCYlUMy4NcNsDAj_WUMdNcZZMwWi216xu4wMg54xqhfj3aiFvnT6MQGPfVSpQIT2qPrSJc-rcpRtaEmdk7-ZP_6pl9muFYAhogMHTm1eN1z3FgfVSDNejNMKnVe_KwTVGw" }
+              { title: "Héroes de Fantasía", sub: "Enanos, Elfos y los Defensores de la Luz.", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuB3o4U20eQujlqlLivp6dfCAP5GGzSX_QIVGCsZjAW44J4Cn5dH3fh--dQTkyhXBkrF8FhFqEkEYr9RQT-DUD067sGwueG54R6I2D9AWpl0SZeHcNNNBlpw-hJcGf44E_evb6KJAvH1iUIbN3XlyqFqu1eAkxpckNTqSho97MfodGIWlijVtftnohk4UDHDDFQLMabvPPyGlPuNecTztgQfAeFoes10LMhaiBmRzvnS1bSmrAv4HZDh04MXIr9oLJX0zf3HFw_Us5E" },
+              { title: "Guerreros Sci-Fi", sub: "Terrores mecánicos y viajeros estelares.", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCOoJ1jIOn4jPLgzNAvKwwkCQE2_iPHMNTRmJnKwTVe1s16Y3IsWqDCLNtw58ig-nCjvDy9n0viSYpTjKSLiE0rVLs2R08qTyRGA9JmI5Jnt1qJYFJFLndBNbemc8FMbL7eNtue4wI5brNfS4WCKcSI55sF40XAguH8xExwk6LL0xnzivEaNUiUCKQgnyl5zuT-bylNbyOoz--wt1re7DbF7JMqODxHf2_ymsFXG8tWfQW1mFrD7L17j3w_G4V3nuEinQqugO-5iSo" },
+              { title: "Manual de Monstruos", sub: "Abominaciones, Bestias y los Grandes Dragones.", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAk61FuYDjWAsNtu247-7UQnKD10MRF9FJclnImLSqjn4IV_svngmRGCH5VwHKU4F08LykO4cLSTZjd7PuG9JIqbAISQ8nYCiKO-jK3rG3FEzPVpdOES5vtmUXNCm8gvJ8Rgu_FRc_G4TCYlUMy4NcNsDAj_WUMdNcZZMwWi216xu4wMg54xqhfj3aiFvnT6MQGPfVSpQIT2qPrSJc-rcpRtaEmdk7-ZP_6pl9muFYAhogMHTm1eN1z3FgfVSDNejNMKnVe_KwTVGw" }
             ].map((col, idx) => (
               <Grid key={idx} size={{ xs: 12, md: 4 }}>
                 <ScrollReveal delay={idx * 200}>
@@ -342,19 +342,19 @@ const Home: React.FC<HomeProps> = ({ setView }) => {
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent'
               }}>
-                The Rift Chronicles
+                Las Crónicas de la Brecha
               </Typography>
               <Typography variant="h6" sx={{ fontStyle: 'italic', color: 'grey.300', maxWidth: 'md', mx: 'auto' }}>
-                "The forges have opened a gateway to strange, distant realities. Behold heroes of graphite and ink, spirits of animation, and titans of the silver screen."
+                "Las forjas han abierto una puerta a realidades extrañas y distantes. Contempla héroes de grafito y tinta, espíritus de animación y titanes de la pantalla grande."
               </Typography>
             </Box>
           </ScrollReveal>
 
           <Grid container spacing={4}>
             {[
-              { title: "Spirit & Steel", sub: "From magical girls to shonen warriors.", tag: "Eastern Realms", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAk61FuYDjWAsNtu247-7UQnKD10MRF9FJclnImLSqjn4IV_svngmRGCH5VwHKU4F08LykO4cLSTZjd7PuG9JIqbAISQ8nYCiKO-jK3rG3FEzPVpdOES5vtmUXNCm8gvJ8Rgu_FRc_G4TCYlUMy4NcNsDAj_WUMdNcZZMwWi216xu4wMg54xqhfj3aiFvnT6MQGPfVSpQIT2qPrSJc-rcpRtaEmdk7-ZP_6pl9muFYAhogMHTm1eN1z3FgfVSDNejNMKnVe_KwTVGw" },
-              { title: "Capes & Cowls", sub: "The gods of ink and paper.", tag: "Modern Myths", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCOoJ1jIOn4jPLgzNAvKwwkCQE2_iPHMNTRmJnKwTVe1s16Y3IsWqDCLNtw58ig-nCjvDy9n0viSYpTjKSLiE0rVLs2R08qTyRGA9JmI5Jnt1qJYFJFLndBNbemc8FMbL7eNtue4wI5brNfS4WCKcSI55sF40XAguH8xExwk6LL0xnzivEaNUiUCKQgnyl5zuT-bylNbyOoz--wt1re7DbF7JMqODxHf2_ymsFXG8tWfQW1mFrD7L17j3w_G4V3nuEinQqugO-5iSo" },
-              { title: "Cinema Titans", sub: "Kaiju, Aliens, and legends.", tag: "Silver Screen", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAk61FuYDjWAsNtu247-7UQnKD10MRF9FJclnImLSqjn4IV_svngmRGCH5VwHKU4F08LykO4cLSTZjd7PuG9JIqbAISQ8nYCiKO-jK3rG3FEzPVpdOES5vtmUXNCm8gvJ8Rgu_FRc_G4TCYlUMy4NcNsDAj_WUMdNcZZMwWi216xu4wMg54xqhfj3aiFvnT6MQGPfVSpQIT2qPrSJc-rcpRtaEmdk7-ZP_6pl9muFYAhogMHTm1eN1z3FgfVSDNejNMKnVe_KwTVGw" }
+              { title: "Espíritu y Acero", sub: "Desde chicas mágicas hasta guerreros shonen.", tag: "Reinos del Este", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAk61FuYDjWAsNtu247-7UQnKD10MRF9FJclnImLSqjn4IV_svngmRGCH5VwHKU4F08LykO4cLSTZjd7PuG9JIqbAISQ8nYCiKO-jK3rG3FEzPVpdOES5vtmUXNCm8gvJ8Rgu_FRc_G4TCYlUMy4NcNsDAj_WUMdNcZZMwWi216xu4wMg54xqhfj3aiFvnT6MQGPfVSpQIT2qPrSJc-rcpRtaEmdk7-ZP_6pl9muFYAhogMHTm1eN1z3FgfVSDNejNMKnVe_KwTVGw" },
+              { title: "Capas y Capuchas", sub: "Los dioses de la tinta y el papel.", tag: "Mitos Modernos", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCOoJ1jIOn4jPLgzNAvKwwkCQE2_iPHMNTRmJnKwTVe1s16Y3IsWqDCLNtw58ig-nCjvDy9n0viSYpTjKSLiE0rVLs2R08qTyRGA9JmI5Jnt1qJYFJFLndBNbemc8FMbL7eNtue4wI5brNfS4WCKcSI55sF40XAguH8xExwk6LL0xnzivEaNUiUCKQgnyl5zuT-bylNbyOoz--wt1re7DbF7JMqODxHf2_ymsFXG8tWfQW1mFrD7L17j3w_G4V3nuEinQqugO-5iSo" },
+              { title: "Titanes del Cine", sub: "Kaijus, Aliens y leyendas.", tag: "Pantalla Grande", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAk61FuYDjWAsNtu247-7UQnKD10MRF9FJclnImLSqjn4IV_svngmRGCH5VwHKU4F08LykO4cLSTZjd7PuG9JIqbAISQ8nYCiKO-jK3rG3FEzPVpdOES5vtmUXNCm8gvJ8Rgu_FRc_G4TCYlUMy4NcNsDAj_WUMdNcZZMwWi216xu4wMg54xqhfj3aiFvnT6MQGPfVSpQIT2qPrSJc-rcpRtaEmdk7-ZP_6pl9muFYAhogMHTm1eN1z3FgfVSDNejNMKnVe_KwTVGw" }
             ].map((item, idx) => (
               <Grid key={idx} size={{ xs: 12, md: 4 }}>
                 <ScrollReveal delay={idx * 150}>
@@ -400,10 +400,9 @@ const Home: React.FC<HomeProps> = ({ setView }) => {
             <Grid size={{ xs: 12, md: 6 }}>
               <ScrollReveal direction="left">
                 <Paper sx={{ p: 6, bgcolor: 'rgba(255,255,255,0.02)', backdropFilter: 'blur(10px)', border: 1, borderColor: 'primary.main' }}>
-                  <Hub sx={{ fontSize: 60, color: 'primary.main', opacity: 0.5, mb: 2 }} />
-                  <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'common.white', fontStyle: 'italic', mb: 2 }}>Multiverse Scale</Typography>
+                  <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'common.white', fontStyle: 'italic', mb: 2 }}>Escala Multiverso</Typography>
                   <Typography sx={{ color: 'grey.400', mb: 4 }}>
-                    Whether it's 28mm heroic fantasy or 1/6 scale busts, our resin adapts to every reality. Pre-supported for the laws of physics in any dimension.
+                    Ya sea fantasía heroica de 28mm o bustos a escala 1/6, nuestra resina se adapta a cada realidad. Pre-soportada para las leyes de la física en cualquier dimensión.
                   </Typography>
 
                   <Box sx={{ display: 'flex', gap: 3, mb: 3 }}>
@@ -411,8 +410,8 @@ const Home: React.FC<HomeProps> = ({ setView }) => {
                       <Straighten sx={{ color: 'secondary.main', fontSize: 20 }} />
                     </Box>
                     <Box>
-                      <Typography variant="subtitle2" sx={{ color: 'common.white', fontWeight: 'bold' }}>TRUE-SCALE ACCURACY</Typography>
-                      <Typography variant="caption" sx={{ color: 'grey.500' }}>Consistent proportions across all lines.</Typography>
+                      <Typography variant="subtitle2" sx={{ color: 'common.white', fontWeight: 'bold' }}>PRECISIÓN DE ESCALA REAL</Typography>
+                      <Typography variant="caption" sx={{ color: 'grey.500' }}>Proporciones consistentes en todas las líneas.</Typography>
                     </Box>
                   </Box>
                   <Box sx={{ display: 'flex', gap: 3 }}>
@@ -420,8 +419,8 @@ const Home: React.FC<HomeProps> = ({ setView }) => {
                       <Science sx={{ color: 'primary.main', fontSize: 20 }} />
                     </Box>
                     <Box>
-                      <Typography variant="subtitle2" sx={{ color: 'common.white', fontWeight: 'bold' }}>VOID-CURED RESIN</Typography>
-                      <Typography variant="caption" sx={{ color: 'grey.500' }}>Impact resistant and ready for paint.</Typography>
+                      <Typography variant="subtitle2" sx={{ color: 'common.white', fontWeight: 'bold' }}>RESINA CURADA AL VACÍO</Typography>
+                      <Typography variant="caption" sx={{ color: 'grey.500' }}>Resistente a impactos y lista para pintar.</Typography>
                     </Box>
                   </Box>
                 </Paper>
@@ -432,13 +431,13 @@ const Home: React.FC<HomeProps> = ({ setView }) => {
               <ScrollReveal direction="right">
                 <Box sx={{ textAlign: 'center', pl: { md: 8 } }}>
                   <Typography variant="h2" sx={{ fontWeight: 900, mb: 3, textShadow: '0 0 20px rgba(197,160,89,0.5)' }}>
-                    <Typography component="span" variant="inherit" sx={{ background: 'linear-gradient(to right, #c084fc, #ec4899)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Limited</Typography> Edition Drops
+                    <Typography component="span" variant="inherit" sx={{ background: 'linear-gradient(to right, #c084fc, #ec4899)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Ediciones</Typography> Limitadas
                   </Typography>
                   <Typography variant="h6" sx={{ color: 'grey.400', mb: 6, fontStyle: 'italic' }}>
-                    "We pull artifacts from the ether before the portal closes. Once a mold breaks, the connection is severed forever."
+                    "Extraemos artefactos del éter antes de que el portal se cierre. Una vez que el molde se rompe, la conexión se corta para siempre."
                   </Typography>
                   <Button onClick={() => setView(ViewState.CATALOG)} variant="outlined" color="secondary" size="large" sx={{ px: 5, py: 1.5, letterSpacing: 3, fontWeight: 'bold' }}>
-                    ACCESS THE VAULT
+                    ACCEDER A LA BÓVEDA
                   </Button>
                 </Box>
               </ScrollReveal>

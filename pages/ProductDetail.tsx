@@ -2,6 +2,8 @@
 import React, { useState, MouseEvent, useMemo, ChangeEvent, useEffect } from 'react';
 import { ViewState, Product, SubItem } from '../types';
 import { useCart } from '../context/CartContext';
+import { formatCurrency } from '../utils/currency';
+import { supabase } from '../src/supabase';
 import {
   Box,
   Container,
@@ -21,7 +23,10 @@ import {
   Card,
   CardContent,
   CardMedia,
-  Skeleton
+  Skeleton,
+  alpha,
+  Dialog,
+  DialogContent
 } from '@mui/material';
 import {
   ArrowBack,
@@ -38,8 +43,22 @@ import {
   Close,
   AccountTree,
   Group,
-  Grid4x4
+  Grid4x4,
+  Opacity,
+  Collections,
+  Delete,
+  Brush
 } from '@mui/icons-material';
+
+interface Review {
+  id: string;
+  product_id: string;
+  user_name: string;
+  rating: number;
+  text: string;
+  image: string | null;
+  created_at: string;
+}
 
 interface ProductDetailProps {
   products: Product[];
@@ -47,37 +66,33 @@ interface ProductDetailProps {
   setView: (view: ViewState) => void;
   wishlist: string[];
   toggleWishlist: (id: string) => void;
+  isAdmin?: boolean;
+  user?: { name: string; id: string } | null;
 }
 
-// Mock initial reviews
-const INITIAL_REVIEWS = [
-  {
-    id: 1,
-    user: "Thrain Ironfoot",
-    rating: 5,
-    text: "The detail on the scales is maddeningly good. Painted up perfectly with Citadel contrast paints. A worthy addition to the hoard.",
-    date: "2 days ago",
-    image: null as string | null
-  },
-  {
-    id: 2,
-    user: "Elara Moonwhisper",
-    rating: 4,
-    text: "Slightly smaller than expected for 'Gargantuan', but fits the grid well. The resin quality is top tier, no bubbles at all.",
-    date: "1 week ago",
-    image: null as string | null
-  }
-];
+// Helper to format dates
+const formatRelativeDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  
+  if (diffDays === 0) return 'Hoy';
+  if (diffDays === 1) return 'Ayer';
+  if (diffDays < 7) return `hace ${diffDays} días`;
+  if (diffDays < 30) return `hace ${Math.floor(diffDays / 7)} semanas`;
+  return `hace ${Math.floor(diffDays / 30)} meses`;
+};
 
 // Helper for the tactical grid - using pure CSS/Box for grid
 const BattlemapFootprint = ({ scale }: { scale: string }) => {
   const size = useMemo(() => {
     const s = scale.toLowerCase();
-    if (s.includes('medium') || s.includes('small')) return 1;
-    if (s.includes('large')) return 2;
-    if (s.includes('huge')) return 3;
-    if (s.includes('gargantuan')) return 4;
-    if (s.includes('colossal')) return 5;
+    if (s.includes('mediano') || s.includes('pequeño') || s.includes('medium') || s.includes('small')) return 1;
+    if (s.includes('grande') || s.includes('large')) return 2;
+    if (s.includes('enorme') || s.includes('huge')) return 3;
+    if (s.includes('gargantuesco') || s.includes('gargantuan')) return 4;
+    if (s.includes('colosal') || s.includes('colossal')) return 5;
     return 1;
   }, [scale]);
 
@@ -128,18 +143,18 @@ const BattlemapFootprint = ({ scale }: { scale: string }) => {
 
       {/* Info */}
       <Box sx={{ flex: 1 }}>
-        <Typography variant="overline" sx={{ color: 'grey.500', fontWeight: 'bold', letterSpacing: 2, mb: 0.5 }}>Tactical Footprint</Typography>
+        <Typography variant="overline" sx={{ color: 'grey.500', fontWeight: 'bold', letterSpacing: 2, mb: 0.5 }}>Huella Táctica</Typography>
         <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, mb: 1 }}>
           <Typography variant="h4" sx={{ fontWeight: 900, color: 'common.white' }}>{totalSquares}</Typography>
-          <Typography variant="caption" sx={{ color: 'secondary.main', opacity: 0.6, fontWeight: 'bold', letterSpacing: 1 }}>SQUARES OCCUPIED</Typography>
+          <Typography variant="caption" sx={{ color: 'secondary.main', opacity: 0.6, fontWeight: 'bold', letterSpacing: 1 }}>CUADRADOS OCUPADOS</Typography>
         </Box>
         <Stack spacing={0.5}>
           <Typography variant="caption" sx={{ color: 'grey.400', fontStyle: 'italic' }}>
-            This {scale} artifact commands a <Box component="span" sx={{ color: 'secondary.main', fontWeight: 'bold' }}>{size}x{size}</Box> presence on a standard 1" tactical grid.
+            Este artefacto de escala {scale} ocupa una presencia de <Box component="span" sx={{ color: 'secondary.main', fontWeight: 'bold' }}>{size}x{size}</Box> en una cuadrícula táctica estándar de 1".
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
             <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: 'primary.main' }} />
-            <Typography variant="caption" sx={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 1, color: 'primary.main', fontWeight: 'bold' }}>In-Scale Accuracy Confirmed</Typography>
+            <Typography variant="caption" sx={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 1, color: 'primary.main', fontWeight: 'bold' }}>Precisión de Escala Confirmada</Typography>
           </Box>
         </Stack>
       </Box>
@@ -177,7 +192,7 @@ const ProductDetailSkeleton = () => (
   </Container>
 );
 
-const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setView, wishlist, toggleWishlist }) => {
+const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setView, wishlist, toggleWishlist, isAdmin = false, user = null }) => {
   const { addToCart } = useCart();
   const product = products.find(p => p.id === productId);
   const isWishlisted = product ? wishlist.includes(product.id) : false;
@@ -193,13 +208,57 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setV
   const [zoomProps, setZoomProps] = useState({ x: 0, y: 0, show: false });
 
   // State for Reviews
-  const [reviews, setReviews] = useState(INITIAL_REVIEWS);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
   const [newReview, setNewReview] = useState({
     user: '',
     text: '',
     rating: 5,
     image: null as string | null
   });
+  const [submittingReview, setSubmittingReview] = useState(false);
+
+  // Gallery lightbox state
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const [selectedGalleryImage, setSelectedGalleryImage] = useState<string | null>(null);
+
+  const [selectedResin, setSelectedResin] = useState('Gris Forja');
+  const resinOptions = [
+    { name: 'Gris Forja', available: true, color: '#5D6D7E' },
+    { name: 'Transparente Espectral', available: false, color: '#AED6F1' },
+    { name: 'Oro de los Enanos', available: false, color: '#F4D03F' }
+  ];
+
+  // Fetch reviews from Supabase
+  useEffect(() => {
+    const fetchReviews = async () => {
+      if (!productId) return;
+      setReviewsLoading(true);
+      const { data, error } = await supabase
+        .from('product_reviews')
+        .select('*')
+        .eq('product_id', productId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching reviews:', error);
+      } else {
+        setReviews(data || []);
+      }
+      setReviewsLoading(false);
+    };
+
+    fetchReviews();
+  }, [productId]);
+
+  // Community Gallery Images (derived from reviews with images)
+  const communityImages = useMemo(() => {
+    return reviews.filter(r => r.image).map(r => ({ 
+      url: r.image!, 
+      user: r.user_name,
+      reviewId: r.id 
+    }));
+  }, [reviews]);
 
   // Sync main image
   useEffect(() => {
@@ -238,9 +297,9 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setV
   const galleryViews = useMemo(() => {
     if (!product) return [];
     const views = [
-      { name: "Front View", url: product.image },
-      { name: "Side Profile", url: product.image },
-      { name: "Detail Shot", url: product.image }
+      { name: "Vista Frontal", url: product.image },
+      { name: "Perfil Lateral", url: product.image },
+      { name: "Detalle", url: product.image }
     ];
     // Add sub-items if they have unique images
     if (product.subItems) {
@@ -296,15 +355,48 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setV
     }
   };
 
-  const handleSubmitReview = () => {
-    if (!newReview.user || !newReview.text) return;
-    const review = {
-      id: Date.now(),
-      ...newReview,
-      date: "Just now"
+  const handleSubmitReview = async () => {
+    if (!user || !newReview.text || !productId) return;
+    setSubmittingReview(true);
+
+    const reviewData = {
+      product_id: productId,
+      user_name: user.name,
+      rating: newReview.rating,
+      text: newReview.text,
+      image: newReview.image
     };
-    setReviews([review, ...reviews]);
-    setNewReview({ user: '', text: '', rating: 5, image: null });
+
+    const { data, error } = await supabase
+      .from('product_reviews')
+      .insert(reviewData)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error submitting review:', error);
+      alert('Error al publicar la crónica. Intenta de nuevo.');
+    } else if (data) {
+      setReviews([data, ...reviews]);
+      setNewReview({ user: '', text: '', rating: 5, image: null });
+    }
+    setSubmittingReview(false);
+  };
+
+  const handleDeleteReview = async (reviewId: string) => {
+    if (!confirm('¿Estás seguro de eliminar esta crónica?')) return;
+    
+    const { error } = await supabase
+      .from('product_reviews')
+      .delete()
+      .eq('id', reviewId);
+
+    if (error) {
+      console.error('Error deleting review:', error);
+      alert('Error al eliminar la crónica.');
+    } else {
+      setReviews(reviews.filter(r => r.id !== reviewId));
+    }
   };
 
   if (isLoading) {
@@ -314,10 +406,10 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setV
   if (!product) {
     return (
       <Box sx={{ minHeight: '50vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', px: 3 }}>
-        <Typography variant="h4" color="secondary.main" fontWeight="bold" gutterBottom>Artifact Lost</Typography>
-        <Typography color="text.secondary" paragraph>The scrying orb cannot locate this item in the archives.</Typography>
+        <Typography variant="h4" color="secondary.main" fontWeight="bold" gutterBottom>Artefacto Perdido</Typography>
+        <Typography color="text.secondary" paragraph>El orbe de adivinación no puede localizar este objeto en los archivos.</Typography>
         <Button onClick={() => setView(ViewState.CATALOG)} color="primary" sx={{ textDecoration: 'underline' }}>
-          Return to Archives
+          Volver a los Archivos
         </Button>
       </Box>
     );
@@ -332,7 +424,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setV
           startIcon={<ArrowBack />}
           sx={{ color: 'text.secondary', '&:hover': { color: 'secondary.main' } }}
         >
-          Catalog
+          Catálogo
         </Button>
         <Typography color="text.secondary">/</Typography>
         <Typography color="text.secondary">{product.category}</Typography>
@@ -392,7 +484,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setV
               {!zoomProps.show && (
                 <Box sx={{ position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)', bgcolor: 'rgba(0,0,0,0.6)', borderRadius: 4, px: 2, py: 0.5, display: 'flex', alignItems: 'center', gap: 1, backdropFilter: 'blur(4px)', border: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
                   <ZoomIn sx={{ fontSize: 16, color: 'white' }} />
-                  <Typography variant="caption" sx={{ color: 'white', letterSpacing: 1, textTransform: 'uppercase' }}>Hover to Inspect</Typography>
+                  <Typography variant="caption" sx={{ color: 'white', letterSpacing: 1, textTransform: 'uppercase' }}>Mira de cerca para Inspeccionar</Typography>
                 </Box>
               )}
             </Paper>
@@ -426,7 +518,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setV
         {/* Right Column: Details */}
         <Grid size={{ xs: 12, lg: 6 }}>
           <Box sx={{ mb: 1, display: 'flex', gap: 2, alignItems: 'center' }}>
-            <Chip label={`${product.scale} Scale`} variant="outlined" color="primary" size="small" sx={{ fontWeight: 'bold' }} />
+            <Chip label={`Escala ${product.scale}`} variant="outlined" color="primary" size="small" sx={{ fontWeight: 'bold' }} />
             <Typography variant="caption" color="text.secondary" sx={{ letterSpacing: 1 }}>
               REF: {product.category.toUpperCase()}-{product.id.padStart(3, '0')}
             </Typography>
@@ -438,7 +530,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setV
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, mb: 4, pb: 4, borderBottom: 1, borderColor: 'rgba(197, 160, 89, 0.1)' }}>
             <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'secondary.main' }}>
-              {product.price.toFixed(0)} GP
+              {formatCurrency(product.price)}
             </Typography>
             <Divider orientation="vertical" flexItem sx={{ bgcolor: 'grey.800' }} />
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -448,9 +540,9 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setV
           </Box>
 
           <Box sx={{ mb: 5 }}>
-            <Typography variant="overline" color="secondary.main" fontWeight="bold" letterSpacing={2} display="block" gutterBottom>Lore & Description</Typography>
+            <Typography variant="overline" color="secondary.main" fontWeight="bold" letterSpacing={2} display="block" gutterBottom>Lore y Descripción</Typography>
             <Typography variant="body1" color="text.secondary" paragraph fontStyle="italic" sx={{ opacity: 0.9 }}>
-              "{product.description || "A rare artifact retrieved from the deepest dungeons. Details of its origin are shrouded in mystery, but its craftsmanship is undeniable."}"
+              "{product.description || "Un raro artefacto recuperado de las mazmorras más profundas. Los detalles de su origen están envueltos en misterio, pero su artesanía es innegable."}"
             </Typography>
           </Box>
 
@@ -460,7 +552,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setV
           {product.subItems && product.subItems.length > 0 && (
             <Paper elevation={0} sx={{ mb: 5, p: 3, bgcolor: 'background.paper', border: 1, borderColor: 'rgba(197, 160, 89, 0.2)', position: 'relative' }}>
               <Typography variant="overline" color="common.white" fontWeight="bold" letterSpacing={2} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <AccountTree fontSize="small" color="secondary" /> Unit Composition
+                <AccountTree fontSize="small" color="secondary" /> Composición de la Unidad
               </Typography>
               <Grid container spacing={2}>
                 {product.subItems.map((item) => (
@@ -482,61 +574,80 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setV
             </Paper>
           )}
 
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 6 }}>
-            <Button
-              fullWidth
-              onClick={() => addToCart(product)}
-              variant="contained"
-              color="primary"
-              size="large"
-              startIcon={<ShoppingBag />}
-              sx={{ py: 2, fontSize: '1.1rem', fontWeight: 'bold', letterSpacing: 2 }}
-            >
-              Add to Hoard
-            </Button>
-            <Button
-              onClick={() => toggleWishlist(product.id)}
-              variant="outlined"
-              color={isWishlisted ? "primary" : "secondary"}
-              sx={{ minWidth: 64, borderColor: isWishlisted ? 'primary.main' : 'rgba(197, 160, 89, 0.3)' }}
-            >
-              {isWishlisted ? <Favorite /> : <FavoriteBorder />}
-            </Button>
+          {/* Resin Selection */}
+        <Box sx={{ mb: 6 }}>
+          <Typography variant="overline" color="secondary.main" fontWeight="bold" letterSpacing={2} display="block" gutterBottom>
+            <Opacity fontSize="inherit" /> Selección de Resina
+          </Typography>
+          <Stack direction="row" spacing={2}>
+            {resinOptions.map((resin) => (
+              <Box
+                key={resin.name}
+                onClick={() => resin.available && setSelectedResin(resin.name)}
+                sx={{
+                  flex: 1,
+                  p: 2,
+                  borderRadius: 1,
+                  border: 2,
+                  borderColor: selectedResin === resin.name ? 'primary.main' : 'rgba(197, 160, 89, 0.1)',
+                  bgcolor: selectedResin === resin.name ? 'rgba(var(--color-primary), 0.1)' : 'rgba(0,0,0,0.2)',
+                  cursor: resin.available ? 'pointer' : 'not-allowed',
+                  opacity: resin.available ? 1 : 0.5,
+                  position: 'relative',
+                  transition: 'all 0.2s',
+                  '&:hover': resin.available ? { borderColor: 'primary.main', bgcolor: 'rgba(var(--color-primary), 0.05)' } : {}
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                  <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: resin.color, border: '1px solid rgba(255,255,255,0.2)' }} />
+                  <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'common.white', lineHeight: 1 }}>{resin.name}</Typography>
+                </Box>
+                {!resin.available && (
+                  <Typography variant="caption" sx={{ fontSize: '0.6rem', color: 'primary.main', fontWeight: 'bold', textTransform: 'uppercase' }}>Próximamente</Typography>
+                )}
+                {selectedResin === resin.name && resin.available && (
+                  <Box sx={{ position: 'absolute', top: 4, right: 4 }}>
+                    <Star sx={{ fontSize: 12, color: 'primary.main' }} />
+                  </Box>
+                )}
+              </Box>
+            ))}
           </Stack>
+        </Box>
 
-          {/* Specs */}
-          <Paper variant="outlined" sx={{ p: 3, bgcolor: 'transparent', borderColor: 'rgba(197, 160, 89, 0.1)' }}>
-            <Typography variant="overline" color="common.white" fontWeight="bold" letterSpacing={2} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Build fontSize="small" color="secondary" /> Technical Specifications
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid size={6}>
-                <Typography variant="caption" color="grey.600" display="block">Material</Typography>
-                <Typography variant="body2" color="grey.400">High-Fidelity Grey Resin</Typography>
-              </Grid>
-              <Grid size={6}>
-                <Typography variant="caption" color="grey.600" display="block">Base Size</Typography>
-                <Typography variant="body2" color="grey.400">{product.scale === 'Gargantuan' ? '100mm' : product.scale === 'Large' ? '50mm' : '32mm'}</Typography>
-              </Grid>
-              <Grid size={6}>
-                <Typography variant="caption" color="grey.600" display="block">Assembly</Typography>
-                <Typography variant="body2" color="grey.400">Unassembled & Unpainted</Typography>
-              </Grid>
-              <Grid size={6}>
-                <Typography variant="caption" color="grey.600" display="block">Layer Height</Typography>
-                <Typography variant="body2" color="grey.400">0.03mm (30 microns)</Typography>
-              </Grid>
+        {/* Specs */}
+        <Paper variant="outlined" sx={{ p: 3, bgcolor: 'transparent', borderColor: 'rgba(197, 160, 89, 0.1)' }}>
+          <Typography variant="overline" color="common.white" fontWeight="bold" letterSpacing={2} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Build fontSize="small" color="secondary" /> Especificaciones Técnicas
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid size={6}>
+              <Typography variant="caption" color="grey.600" display="block">Material</Typography>
+              <Typography variant="body2" color="grey.400">Resina Gris de Alta Fidelidad</Typography>
             </Grid>
-          </Paper>
+            <Grid size={6}>
+              <Typography variant="caption" color="grey.600" display="block">Tamaño de Base</Typography>
+              <Typography variant="body2" color="grey.400">{product.scale === 'Gargantuesco' || product.scale === 'Gargantuan' ? '100mm' : (product.scale === 'Grande' || product.scale === 'Large') ? '50mm' : '32mm'}</Typography>
+            </Grid>
+            <Grid size={6}>
+              <Typography variant="caption" color="grey.600" display="block">Montaje</Typography>
+              <Typography variant="body2" color="grey.400">Sin Montar y Sin Pintar</Typography>
+            </Grid>
+            <Grid size={6}>
+              <Typography variant="caption" color="grey.600" display="block">Altura de Capa</Typography>
+              <Typography variant="body2" color="grey.400">0.03mm (30 micras)</Typography>
+            </Grid>
+          </Grid>
+        </Paper>
 
-          <Box sx={{ mt: 2, display: 'flex', gap: 1, alignItems: 'flex-start' }}>
-            <LocalShipping fontSize="small" color="secondary" />
-            <Typography variant="caption" color="text.secondary" fontStyle="italic">
-              Ships within 3-5 business days. Packaged with protective enchantments (bubble wrap) to ensure safe arrival.
-            </Typography>
-          </Box>
-        </Grid>
+        <Box sx={{ mt: 2, display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+          <LocalShipping fontSize="small" color="secondary" />
+          <Typography variant="caption" color="text.secondary" fontStyle="italic">
+            Se envía en 3-5 días hábiles. Embalado con encantamientos protectores (plástico de burbujas) para asegurar su llegada a salvo.
+          </Typography>
+        </Box>
       </Grid>
+    </Grid>
 
       {/* Related Artifacts */}
       {relatedProducts.length > 0 && (
@@ -544,7 +655,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setV
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 4 }}>
             <Divider sx={{ flex: 1, borderColor: 'rgba(197, 160, 89, 0.2)' }} />
             <Typography variant="h5" sx={{ textTransform: 'uppercase', letterSpacing: 3, fontWeight: 'bold', fontStyle: 'italic', color: 'common.white' }}>
-              Related Artifacts
+              Artefactos Relacionados
             </Typography>
             <Divider sx={{ flex: 1, borderColor: 'rgba(197, 160, 89, 0.2)' }} />
           </Box>
@@ -567,98 +678,201 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setV
         </Box>
       )}
 
+      {/* Community Gallery */}
+      {communityImages.length > 0 && (
+        <Box sx={{ mb: 10 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 4 }}>
+            <Divider sx={{ flex: 1, borderColor: 'rgba(197, 160, 89, 0.2)' }} />
+            <Typography variant="h5" sx={{ display: 'flex', alignItems: 'center', gap: 2, textTransform: 'uppercase', letterSpacing: 3, fontWeight: 'bold', fontStyle: 'italic', color: 'common.white' }}>
+              <Brush /> Galería de Aventureros
+            </Typography>
+            <Divider sx={{ flex: 1, borderColor: 'rgba(197, 160, 89, 0.2)' }} />
+          </Box>
+          <Typography variant="body2" color="grey.500" sx={{ textAlign: 'center', mb: 3, fontStyle: 'italic' }}>
+            Obras de arte pintadas por nuestra comunidad de aventureros
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 2, overflowX: 'auto', pb: 2, '&::-webkit-scrollbar': { height: 8 }, '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(197, 160, 89, 0.2)', borderRadius: 4 } }}>
+            {communityImages.map((img, i) => (
+              <Box 
+                key={i} 
+                onClick={() => { setSelectedGalleryImage(img.url); setGalleryOpen(true); }}
+                sx={{ minWidth: 200, maxWidth: 200, position: 'relative', borderRadius: 2, overflow: 'hidden', border: 1, borderColor: 'rgba(197, 160, 89, 0.1)', cursor: 'pointer', '&:hover img': { transform: 'scale(1.1)' } }}
+              >
+                <Box component="img" src={img.url} sx={{ width: '100%', height: 260, objectFit: 'cover', transition: 'transform 0.5s' }} />
+                <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, p: 1.5, background: 'linear-gradient(transparent, rgba(0,0,0,0.8))', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="caption" sx={{ color: 'white', fontWeight: 'bold' }}>{img.user}</Typography>
+                  {isAdmin && (
+                    <IconButton
+                      size="small"
+                      onClick={(e) => { e.stopPropagation(); handleDeleteReview(img.reviewId); }}
+                      sx={{ color: 'grey.400', p: 0.5, '&:hover': { color: 'error.main' } }}
+                      title="Eliminar imagen (Admin)"
+                    >
+                      <Delete sx={{ fontSize: 16 }} />
+                    </IconButton>
+                  )}
+                </Box>
+              </Box>
+            ))}
+          </Box>
+        </Box>
+      )}
+
+      {/* Image Lightbox Dialog */}
+      <Dialog 
+        open={galleryOpen} 
+        onClose={() => setGalleryOpen(false)}
+        maxWidth="lg"
+        PaperProps={{ sx: { bgcolor: 'transparent', boxShadow: 'none' } }}
+      >
+        <DialogContent sx={{ p: 0, position: 'relative' }}>
+          <IconButton
+            onClick={() => setGalleryOpen(false)}
+            sx={{ position: 'absolute', top: -40, right: 0, color: 'white' }}
+          >
+            <Close />
+          </IconButton>
+          {selectedGalleryImage && (
+            <Box 
+              component="img" 
+              src={selectedGalleryImage} 
+              sx={{ maxWidth: '90vw', maxHeight: '80vh', objectFit: 'contain', borderRadius: 2 }} 
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Reviews Section */}
       <Box sx={{ borderTop: 1, borderColor: 'rgba(197, 160, 89, 0.2)', pt: 6 }}>
         <Grid container spacing={8}>
           {/* Form */}
           <Grid size={{ xs: 12, lg: 4 }}>
-            <Typography variant="h6" color="secondary.main" gutterBottom sx={{ textTransform: 'uppercase', letterSpacing: 2, fontWeight: 'bold' }}>Inscribe a Chronicle</Typography>
-            <Typography variant="body2" color="text.secondary" paragraph fontStyle="italic">Share your experience with this artifact. Your tales guide other adventurers.</Typography>
+            <Typography variant="h6" color="secondary.main" gutterBottom sx={{ textTransform: 'uppercase', letterSpacing: 2, fontWeight: 'bold' }}>Inscribe una Crónica</Typography>
+            <Typography variant="body2" color="text.secondary" paragraph fontStyle="italic">Comparte tu experiencia con este artefacto. Tus relatos guían a otros aventureros.</Typography>
 
-            <Stack spacing={3} sx={{ mt: 3 }}>
-              <TextField
-                label="Adventurer Name"
-                variant="outlined"
-                fullWidth
-                value={newReview.user}
-                onChange={(e) => setNewReview({ ...newReview, user: e.target.value })}
-              />
+            {user ? (
+              <Stack spacing={3} sx={{ mt: 3 }}>
+                <Box sx={{ p: 2, bgcolor: 'rgba(197, 160, 89, 0.1)', borderRadius: 1, border: 1, borderColor: 'rgba(197, 160, 89, 0.2)' }}>
+                  <Typography variant="caption" color="text.secondary">Publicando como</Typography>
+                  <Typography variant="subtitle2" color="secondary.main" fontWeight="bold">{user.name}</Typography>
+                </Box>
 
-              <Box>
-                <Typography component="legend" variant="caption" color="text.secondary">Rating</Typography>
-                <Rating
-                  value={newReview.rating}
-                  onChange={(_, val) => setNewReview({ ...newReview, rating: val || 5 })}
-                  emptyIcon={<Star style={{ opacity: 0.3, color: 'grey' }} fontSize="inherit" />}
+                <Box>
+                  <Typography component="legend" variant="caption" color="text.secondary">Rating</Typography>
+                  <Rating
+                    value={newReview.rating}
+                    onChange={(_, val) => setNewReview({ ...newReview, rating: val || 5 })}
+                    emptyIcon={<Star style={{ opacity: 0.3, color: 'grey' }} fontSize="inherit" />}
+                  />
+                </Box>
+
+                <TextField
+                  label="Crónica"
+                  multiline
+                  rows={4}
+                  variant="outlined"
+                  fullWidth
+                  value={newReview.text}
+                  onChange={(e) => setNewReview({ ...newReview, text: e.target.value })}
                 />
-              </Box>
 
-              <TextField
-                label="Chronicle"
-                multiline
-                rows={4}
-                variant="outlined"
-                fullWidth
-                value={newReview.text}
-                onChange={(e) => setNewReview({ ...newReview, text: e.target.value })}
-              />
+                <Box>
+                  <Typography variant="caption" display="block" color="text.secondary" gutterBottom>Prueba Visual (Opcional)</Typography>
+                  <Button variant="outlined" component="label" startIcon={<AddAPhoto />} color="secondary" sx={{ textTransform: 'none' }}>
+                    Adjuntar Imagen
+                    <input type="file" hidden accept="image/*" onChange={handleImageUpload} />
+                  </Button>
+                  {newReview.image && (
+                    <Box sx={{ mt: 1, position: 'relative', width: 80, height: 80, borderRadius: 1, overflow: 'hidden' }}>
+                      <img src={newReview.image} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <IconButton size="small" onClick={() => setNewReview({ ...newReview, image: null })} sx={{ position: 'absolute', top: 0, right: 0, bgcolor: 'rgba(0,0,0,0.6)', color: 'white' }}>
+                        <Close fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  )}
+                </Box>
 
-              <Box>
-                <Typography variant="caption" display="block" color="text.secondary" gutterBottom>Visual Proof (Optional)</Typography>
-                <Button variant="outlined" component="label" startIcon={<AddAPhoto />} color="secondary" sx={{ textTransform: 'none' }}>
-                  Attach Image
-                  <input type="file" hidden accept="image/*" onChange={handleImageUpload} />
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  fullWidth
+                  size="large"
+                  onClick={handleSubmitReview}
+                  disabled={!newReview.text || submittingReview}
+                  sx={{ color: 'background.default', fontWeight: 'bold' }}
+                >
+                  {submittingReview ? 'Inscribiendo...' : 'Publicar Crónica'}
                 </Button>
-                {newReview.image && (
-                  <Box sx={{ mt: 1, position: 'relative', width: 80, height: 80, borderRadius: 1, overflow: 'hidden' }}>
-                    <img src={newReview.image} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    <IconButton size="small" onClick={() => setNewReview({ ...newReview, image: null })} sx={{ position: 'absolute', top: 0, right: 0, bgcolor: 'rgba(0,0,0,0.6)', color: 'white' }}>
-                      <Close fontSize="small" />
-                    </IconButton>
-                  </Box>
-                )}
+              </Stack>
+            ) : (
+              <Box sx={{ mt: 3, p: 4, textAlign: 'center', bgcolor: 'rgba(0,0,0,0.3)', borderRadius: 2, border: 1, borderColor: 'rgba(197, 160, 89, 0.2)' }}>
+                <Typography variant="body2" color="text.secondary" paragraph fontStyle="italic">
+                  Debes iniciar sesión para dejar una crónica.
+                </Typography>
+                <Button
+                  variant="outlined"
+                  color="secondary"
+                  onClick={() => setView(ViewState.LOGIN)}
+                  sx={{ fontWeight: 'bold' }}
+                >
+                  Iniciar Sesión
+                </Button>
               </Box>
-
-              <Button
-                variant="contained"
-                color="secondary"
-                fullWidth
-                size="large"
-                onClick={handleSubmitReview}
-                disabled={!newReview.user || !newReview.text}
-                sx={{ color: 'background.default', fontWeight: 'bold' }}
-              >
-                Post Chronicle
-              </Button>
-            </Stack>
+            )}
           </Grid>
 
           {/* Log */}
           <Grid size={{ xs: 12, lg: 8 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4, pb: 2, borderBottom: 1, borderColor: 'rgba(197, 160, 89, 0.2)' }}>
-              <Typography variant="h5" color="common.white" fontWeight="bold" sx={{ fontStyle: 'italic' }}>Scribe's Log</Typography>
-              <Typography variant="caption" color="secondary.main">{reviews.length} Entries recorded</Typography>
+              <Typography variant="h5" color="common.white" fontWeight="bold" sx={{ fontStyle: 'italic' }}>Registro del Escriba</Typography>
+              <Typography variant="caption" color="secondary.main">{reviews.length} Entradas registradas</Typography>
             </Box>
 
             <Stack spacing={4}>
-              {reviews.map(review => (
-                <Paper key={review.id} elevation={0} sx={{ p: 3, bgcolor: 'background.paper', border: 1, borderColor: 'rgba(197, 160, 89, 0.1)' }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                    <Box sx={{ display: 'flex', gap: 2 }}>
-                      <Avatar sx={{ bgcolor: 'rgba(197, 160, 89, 0.2)', color: 'secondary.main', fontWeight: 'bold' }}>{review.user.charAt(0)}</Avatar>
-                      <Box>
-                        <Typography variant="subtitle2" color="common.white" fontWeight="bold">{review.user}</Typography>
-                        <Typography variant="caption" color="text.secondary">{review.date}</Typography>
+              {reviewsLoading ? (
+                <Box sx={{ textAlign: 'center', py: 4 }}>
+                  <Typography variant="body2" color="grey.500" fontStyle="italic">Consultando los archivos...</Typography>
+                </Box>
+              ) : reviews.length === 0 ? (
+                <Box sx={{ textAlign: 'center', py: 4 }}>
+                  <Typography variant="body2" color="grey.500" fontStyle="italic">Aún no hay crónicas inscritas. ¡Sé el primero en compartir tu experiencia!</Typography>
+                </Box>
+              ) : (
+                reviews.map(review => (
+                  <Paper key={review.id} elevation={0} sx={{ p: 3, bgcolor: 'background.paper', border: 1, borderColor: 'rgba(197, 160, 89, 0.1)', position: 'relative' }}>
+                    {isAdmin && (
+                      <IconButton
+                        size="small"
+                        onClick={() => handleDeleteReview(review.id)}
+                        sx={{ position: 'absolute', top: 8, right: 8, color: 'grey.600', '&:hover': { color: 'error.main' } }}
+                        title="Eliminar crónica (Admin)"
+                      >
+                        <Delete fontSize="small" />
+                      </IconButton>
+                    )}
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                      <Box sx={{ display: 'flex', gap: 2 }}>
+                        <Avatar sx={{ bgcolor: 'rgba(197, 160, 89, 0.2)', color: 'secondary.main', fontWeight: 'bold' }}>{review.user_name.charAt(0)}</Avatar>
+                        <Box>
+                          <Typography variant="subtitle2" color="common.white" fontWeight="bold">{review.user_name}</Typography>
+                          <Typography variant="caption" color="text.secondary">{formatRelativeDate(review.created_at)}</Typography>
+                        </Box>
                       </Box>
+                      <Rating value={review.rating} readOnly size="small" emptyIcon={<Star style={{ opacity: 0.3, color: 'grey' }} fontSize="inherit" />} />
                     </Box>
-                    <Rating value={review.rating} readOnly size="small" emptyIcon={<Star style={{ opacity: 0.3, color: 'grey' }} fontSize="inherit" />} />
-                  </Box>
-                  <Typography variant="body2" color="text.secondary" fontStyle="italic" paragraph>"{review.text}"</Typography>
-                  {review.image && (
-                    <Box component="img" src={review.image} alt="User upload" sx={{ height: 100, borderRadius: 1, border: 1, borderColor: 'rgba(255,255,255,0.1)' }} />
-                  )}
-                </Paper>
-              ))}
+                    <Typography variant="body2" color="text.secondary" fontStyle="italic" paragraph>"{review.text}"</Typography>
+                    {review.image && (
+                      <Box 
+                        component="img" 
+                        src={review.image} 
+                        alt="User upload" 
+                        onClick={() => { setSelectedGalleryImage(review.image); setGalleryOpen(true); }}
+                        sx={{ height: 100, borderRadius: 1, border: 1, borderColor: 'rgba(255,255,255,0.1)', cursor: 'pointer', '&:hover': { opacity: 0.8 } }} 
+                      />
+                    )}
+                  </Paper>
+                ))
+              )}
             </Stack>
           </Grid>
         </Grid>

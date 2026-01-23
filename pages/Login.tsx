@@ -72,8 +72,8 @@ const Login: React.FC<LoginProps> = ({ setView, onLogin }) => {
           <Box sx={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 64, height: 64, borderRadius: '50%', bgcolor: (t) => alpha(t.palette.secondary.main, 0.1), border: 1, borderColor: (t) => alpha(t.palette.secondary.main, 0.3), mb: 2, color: 'secondary.main' }}>
             <Lock sx={{ fontSize: 28 }} />
           </Box>
-          <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'common.white', textTransform: 'uppercase', letterSpacing: 3 }}>Identify Yourself</Typography>
-          <Typography variant="body2" sx={{ color: 'grey.500', fontStyle: 'italic', mt: 1 }}>Enter the archives securely.</Typography>
+          <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'common.white', textTransform: 'uppercase', letterSpacing: 3 }}>Identifícate</Typography>
+          <Typography variant="body2" sx={{ color: 'grey.500', fontStyle: 'italic', mt: 1 }}>Accede a los archivos de forma segura.</Typography>
         </Box>
 
         <Collapse in={!!error}>
@@ -86,17 +86,17 @@ const Login: React.FC<LoginProps> = ({ setView, onLogin }) => {
           <Stack spacing={3}>
             <TextField
               fullWidth
-              label="Email Scroll"
+              label="Pergamino de Email"
               type="email"
               required
               disabled={isLoading}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="wizard@resinforge.com"
+              placeholder="mago@resinforge.com"
             />
             <TextField
               fullWidth
-              label="Secret Rune"
+              label="Runa Secreta"
               type="password"
               required
               disabled={isLoading}
@@ -125,10 +125,10 @@ const Login: React.FC<LoginProps> = ({ setView, onLogin }) => {
               {isLoading ? (
                 <Stack direction="row" spacing={1} alignItems="center">
                   <CircularProgress size={20} color="inherit" />
-                  <span>Deciphering...</span>
+                  <span>Descifrando...</span>
                 </Stack>
               ) : (
-                "Enter The Realm"
+                "Entrar al Reino"
               )}
             </Button>
 
@@ -147,7 +147,7 @@ const Login: React.FC<LoginProps> = ({ setView, onLogin }) => {
                 '&:hover': { borderColor: 'secondary.main', bgcolor: alpha(theme.palette.secondary.main, 0.05) }
               }}
             >
-              Connect with Google
+              Conectar con Google
             </Button>
           </Stack>
         </Box>
@@ -155,7 +155,7 @@ const Login: React.FC<LoginProps> = ({ setView, onLogin }) => {
         <Divider sx={{ my: 4 }} />
 
         <Box sx={{ textAlign: 'center' }}>
-          <Typography variant="body2" sx={{ color: 'grey.500', fontStyle: 'italic', mb: 1 }}>New to the forge?</Typography>
+          <Typography variant="body2" sx={{ color: 'grey.500', fontStyle: 'italic', mb: 1 }}>¿Eres nuevo en la forja?</Typography>
           <Button
             onClick={() => !isLoading && setView(ViewState.SIGNUP)}
             disabled={isLoading}
@@ -170,7 +170,7 @@ const Login: React.FC<LoginProps> = ({ setView, onLogin }) => {
               '&:hover .MuiSvgIcon-root': { transform: 'translateX(4px)' }
             }}
           >
-            Inscribe New Name
+            Inscribir Nuevo Nombre
           </Button>
         </Box>
       </FancyPaper>

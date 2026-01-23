@@ -1,6 +1,6 @@
-import React from 'react';
 import { useCart } from '../context/CartContext';
 import { ViewState } from '../types';
+import { formatCurrency, formatCurrencyDecimal } from '../utils/currency';
 import {
   Box,
   Container,
@@ -44,8 +44,8 @@ const Cart: React.FC<CartProps> = ({ setView }) => {
   return (
     <Container maxWidth="lg" sx={{ py: 6, px: { xs: 2, lg: 4 } }}>
       <SectionHeader
-        title="Review Your Loot"
-        description="The hoard has been gathered. Secure it before the dungeon collapses."
+        title="Revisa tu Botín"
+        description="El tesoro ha sido reunido. Asegúralo antes de que la mazmorra se colapse."
         icon={<Inventory2 />}
       />
 
@@ -67,18 +67,18 @@ const Cart: React.FC<CartProps> = ({ setView }) => {
           <Box sx={{ position: 'relative', zIndex: 1, p: { sm: 4 } }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: 1, borderColor: (theme) => alpha(theme.palette.secondary.main, 0.2), pb: 2, mb: 4 }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 2, color: 'secondary.main' }}>
-                The Loot
+                El Botín
               </Typography>
               <Typography variant="caption" sx={{ fontStyle: 'italic', color: (theme) => alpha(theme.palette.secondary.main, 0.4) }}>
-                {items.length} items found
+                {items.length} objetos encontrados
               </Typography>
             </Box>
 
             {items.length === 0 ? (
               <Box sx={{ textAlign: 'center', py: 6, bgcolor: { xs: (theme) => alpha(theme.palette.common.black, 0.2), sm: 'transparent' }, borderRadius: 1 }}>
-                <Typography color="grey.500" fontStyle="italic">Your hoard is empty.</Typography>
+                <Typography color="grey.500" fontStyle="italic">Tu tesoro está vacío.</Typography>
                 <Button onClick={() => setView(ViewState.CATALOG)} sx={{ mt: 2, textDecoration: 'underline', color: 'secondary.main', '&:hover': { color: 'common.white' } }}>
-                  Return to Archives
+                  Volver a los Archivos
                 </Button>
               </Box>
             ) : (
@@ -129,7 +129,7 @@ const Cart: React.FC<CartProps> = ({ setView }) => {
                         </Box>
                         {isMobile && (
                           <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: 'secondary.main', whiteSpace: 'nowrap' }}>
-                            {(item.price * item.quantity).toFixed(0)} GP
+                            {formatCurrency(item.price * item.quantity)}
                           </Typography>
                         )}
                       </Box>
@@ -152,7 +152,7 @@ const Cart: React.FC<CartProps> = ({ setView }) => {
                           size="small"
                           sx={{ color: 'grey.500', textTransform: 'uppercase', fontWeight: 'bold', fontSize: '0.75rem', '&:hover': { color: 'primary.main' } }}
                         >
-                          Discard
+                          Descartar
                         </Button>
                       </Box>
                     </Box>
@@ -160,7 +160,7 @@ const Cart: React.FC<CartProps> = ({ setView }) => {
                     {!isMobile && (
                       <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
                         <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'secondary.main' }}>
-                          {(item.price * item.quantity).toFixed(2)} GP
+                          {formatCurrencyDecimal(item.price * item.quantity)}
                         </Typography>
                       </Box>
                     )}
@@ -170,8 +170,8 @@ const Cart: React.FC<CartProps> = ({ setView }) => {
             )}
 
             <Box sx={{ mt: 6, pt: 4, borderTop: 1, borderColor: (theme) => alpha(theme.palette.secondary.main, 0.2), display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: 'center', gap: 1, color: (theme) => alpha(theme.palette.secondary.main, 0.5), fontStyle: 'italic', textAlign: { xs: 'center', sm: 'left' } }}>
-              <Typography variant="caption">Your inventory is protected by magical wards.</Typography>
-              <Typography variant="caption">Total Weight: 12.4 lbs</Typography>
+              <Typography variant="caption">Tu inventario está protegido por guardas mágicas.</Typography>
+              <Typography variant="caption">Peso Total: 12.4 lbs</Typography>
             </Box>
           </Box>
         </Grid>
@@ -191,28 +191,28 @@ const Cart: React.FC<CartProps> = ({ setView }) => {
               <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, height: 4, bgcolor: 'secondary.main' }} />
               <Typography variant="h6" sx={{ fontWeight: 'bold', fontStyle: 'italic', mb: 3, display: 'flex', alignItems: 'center', gap: 1, color: 'common.white' }}>
                 <MonetizationOn sx={{ color: 'secondary.main' }} />
-                Treasure Summary
+                Resumen del Tesoro
               </Typography>
 
               <Stack spacing={2} sx={{ mb: 4 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2" sx={{ color: 'grey.500', textTransform: 'uppercase', letterSpacing: 1 }}>Hoard Subtotal</Typography>
-                  <Typography variant="body2" sx={{ color: 'secondary.main', fontWeight: 'bold' }}>{totalPrice.toFixed(2)} GP</Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <Typography variant="body2" sx={{ color: 'grey.500', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 'bold', minWidth: '120px' }}>Subtotal</Typography>
+                  <Typography variant="body2" sx={{ color: 'secondary.main', fontWeight: 'bold', textAlign: 'right' }}>{formatCurrencyDecimal(totalPrice)}</Typography>
                 </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2" sx={{ color: 'grey.500', textTransform: 'uppercase', letterSpacing: 1 }}>Carriage & Portal Fee</Typography>
-                  <Typography variant="body2" sx={{ color: 'secondary.main', fontWeight: 'bold' }}>{shipping.toFixed(2)} GP</Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <Typography variant="body2" sx={{ color: 'grey.500', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 'bold', minWidth: '120px' }}>Tarifa Portal</Typography>
+                  <Typography variant="body2" sx={{ color: 'secondary.main', fontWeight: 'bold', textAlign: 'right' }}>{formatCurrencyDecimal(shipping)}</Typography>
                 </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', pb: 2, borderBottom: 1, borderColor: (theme) => alpha(theme.palette.secondary.main, 0.1) }}>
-                  <Typography variant="body2" sx={{ color: 'grey.500', textTransform: 'uppercase', letterSpacing: 1 }}>Taxation of the Realm</Typography>
-                  <Typography variant="body2" sx={{ color: 'secondary.main', fontWeight: 'bold' }}>{taxes.toFixed(2)} GP</Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', pb: 2, borderBottom: 1, borderColor: (theme) => alpha(theme.palette.secondary.main, 0.1) }}>
+                  <Typography variant="body2" sx={{ color: 'grey.500', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 'bold', minWidth: '120px' }}>Impuestos</Typography>
+                  <Typography variant="body2" sx={{ color: 'secondary.main', fontWeight: 'bold', textAlign: 'right' }}>{formatCurrencyDecimal(taxes)}</Typography>
                 </Box>
 
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', pt: 1 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 'bold', fontStyle: 'italic', color: 'common.white' }}>Grand Total</Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pt: 2, mt: 1, borderTop: 1, borderColor: (theme) => alpha(theme.palette.secondary.main, 0.2) }}>
+                  <Typography variant="h5" sx={{ fontWeight: 'bold', fontStyle: 'italic', color: 'common.white', textTransform: 'uppercase', letterSpacing: 2 }}>Total</Typography>
                   <Box sx={{ textAlign: 'right' }}>
-                    <Typography variant="h4" sx={{ fontWeight: 900, color: 'secondary.main', lineHeight: 1 }}>{grandTotal.toFixed(2)} GP</Typography>
-                    <Typography variant="caption" sx={{ color: (theme) => alpha(theme.palette.secondary.main, 0.4), textTransform: 'uppercase', fontSize: '0.65rem' }}>Gold Pieces equivalent</Typography>
+                    <Typography variant="h4" sx={{ fontWeight: 900, color: 'secondary.main', lineHeight: 1 }}>{formatCurrencyDecimal(grandTotal)}</Typography>
+                    <Typography variant="caption" sx={{ color: (theme) => alpha(theme.palette.secondary.main, 0.4), textTransform: 'uppercase', fontSize: '0.6rem', display: 'block', mt: 0.5 }}>Equivalente en Oro</Typography>
                   </Box>
                 </Box>
               </Stack>
@@ -234,12 +234,12 @@ const Cart: React.FC<CartProps> = ({ setView }) => {
                   boxShadow: '0 0 15px rgba(150,0,24,0.4), inset 0 0 10px rgba(255,255,255,0.1)'
                 }}
               >
-                Proceed to Secure
+                Proceder al Pago Seguro
               </Button>
 
               <Box sx={{ mt: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5 }}>
                 <Divider flexItem sx={{ borderColor: (theme) => alpha(theme.palette.secondary.main, 0.3), width: '100%' }} />
-                <Typography variant="caption" sx={{ color: 'grey.600', textTransform: 'uppercase', letterSpacing: 1 }}>Accepted Currencies</Typography>
+                <Typography variant="caption" sx={{ color: 'grey.600', textTransform: 'uppercase', letterSpacing: 1 }}>Monedas Aceptadas</Typography>
                 <Box sx={{ display: 'flex', gap: 2, opacity: 0.5, color: 'common.white' }}>
                   <Payments />
                   <AccountBalanceWallet />
@@ -249,8 +249,8 @@ const Cart: React.FC<CartProps> = ({ setView }) => {
             </Paper>
 
             <Typography variant="body2" sx={{ p: 2, border: 1, borderColor: (theme) => alpha(theme.palette.secondary.main, 0.1), borderRadius: 1, fontStyle: 'italic', color: 'grey.600', textAlign: 'center', fontSize: '0.875rem' }}>
-              "A wise adventurer knows when to retreat and when to claim the prize."
-              <Box component="span" sx={{ display: 'block', mt: 0.5, fontSize: '0.625rem', textTransform: 'uppercase', letterSpacing: 1 }}>— The Dungeon Master</Box>
+              "Un aventurero sabio sabe cuándo retirarse y cuándo reclamar el premio."
+              <Box component="span" sx={{ display: 'block', mt: 0.5, fontSize: '0.625rem', textTransform: 'uppercase', letterSpacing: 1 }}>— El Dungeon Master</Box>
             </Typography>
           </Stack>
         </Grid>

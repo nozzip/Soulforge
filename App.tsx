@@ -17,6 +17,7 @@ import { ThemeProvider, CssBaseline } from '@mui/material';
 import { fantasyTheme, warhammerTheme } from './src/theme';
 import { supabase } from './src/supabase';
 import { User } from '@supabase/supabase-js';
+import { updatePageMeta, getSEOForView } from './utils/seo';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewState>(ViewState.HOME);
@@ -51,18 +52,18 @@ const App: React.FC = () => {
   const [categories, setCategories] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem('resinforge_categories');
-      return saved ? JSON.parse(saved) : ["D&D", "Warhammer", "Sci-Fi", "Anime", "Movies"];
+      return saved ? JSON.parse(saved) : ["D&D", "Warhammer", "Sci-Fi", "Anime", "Cine"];
     } catch (e) {
-      return ["D&D", "Warhammer", "Sci-Fi", "Anime", "Movies"];
+      return ["D&D", "Warhammer", "Sci-Fi", "Anime", "Cine"];
     }
   });
 
   const [scales, setScales] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem('resinforge_scales');
-      return saved ? JSON.parse(saved) : ["Medium", "Large", "Gargantuan", "Colossal"];
+      return saved ? JSON.parse(saved) : ["Mediano", "Grande", "Gargantuesco", "Colosal"];
     } catch (e) {
-      return ["Medium", "Large", "Gargantuan", "Colossal"];
+      return ["Mediano", "Grande", "Gargantuesco", "Colosal"];
     }
   });
 
@@ -93,7 +94,7 @@ const App: React.FC = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Wishlist State
+  // Wishlist State - Syncs with Supabase when user is logged in
   const [wishlist, setWishlist] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem('resinforge_wishlist');
@@ -105,18 +106,55 @@ const App: React.FC = () => {
 
   // MUI Theme handles class toggling via CssBaseline and ThemeProvider
 
-  // Persist Wishlist
+  // Load wishlist from Supabase when user logs in
+  useEffect(() => {
+    const loadWishlist = async () => {
+      if (user) {
+        const { data, error } = await supabase
+          .from('wishlists')
+          .select('product_id')
+          .eq('user_id', user.id);
+
+        if (!error && data) {
+          const productIds = data.map(item => item.product_id);
+          setWishlist(productIds);
+          localStorage.setItem('resinforge_wishlist', JSON.stringify(productIds));
+        }
+      }
+    };
+    loadWishlist();
+  }, [user]);
+
+  // Persist Wishlist to localStorage
   useEffect(() => {
     localStorage.setItem('resinforge_wishlist', JSON.stringify(wishlist));
   }, [wishlist]);
 
-  const toggleWishlist = (productId: string) => {
+  const toggleWishlist = async (productId: string) => {
+    const isInWishlist = wishlist.includes(productId);
+    
+    // Optimistic update
     setWishlist(prev => {
-      if (prev.includes(productId)) {
+      if (isInWishlist) {
         return prev.filter(id => id !== productId);
       }
       return [...prev, productId];
     });
+
+    // Sync with Supabase if user is logged in
+    if (user) {
+      if (isInWishlist) {
+        await supabase
+          .from('wishlists')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('product_id', productId);
+      } else {
+        await supabase
+          .from('wishlists')
+          .insert({ user_id: user.id, product_id: productId });
+      }
+    }
   };
 
   const handleProductClick = (id: string) => {
@@ -135,6 +173,13 @@ const App: React.FC = () => {
     }
     setCurrentView(view);
   };
+
+  // Update SEO metadata when view or product changes
+  useEffect(() => {
+    const currentProduct = selectedProductId ? products.find(p => p.id === selectedProductId) : null;
+    const seoData = getSEOForView(currentView, currentProduct);
+    updatePageMeta(seoData);
+  }, [currentView, selectedProductId, products]);
 
   const handleLogin = (newUser: User) => {
     setUser(newUser);
@@ -181,6 +226,7 @@ const App: React.FC = () => {
             initialSearchQuery={globalSearchQuery}
             wishlist={wishlist}
             toggleWishlist={toggleWishlist}
+            loading={loading}
           />
         );
       case ViewState.CART:
@@ -195,6 +241,8 @@ const App: React.FC = () => {
             setView={handleSetView}
             wishlist={wishlist}
             toggleWishlist={toggleWishlist}
+            isAdmin={user?.user_metadata?.role === 'admin'}
+            user={user ? { name: user.user_metadata?.full_name || user.email || 'Usuario', id: user.id } : null}
           />
         );
       case ViewState.LOGIN:

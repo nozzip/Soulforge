@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 import React, { useState, ChangeEvent } from 'react';
-import { ViewState, Product, SubItem } from '../types';
+import { formatCurrency, formatCurrencyDecimal } from '../utils/currency';
 import {
   Box,
   Container,
@@ -15,7 +15,6 @@ import {
   Stack,
   Chip,
   FormControl,
-  InputLabel,
   Alert,
   Collapse,
   List,
@@ -24,7 +23,16 @@ import {
   ListItemSecondaryAction,
   Divider,
   alpha,
-  useTheme
+  useTheme,
+  Tabs,
+  Tab,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  CircularProgress
 } from '@mui/material';
 import {
   AutoStories,
@@ -35,13 +43,19 @@ import {
   Delete,
   UploadFile,
   ImageNotSupported,
-  Add,
   AddAPhoto,
   Group,
-  AutoFixHigh
+  AutoFixHigh,
+  ReceiptLong,
+  Inventory,
+  LocalShipping,
+  HourglassEmpty,
+  CleaningServices,
+  Handyman
 } from '@mui/icons-material';
 import { SectionHeader } from '../components/StyledComponents';
 import { supabase } from '../src/supabase';
+import { ViewState, Product, SubItem } from '../types';
 
 interface AdminProps {
   onAddProduct: (product: Product) => void;
@@ -87,6 +101,42 @@ const Admin: React.FC<AdminProps> = ({
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [currentTab, setCurrentTab] = useState(0);
+
+  // Orders State
+  const [allOrders, setAllOrders] = useState<any[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+
+  const fetchOrders = async () => {
+    setOrdersLoading(true);
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*, order_items(*)')
+      .order('created_at', { ascending: false });
+
+    if (error) console.error('Error fetching orders:', error);
+    else setAllOrders(data || []);
+    setOrdersLoading(false);
+  };
+
+  React.useEffect(() => {
+    if (currentTab === 1) {
+      fetchOrders();
+    }
+  }, [currentTab]);
+
+  const handleUpdateStatus = async (orderId: string, newStatus: string) => {
+    const { error } = await supabase
+      .from('orders')
+      .update({ status: newStatus })
+      .eq('id', orderId);
+
+    if (error) {
+      alert("Error al actualizar estado: " + error.message);
+    } else {
+      setAllOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
@@ -192,8 +242,8 @@ const Admin: React.FC<AdminProps> = ({
   return (
     <Container maxWidth="lg" sx={{ py: 6 }}>
       <SectionHeader
-        title="The High Overseer's Ledger"
-        description="Forge new legends into the archives"
+        title="El Libro del Alto Supervisor"
+        description="Forja nuevas leyendas en los archivos"
         icon={<AutoStories />}
         rightElement={
           <Button
@@ -203,226 +253,318 @@ const Admin: React.FC<AdminProps> = ({
             startIcon={<AutoStories />}
             sx={{ borderColor: (t) => alpha(t.palette.secondary.main, 0.3), color: 'secondary.main', '&:hover': { borderColor: 'secondary.main', bgcolor: (t) => alpha(t.palette.secondary.main, 0.1) } }}
           >
-            View Catalog
+            Ver Catálogo
           </Button>
         }
       />
 
-      <Grid container spacing={6}>
-        {/* Form Section */}
-        <Grid size={{ xs: 12, lg: 7 }}>
-          <Stack spacing={4}>
-            <Paper sx={{ p: 4, background: (theme) => `linear-gradient(to bottom, ${theme.palette.background.paper}, ${alpha(theme.palette.background.default, 0.9)})`, border: 2, borderColor: 'accent.main', borderRadius: 2, position: 'relative', overflow: 'hidden', boxShadow: (theme) => `0 0 50px ${alpha(theme.palette.common.black, 0.5)}, inset 0 0 30px ${alpha(theme.palette.common.black, 0.2)}` }}>
-              <Box sx={{ position: 'absolute', top: 16, right: 16, opacity: 0.1, pointerEvents: 'none' }}>
-                <Create sx={{ fontSize: 80, color: 'accent.main' }} />
-              </Box>
+      <Box sx={{ mb: 4, borderBottom: 1, borderColor: (t) => alpha(t.palette.secondary.main, 0.2) }}>
+        <Tabs value={currentTab} onChange={(_e, v) => setCurrentTab(v)} textColor="secondary" indicatorColor="secondary">
+          <Tab icon={<Inventory />} label="Forjar Artefactos" sx={{ fontWeight: 'bold', letterSpacing: 1 }} />
+          <Tab icon={<ReceiptLong />} label="Gestión de Requisiciones" sx={{ fontWeight: 'bold', letterSpacing: 1 }} />
+        </Tabs>
+      </Box>
 
-              <Collapse in={success}>
-                <Alert severity="success" icon={<CheckCircle />} sx={{ mb: 3, bgcolor: (t) => alpha(t.palette.success.main, 0.1), border: 1, borderColor: 'success.main' }}>
-                  <Typography variant="body2" sx={{ fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 1 }}>The Blueprint has been Inscribed into the Archives.</Typography>
-                </Alert>
-              </Collapse>
+      {currentTab === 0 ? (
+        <Grid container spacing={6}>
+          {/* Form Section */}
+          <Grid size={{ xs: 12, lg: 7 }}>
+            <Stack spacing={4}>
+              <Paper sx={{ p: 4, background: (theme) => `linear-gradient(to bottom, ${theme.palette.background.paper}, ${alpha(theme.palette.background.default, 0.9)})`, border: 2, borderColor: 'accent.main', borderRadius: 2, position: 'relative', overflow: 'hidden', boxShadow: (theme) => `0 0 50px ${alpha(theme.palette.common.black, 0.5)}, inset 0 0 30px ${alpha(theme.palette.common.black, 0.2)}` }}>
+                <Box sx={{ position: 'absolute', top: 16, right: 16, opacity: 0.1, pointerEvents: 'none' }}>
+                  <Create sx={{ fontSize: 80, color: 'accent.main' }} />
+                </Box>
 
-              <Box component="form" onSubmit={handleSubmit}>
-                <Grid container spacing={3}>
-                  <Grid size={{ xs: 12, md: 6 }}>
-                    <TextField fullWidth label="Artifact Name" name="name" required value={formData.name} onChange={handleInputChange} placeholder="e.g. Shadow-Stalker Wyvern" />
-                  </Grid>
-                  <Grid size={{ xs: 12, md: 6 }}>
-                    <TextField fullWidth label="Price (GP)" name="price" type="number" required value={formData.price} onChange={handleInputChange} placeholder="45" />
-                  </Grid>
+                <Collapse in={success}>
+                  <Alert severity="success" icon={<CheckCircle />} sx={{ mb: 3, bgcolor: (t) => alpha(t.palette.success.main, 0.1), border: 1, borderColor: 'success.main' }}>
+                    <Typography variant="body2" sx={{ fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 1 }}>El plano ha sido inscrito en los archivos.</Typography>
+                  </Alert>
+                </Collapse>
 
-                  {/* Category */}
-                  <Grid size={{ xs: 12, md: 6 }}>
-                    <Box sx={{ position: 'relative' }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                        <Typography variant="caption" sx={{ color: 'secondary.main', textTransform: 'uppercase', letterSpacing: 2, fontWeight: 'bold' }}>World Origin</Typography>
-                        <IconButton size="small" onClick={() => setShowManageCat(!showManageCat)} sx={{ color: 'secondary.main' }}>
-                          {showManageCat ? <Close fontSize="small" /> : <Settings fontSize="small" />}
-                        </IconButton>
+                <Box component="form" onSubmit={handleSubmit}>
+                  <Grid container spacing={3}>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <TextField fullWidth label="Nombre del Artefacto" name="name" required value={formData.name} onChange={handleInputChange} placeholder="ej. Guiverno Acecha-Sombras" />
+                    </Grid>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <TextField fullWidth label="Precio (GP)" name="price" type="number" required value={formData.price} onChange={handleInputChange} placeholder="45" helperText={formData.price ? `Equivalente: ${formatCurrency(parseFloat(formData.price) || 0)}` : ''} />
+                    </Grid>
+
+                    {/* Category */}
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <Box sx={{ position: 'relative' }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                          <Typography variant="caption" sx={{ color: 'secondary.main', textTransform: 'uppercase', letterSpacing: 2, fontWeight: 'bold' }}>Origen del Mundo</Typography>
+                          <IconButton size="small" onClick={() => setShowManageCat(!showManageCat)} sx={{ color: 'secondary.main' }}>
+                            {showManageCat ? <Close fontSize="small" /> : <Settings fontSize="small" />}
+                          </IconButton>
+                        </Box>
+                        {showManageCat ? (
+                          <Paper sx={{ p: 2, bgcolor: 'background.paper', border: 1, borderColor: 'secondary.main' }}>
+                            <Typography variant="caption" sx={{ color: 'secondary.main', display: 'block', mb: 1, borderBottom: 1, borderColor: (t) => alpha(t.palette.secondary.main, 0.2), pb: 1 }}>Gestionar Orígenes</Typography>
+                            <List dense sx={{ maxHeight: 150, overflowY: 'auto', mb: 2 }}>
+                              {categories.map(c => (
+                                <ListItem key={c} sx={{ bgcolor: (t) => alpha(t.palette.common.black, 0.3), borderRadius: 1, mb: 0.5 }}>
+                                  <ListItemText primary={c} primaryTypographyProps={{ variant: 'body2', color: 'grey.300' }} />
+                                  <ListItemSecondaryAction>
+                                    <IconButton edge="end" size="small" onClick={() => onDeleteCategory(c)} sx={{ color: 'grey.600', '&:hover': { color: 'error.main' } }}>
+                                      <Delete fontSize="small" />
+                                    </IconButton>
+                                  </ListItemSecondaryAction>
+                                </ListItem>
+                              ))}
+                            </List>
+                            <Stack direction="row" spacing={1}>
+                              <TextField size="small" fullWidth value={newCat} onChange={(e) => setNewCat(e.target.value)} placeholder="Nuevo Origen..." />
+                              <Button variant="contained" color="secondary" onClick={handleCreateCategory} sx={{ fontWeight: 'bold' }}>Añadir</Button>
+                            </Stack>
+                          </Paper>
+                        ) : (
+                          <FormControl fullWidth size="small">
+                            <Select name="category" value={formData.category} onChange={handleInputChange as any} sx={{ bgcolor: 'background.default', color: 'white', '& .MuiOutlinedInput-notchedOutline': { borderColor: (t: typeof theme) => alpha(t.palette.secondary.main, 0.3) }, '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'secondary.main' }, '& .MuiSvgIcon-root': { color: 'secondary.main' } }}>
+                              {categories.map(c => <MenuItem key={c} value={c}>{c}</MenuItem>)}
+                            </Select>
+                          </FormControl>
+                        )}
                       </Box>
-                      {showManageCat ? (
-                        <Paper sx={{ p: 2, bgcolor: 'background.paper', border: 1, borderColor: 'secondary.main' }}>
-                          <Typography variant="caption" sx={{ color: 'secondary.main', display: 'block', mb: 1, borderBottom: 1, borderColor: (t) => alpha(t.palette.secondary.main, 0.2), pb: 1 }}>Manage World Origins</Typography>
-                          <List dense sx={{ maxHeight: 150, overflowY: 'auto', mb: 2 }}>
-                            {categories.map(c => (
-                              <ListItem key={c} sx={{ bgcolor: (t) => alpha(t.palette.common.black, 0.3), borderRadius: 1, mb: 0.5 }}>
-                                <ListItemText primary={c} primaryTypographyProps={{ variant: 'body2', color: 'grey.300' }} />
-                                <ListItemSecondaryAction>
-                                  <IconButton edge="end" size="small" onClick={() => onDeleteCategory(c)} sx={{ color: 'grey.600', '&:hover': { color: 'error.main' } }}>
-                                    <Delete fontSize="small" />
-                                  </IconButton>
-                                </ListItemSecondaryAction>
-                              </ListItem>
-                            ))}
-                          </List>
-                          <Stack direction="row" spacing={1}>
-                            <TextField size="small" fullWidth value={newCat} onChange={(e) => setNewCat(e.target.value)} placeholder="New Origin..." />
-                            <Button variant="contained" color="secondary" onClick={handleCreateCategory} sx={{ fontWeight: 'bold' }}>Add</Button>
-                          </Stack>
-                        </Paper>
-                      ) : (
-                        <FormControl fullWidth size="small">
-                          <Select name="category" value={formData.category} onChange={handleInputChange as any} sx={{ bgcolor: 'background.default', color: 'white', '& .MuiOutlinedInput-notchedOutline': { borderColor: (t: typeof theme) => alpha(t.palette.secondary.main, 0.3) }, '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'secondary.main' }, '& .MuiSvgIcon-root': { color: 'secondary.main' } }}>
-                            {categories.map(c => <MenuItem key={c} value={c}>{c}</MenuItem>)}
-                          </Select>
-                        </FormControl>
-                      )}
-                    </Box>
-                  </Grid>
+                    </Grid>
 
-                  {/* Scale */}
-                  <Grid size={{ xs: 12, md: 6 }}>
-                    <Box sx={{ position: 'relative' }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                        <Typography variant="caption" sx={{ color: 'secondary.main', textTransform: 'uppercase', letterSpacing: 2, fontWeight: 'bold' }}>Scale Class</Typography>
-                        <IconButton size="small" onClick={() => setShowManageScale(!showManageScale)} sx={{ color: 'secondary.main' }}>
-                          {showManageScale ? <Close fontSize="small" /> : <Settings fontSize="small" />}
-                        </IconButton>
+                    {/* Scale */}
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <Box sx={{ position: 'relative' }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                          <Typography variant="caption" sx={{ color: 'secondary.main', textTransform: 'uppercase', letterSpacing: 2, fontWeight: 'bold' }}>Clase de Escala</Typography>
+                          <IconButton size="small" onClick={() => setShowManageScale(!showManageScale)} sx={{ color: 'secondary.main' }}>
+                            {showManageScale ? <Close fontSize="small" /> : <Settings fontSize="small" />}
+                          </IconButton>
+                        </Box>
+                        {showManageScale ? (
+                          <Paper sx={{ p: 2, bgcolor: 'background.paper', border: 1, borderColor: 'secondary.main' }}>
+                            <Typography variant="caption" sx={{ color: 'secondary.main', display: 'block', mb: 1, borderBottom: 1, borderColor: (t) => alpha(t.palette.secondary.main, 0.2), pb: 1 }}>Gestionar Clases de Escala</Typography>
+                            <List dense sx={{ maxHeight: 150, overflowY: 'auto', mb: 2 }}>
+                              {scales.map(s => (
+                                <ListItem key={s} sx={{ bgcolor: (t) => alpha(t.palette.common.black, 0.3), borderRadius: 1, mb: 0.5 }}>
+                                  <ListItemText primary={s} primaryTypographyProps={{ variant: 'body2', color: 'grey.300' }} />
+                                  <ListItemSecondaryAction>
+                                    <IconButton edge="end" size="small" onClick={() => onDeleteScale(s)} sx={{ color: 'grey.600', '&:hover': { color: 'error.main' } }}>
+                                      <Delete fontSize="small" />
+                                    </IconButton>
+                                  </ListItemSecondaryAction>
+                                </ListItem>
+                              ))}
+                            </List>
+                            <Stack direction="row" spacing={1}>
+                              <TextField size="small" fullWidth value={newScale} onChange={(e) => setNewScale(e.target.value)} placeholder="Nueva Escala..." />
+                              <Button variant="contained" color="secondary" onClick={handleCreateScale} sx={{ fontWeight: 'bold' }}>Añadir</Button>
+                            </Stack>
+                          </Paper>
+                        ) : (
+                          <FormControl fullWidth size="small">
+                            <Select name="scale" value={formData.scale} onChange={handleInputChange as any} sx={{ bgcolor: 'background.default', color: 'white', '& .MuiOutlinedInput-notchedOutline': { borderColor: (t: typeof theme) => alpha(t.palette.secondary.main, 0.3) }, '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'secondary.main' }, '& .MuiSvgIcon-root': { color: 'secondary.main' } }}>
+                              {scales.map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
+                            </Select>
+                          </FormControl>
+                        )}
                       </Box>
-                      {showManageScale ? (
-                        <Paper sx={{ p: 2, bgcolor: 'background.paper', border: 1, borderColor: 'secondary.main' }}>
-                          <Typography variant="caption" sx={{ color: 'secondary.main', display: 'block', mb: 1, borderBottom: 1, borderColor: (t) => alpha(t.palette.secondary.main, 0.2), pb: 1 }}>Manage Scale Classes</Typography>
-                          <List dense sx={{ maxHeight: 150, overflowY: 'auto', mb: 2 }}>
-                            {scales.map(s => (
-                              <ListItem key={s} sx={{ bgcolor: (t) => alpha(t.palette.common.black, 0.3), borderRadius: 1, mb: 0.5 }}>
-                                <ListItemText primary={s} primaryTypographyProps={{ variant: 'body2', color: 'grey.300' }} />
-                                <ListItemSecondaryAction>
-                                  <IconButton edge="end" size="small" onClick={() => onDeleteScale(s)} sx={{ color: 'grey.600', '&:hover': { color: 'error.main' } }}>
-                                    <Delete fontSize="small" />
-                                  </IconButton>
-                                </ListItemSecondaryAction>
-                              </ListItem>
-                            ))}
-                          </List>
-                          <Stack direction="row" spacing={1}>
-                            <TextField size="small" fullWidth value={newScale} onChange={(e) => setNewScale(e.target.value)} placeholder="New Scale..." />
-                            <Button variant="contained" color="secondary" onClick={handleCreateScale} sx={{ fontWeight: 'bold' }}>Add</Button>
-                          </Stack>
-                        </Paper>
-                      ) : (
-                        <FormControl fullWidth size="small">
-                          <Select name="scale" value={formData.scale} onChange={handleInputChange as any} sx={{ bgcolor: 'background.default', color: 'white', '& .MuiOutlinedInput-notchedOutline': { borderColor: (t: typeof theme) => alpha(t.palette.secondary.main, 0.3) }, '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'secondary.main' }, '& .MuiSvgIcon-root': { color: 'secondary.main' } }}>
-                            {scales.map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
-                          </Select>
-                        </FormControl>
-                      )}
-                    </Box>
-                  </Grid>
+                    </Grid>
 
-                  {/* Image */}
-                  <Grid size={{ xs: 12 }}>
-                    <Typography variant="caption" sx={{ color: 'secondary.main', textTransform: 'uppercase', letterSpacing: 2, fontWeight: 'bold', display: 'block', mb: 1 }}>Visual Essence (Main Image)</Typography>
-                    <TextField fullWidth name="image" value={formData.image} onChange={handleInputChange} placeholder="Paste URL or use upload below..." sx={{ mb: 2 }} />
-                    <Stack direction="row" spacing={2} alignItems="center">
-                      <Typography variant="caption" color="grey.600">or</Typography>
-                      <Button component="label" variant="outlined" startIcon={<UploadFile />} sx={{ flex: 1, borderStyle: 'dashed', borderColor: (t) => alpha(t.palette.secondary.main, 0.4), color: 'secondary.main', '&:hover': { bgcolor: (t) => alpha(t.palette.secondary.main, 0.05) } }}>
-                        Transcribe Local Image
-                        <input type="file" hidden accept="image/*" onChange={(e) => handleFileUpload(e, 'main')} />
+                    {/* Image */}
+                    <Grid size={{ xs: 12 }}>
+                      <Typography variant="caption" sx={{ color: 'secondary.main', textTransform: 'uppercase', letterSpacing: 2, fontWeight: 'bold', display: 'block', mb: 1 }}>Esencia Visual (Imagen Principal)</Typography>
+                      <TextField fullWidth name="image" value={formData.image} onChange={handleInputChange} placeholder="Pega la URL o usa la carga de abajo..." sx={{ mb: 2 }} />
+                      <Stack direction="row" spacing={2} alignItems="center">
+                        <Typography variant="caption" color="grey.600">o</Typography>
+                        <Button component="label" variant="outlined" startIcon={<UploadFile />} sx={{ flex: 1, borderStyle: 'dashed', borderColor: (t) => alpha(t.palette.secondary.main, 0.4), color: 'secondary.main', '&:hover': { bgcolor: (t) => alpha(t.palette.secondary.main, 0.05) } }}>
+                          Transcribir Imagen Local
+                          <input type="file" hidden accept="image/*" onChange={(e) => handleFileUpload(e, 'main')} />
+                        </Button>
+                      </Stack>
+                    </Grid>
+
+                    {/* Description */}
+                    <Grid size={{ xs: 12 }}>
+                      <TextField fullWidth multiline rows={3} label="Lore del Artefacto" name="description" required value={formData.description} onChange={handleInputChange} placeholder="Inscribe la historia de esta pieza..." />
+                    </Grid>
+
+                    {/* Submit */}
+                    <Grid size={{ xs: 12 }}>
+                      <Divider sx={{ my: 2 }} />
+                      <Button
+                        type="submit"
+                        fullWidth
+                        variant="contained"
+                        color="primary"
+                        size="large"
+                        disabled={loading}
+                        startIcon={<AutoFixHigh />}
+                        sx={{ py: 2, fontWeight: 'bold', letterSpacing: 4, border: 1, borderColor: (t) => alpha(t.palette.secondary.main, 0.2) }}
+                      >
+                        {loading ? 'Forjando...' : 'Forjar Producto Final'}
                       </Button>
-                    </Stack>
+                    </Grid>
                   </Grid>
-
-                  {/* Description */}
-                  <Grid size={{ xs: 12 }}>
-                    <TextField fullWidth multiline rows={3} label="Artifact Lore" name="description" required value={formData.description} onChange={handleInputChange} placeholder="Inscribe the history of this piece..." />
-                  </Grid>
-
-                  {/* Submit */}
-                  <Grid size={{ xs: 12 }}>
-                    <Divider sx={{ my: 2 }} />
-                    <Button
-                      type="submit"
-                      fullWidth
-                      variant="contained"
-                      color="primary"
-                      size="large"
-                      disabled={loading}
-                      startIcon={<AutoFixHigh />}
-                      sx={{ py: 2, fontWeight: 'bold', letterSpacing: 4, border: 1, borderColor: (t) => alpha(t.palette.secondary.main, 0.2) }}
-                    >
-                      {loading ? 'Forging...' : 'Forge Final Product'}
-                    </Button>
-                  </Grid>
-                </Grid>
-              </Box>
-            </Paper>
-
-            {/* Sub-Items */}
-            <Paper sx={{ p: 4, bgcolor: (t) => alpha(t.palette.background.default, 0.8), border: 1, borderColor: (t) => alpha(t.palette.accent.main, 0.3), borderRadius: 2 }}>
-              <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 3 }}>
-                <Group sx={{ color: 'accent.main' }} />
-                <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'common.white', textTransform: 'uppercase', letterSpacing: 2 }}>Unit Composition (The Set)</Typography>
-              </Stack>
-              <Paper sx={{ p: 2, bgcolor: (t) => alpha(t.palette.common.black, 0.3), border: 1, borderColor: (t) => alpha(t.palette.accent.main, 0.1), mb: 3 }}>
-                <Grid container spacing={2}>
-                  <Grid size={{ xs: 12, md: 6 }}>
-                    <TextField size="small" fullWidth label="Sub-Unit Name" value={newSubItem.name} onChange={(e) => setNewSubItem(prev => ({ ...prev, name: e.target.value }))} placeholder="e.g. Archer #1" />
-                  </Grid>
-                  <Grid size={{ xs: 12, md: 6 }}>
-                    <Stack direction="row" spacing={1}>
-                      <TextField size="small" fullWidth label="Specific Image (Optional)" value={newSubItem.image} onChange={(e) => setNewSubItem(prev => ({ ...prev, image: e.target.value }))} placeholder="URL..." />
-                      <IconButton component="label" sx={{ bgcolor: (t) => alpha(t.palette.secondary.main, 0.1), border: 1, borderColor: (t) => alpha(t.palette.secondary.main, 0.2), '&:hover': { bgcolor: (t) => alpha(t.palette.secondary.main, 0.2) } }}>
-                        <AddAPhoto sx={{ color: 'secondary.main' }} />
-                        <input type="file" hidden accept="image/*" onChange={(e) => handleFileUpload(e, 'sub')} />
-                      </IconButton>
-                    </Stack>
-                  </Grid>
-                  <Grid size={{ xs: 12 }}>
-                    <Button fullWidth variant="outlined" color="secondary" onClick={addSubItem} disabled={!newSubItem.name} sx={{ fontWeight: 'bold', letterSpacing: 2 }}>Add to Unit Composition</Button>
-                  </Grid>
-                </Grid>
+                </Box>
               </Paper>
-              {subItems.length > 0 && (
-                <Stack spacing={1}>
-                  {subItems.map((item, idx) => (
-                    <Paper key={item.id} sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 1.5, bgcolor: (t) => alpha(t.palette.common.black, 0.4), border: 1, borderColor: (t) => alpha(t.palette.secondary.main, 0.1) }}>
-                      <Typography variant="caption" sx={{ color: (t) => alpha(t.palette.secondary.main, 0.4), fontFamily: 'monospace' }}>#{idx + 1}</Typography>
-                      <Box sx={{ width: 40, height: 40, borderRadius: 1, overflow: 'hidden', border: 1, borderColor: (t) => alpha(t.palette.secondary.main, 0.2), flexShrink: 0 }}>
-                        <Box component="img" src={item.image || formData.image} alt={item.name} sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      </Box>
-                      <Typography variant="body2" sx={{ flex: 1, fontWeight: 'bold', color: 'grey.300' }}>{item.name}</Typography>
-                      <IconButton size="small" onClick={() => removeSubItem(item.id)} sx={{ color: 'grey.600', '&:hover': { color: 'error.main' } }}>
-                        <Delete fontSize="small" />
-                      </IconButton>
-                    </Paper>
-                  ))}
-                </Stack>
-              )}
-            </Paper>
-          </Stack>
-        </Grid>
 
-        {/* Preview */}
-        <Grid size={{ xs: 12, lg: 5 }}>
-          <Box sx={{ position: 'sticky', top: 100 }}>
-            <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', color: 'grey.600', textTransform: 'uppercase', letterSpacing: 3, fontWeight: 'bold', mb: 2 }}>Spectral Manifestation</Typography>
-            <Paper sx={{ p: 4, bgcolor: 'background.default', border: 1, borderColor: (t) => alpha(t.palette.secondary.main, 0.2), borderRadius: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              {previewImage ? (
-                <Box sx={{ width: '100%', aspectRatio: '1', border: 1, borderColor: (t) => alpha(t.palette.secondary.main, 0.1), borderRadius: 1, overflow: 'hidden', mb: 3, boxShadow: '0 0 30px rgba(0,0,0,0.5)' }}>
-                  <Box component="img" src={previewImage} alt="Preview" sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                </Box>
-              ) : (
-                <Box sx={{ width: '100%', aspectRatio: '1', border: 2, borderStyle: 'dashed', borderColor: (t) => alpha(t.palette.secondary.main, 0.1), borderRadius: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'grey.700', mb: 3, bgcolor: (t) => alpha(t.palette.common.black, 0.2) }}>
-                  <ImageNotSupported sx={{ fontSize: 48, mb: 1 }} />
-                  <Typography variant="caption" sx={{ textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: 2 }}>Awaiting Visual Input</Typography>
-                </Box>
-              )}
-              <Typography variant="h5" sx={{ fontWeight: 'bold', fontStyle: 'italic', color: 'common.white', mb: 0.5, textAlign: 'center' }}>{formData.name || "Unnamed Artifact"}</Typography>
-              <Typography variant="h6" sx={{ color: 'secondary.main', fontWeight: 'bold', mb: 2 }}>{formData.price || "0"} GP</Typography>
-              <Stack direction="row" spacing={2} sx={{ color: 'grey.500', mb: 3 }}>
-                <Typography variant="caption" sx={{ textTransform: 'uppercase', letterSpacing: 2, fontWeight: 'bold' }}>{formData.category}</Typography>
-                <Typography variant="caption">•</Typography>
-                <Typography variant="caption" sx={{ textTransform: 'uppercase', letterSpacing: 2, fontWeight: 'bold' }}>{formData.scale} Scale</Typography>
-              </Stack>
-              <Divider sx={{ width: '100%', borderColor: (t) => alpha(t.palette.secondary.main, 0.2), my: 2 }} />
-              <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'grey.500', textAlign: 'center', px: 2 }}>
-                {formData.description || "The history of this piece is yet to be written..."}
-              </Typography>
-            </Paper>
-          </Box>
+              {/* Sub-Items */}
+              <Paper sx={{ p: 4, bgcolor: (t) => alpha(t.palette.background.default, 0.8), border: 1, borderColor: (t) => alpha(t.palette.accent.main, 0.3), borderRadius: 2 }}>
+                <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 3 }}>
+                  <Group sx={{ color: 'accent.main' }} />
+                  <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'common.white', textTransform: 'uppercase', letterSpacing: 2 }}>Composición de la Unidad (El Conjunto)</Typography>
+                </Stack>
+                <Paper sx={{ p: 2, bgcolor: (t) => alpha(t.palette.common.black, 0.3), border: 1, borderColor: (t) => alpha(t.palette.accent.main, 0.1), mb: 3 }}>
+                  <Grid container spacing={2}>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <TextField size="small" fullWidth label="Nombre de la Sub-Unidad" value={newSubItem.name} onChange={(e) => setNewSubItem(prev => ({ ...prev, name: e.target.value }))} placeholder="ej. Arquero #1" />
+                    </Grid>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <Stack direction="row" spacing={1}>
+                        <TextField size="small" fullWidth label="Imagen Específica (Opcional)" value={newSubItem.image} onChange={(e) => setNewSubItem(prev => ({ ...prev, image: e.target.value }))} placeholder="URL..." />
+                        <IconButton component="label" sx={{ bgcolor: (t) => alpha(t.palette.secondary.main, 0.1), border: 1, borderColor: (t) => alpha(t.palette.secondary.main, 0.2), '&:hover': { bgcolor: (t) => alpha(t.palette.secondary.main, 0.2) } }}>
+                          <AddAPhoto sx={{ color: 'secondary.main' }} />
+                          <input type="file" hidden accept="image/*" onChange={(e) => handleFileUpload(e, 'sub')} />
+                        </IconButton>
+                      </Stack>
+                    </Grid>
+                    <Grid size={{ xs: 12 }}>
+                      <Button fullWidth variant="outlined" color="secondary" onClick={addSubItem} disabled={!newSubItem.name} sx={{ fontWeight: 'bold', letterSpacing: 2 }}>Añadir a la Composición</Button>
+                    </Grid>
+                  </Grid>
+                </Paper>
+                {subItems.length > 0 && (
+                  <Stack spacing={1}>
+                    {subItems.map((item, idx) => (
+                      <Paper key={item.id} sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 1.5, bgcolor: (t) => alpha(t.palette.common.black, 0.4), border: 1, borderColor: (t) => alpha(t.palette.secondary.main, 0.1) }}>
+                        <Typography variant="caption" sx={{ color: (t) => alpha(t.palette.secondary.main, 0.4), fontFamily: 'monospace' }}>#{idx + 1}</Typography>
+                        <Box sx={{ width: 40, height: 40, borderRadius: 1, overflow: 'hidden', border: 1, borderColor: (t) => alpha(t.palette.secondary.main, 0.2), flexShrink: 0 }}>
+                          <Box component="img" src={item.image || formData.image} alt={item.name} sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        </Box>
+                        <Typography variant="body2" sx={{ flex: 1, fontWeight: 'bold', color: 'grey.300' }}>{item.name}</Typography>
+                        <IconButton size="small" onClick={() => removeSubItem(item.id)} sx={{ color: 'grey.600', '&:hover': { color: 'error.main' } }}>
+                          <Delete fontSize="small" />
+                        </IconButton>
+                      </Paper>
+                    ))}
+                  </Stack>
+                )}
+              </Paper>
+            </Stack>
+          </Grid>
+
+          {/* Preview */}
+          <Grid size={{ xs: 12, lg: 5 }}>
+            <Box sx={{ position: 'sticky', top: 100 }}>
+              <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', color: 'grey.600', textTransform: 'uppercase', letterSpacing: 3, fontWeight: 'bold', mb: 2 }}>Manifestación Espectral</Typography>
+              <Paper sx={{ p: 4, bgcolor: 'background.default', border: 1, borderColor: (t) => alpha(t.palette.secondary.main, 0.2), borderRadius: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                {previewImage ? (
+                  <Box sx={{ width: '100%', aspectRatio: '1', border: 1, borderColor: (t) => alpha(t.palette.secondary.main, 0.1), borderRadius: 1, overflow: 'hidden', mb: 3, boxShadow: '0 0 30px rgba(0,0,0,0.5)' }}>
+                    <Box component="img" src={previewImage} alt="Preview" sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </Box>
+                ) : (
+                  <Box sx={{ width: '100%', aspectRatio: '1', border: 2, borderStyle: 'dashed', borderColor: (t) => alpha(t.palette.secondary.main, 0.1), borderRadius: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'grey.700', mb: 3, bgcolor: (t) => alpha(t.palette.common.black, 0.2) }}>
+                    <ImageNotSupported sx={{ fontSize: 48, mb: 1 }} />
+                    <Typography variant="caption" sx={{ textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: 2 }}>Esperando Entrada Visual</Typography>
+                  </Box>
+                )}
+                <Typography variant="h5" sx={{ fontWeight: 'bold', fontStyle: 'italic', color: 'common.white', mb: 0.5, textAlign: 'center' }}>{formData.name || "Artefacto sin Nombre"}</Typography>
+                <Typography variant="h6" sx={{ color: 'secondary.main', fontWeight: 'bold', mb: 2 }}>{formatCurrency(parseFloat(formData.price) || 0)}</Typography>
+                <Stack direction="row" spacing={2} sx={{ color: 'grey.500', mb: 3 }}>
+                  <Typography variant="caption" sx={{ textTransform: 'uppercase', letterSpacing: 2, fontWeight: 'bold' }}>{formData.category}</Typography>
+                  <Typography variant="caption">•</Typography>
+                  <Typography variant="caption" sx={{ textTransform: 'uppercase', letterSpacing: 2, fontWeight: 'bold' }}>Escala {formData.scale}</Typography>
+                </Stack>
+                <Divider sx={{ width: '100%', borderColor: (t) => alpha(t.palette.secondary.main, 0.2), my: 2 }} />
+                <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'grey.500', textAlign: 'center', px: 2 }}>
+                  {formData.description || "La historia de esta pieza aún está por escribirse..."}
+                </Typography>
+              </Paper>
+            </Box>
+          </Grid>
         </Grid>
-      </Grid>
+      ) : (
+        <Box>
+          {ordersLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
+              <CircularProgress color="secondary" />
+            </Box>
+          ) : (
+            <TableContainer component={Paper} sx={{ bgcolor: 'background.paper', borderRadius: 2, border: 1, borderColor: (t) => alpha(t.palette.secondary.main, 0.2), boxShadow: 6 }}>
+              <Table>
+                <TableHead sx={{ bgcolor: (t) => alpha(t.palette.common.black, 0.3) }}>
+                  <TableRow>
+                    <TableCell sx={{ color: 'secondary.main', fontWeight: 'bold' }}>Pacto</TableCell>
+                    <TableCell sx={{ color: 'secondary.main', fontWeight: 'bold' }}>Aventurero</TableCell>
+                    <TableCell sx={{ color: 'secondary.main', fontWeight: 'bold' }}>Items</TableCell>
+                    <TableCell sx={{ color: 'secondary.main', fontWeight: 'bold' }}>Total</TableCell>
+                    <TableCell sx={{ color: 'secondary.main', fontWeight: 'bold' }}>Estado de la Forja</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {allOrders.map((order) => (
+                    <TableRow key={order.id} sx={{ '&:hover': { bgcolor: (t) => alpha(t.palette.common.white, 0.05) } }}>
+                      <TableCell sx={{ color: 'grey.300', fontFamily: 'monospace' }}>
+                        <Typography variant="body2" sx={{ fontWeight: 'bold' }}>#{order.id.slice(0, 8)}</Typography>
+                        <Typography variant="caption" sx={{ color: 'grey.600' }}>{new Date(order.created_at).toLocaleDateString()}</Typography>
+                      </TableCell>
+                      <TableCell sx={{ color: 'grey.400' }}>
+                        <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'common.white' }}>{order.phone}</Typography>
+                        <Typography variant="caption" sx={{ color: 'grey.600' }}>ID: {order.user_id?.slice(0, 8) || 'GUEST'}</Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Stack spacing={0.5}>
+                          {order.order_items?.map((item: any, i: number) => (
+                            <Typography key={i} variant="caption" sx={{ color: 'grey.500', display: 'block' }}>
+                              • {item.quantity}x {item.name}
+                            </Typography>
+                          ))}
+                        </Stack>
+                      </TableCell>
+                      <TableCell sx={{ color: 'secondary.main', fontWeight: 'bold' }}>
+                        {formatCurrencyDecimal(order.total_gp)}
+                      </TableCell>
+                      <TableCell>
+                        <FormControl size="small" fullWidth>
+                          <Select
+                            value={order.status}
+                            onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
+                            sx={{
+                              height: 32,
+                              fontSize: '0.75rem',
+                              bgcolor: (theme) => {
+                                switch (order.status) {
+                                  case 'Enviado': return alpha(theme.palette.success.main, 0.1);
+                                  case 'En la Forja': return alpha(theme.palette.warning.main, 0.1);
+                                  case 'Limpieza y Curado': return alpha(theme.palette.info.main, 0.1);
+                                  case 'Recibido': return alpha(theme.palette.grey[500], 0.1);
+                                  case 'Cancelado': return alpha(theme.palette.error.main, 0.1);
+                                  default: return 'transparent';
+                                }
+                              }
+                            }}
+                          >
+                            <MenuItem value="Recibido"><HourglassEmpty sx={{ fontSize: 16, mr: 1 }} /> Recibido</MenuItem>
+                            <MenuItem value="En la Forja"><Handyman sx={{ fontSize: 16, mr: 1 }} /> En la Forja</MenuItem>
+                            <MenuItem value="Limpieza y Curado"><CleaningServices sx={{ fontSize: 16, mr: 1 }} /> Limpieza y Curado</MenuItem>
+                            <MenuItem value="Enviado"><LocalShipping sx={{ fontSize: 16, mr: 1 }} /> Enviado</MenuItem>
+                            <MenuItem value="Cancelado"><Close sx={{ fontSize: 16, mr: 1 }} /> Cancelado</MenuItem>
+                          </Select>
+                        </FormControl>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {allOrders.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={5} sx={{ textAlign: 'center', py: 6, color: 'grey.600', fontStyle: 'italic' }}>
+                        No hay requisiciones inscritas en el libro.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </Box>
+      )}
     </Container>
   );
 };

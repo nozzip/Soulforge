@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { ViewState, Product } from '../types';
 import { useCart } from '../context/CartContext';
+import { formatCurrency } from '../utils/currency';
 import {
   Box,
   Container,
@@ -39,12 +40,12 @@ const Wishlist: React.FC<WishlistProps> = ({ products, setView, onProductClick, 
   return (
     <Container maxWidth="lg" sx={{ py: 6 }}>
       <SectionHeader
-        title="My Wishlist"
-        description="Artifacts marked for future acquisition"
+        title="Mi Lista de Deseos"
+        description="Artefactos marcados para futura adquisición"
         icon={<Favorite />}
         rightElement={
           <Button onClick={() => setView(ViewState.CATALOG)} sx={{ color: 'secondary.main', textDecoration: 'underline', textTransform: 'uppercase', letterSpacing: 2, fontSize: '0.7rem', '&:hover': { color: 'common.white' } }}>
-            Continue Exploring
+            Continuar Explorando
           </Button>
         }
       />
@@ -52,12 +53,12 @@ const Wishlist: React.FC<WishlistProps> = ({ products, setView, onProductClick, 
       {wishlistedProducts.length === 0 ? (
         <Paper sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: 10, textAlign: 'center', opacity: 0.8, bgcolor: (t) => alpha(t.palette.background.paper, 0.5), border: 1, borderColor: (t) => alpha(t.palette.secondary.main, 0.1), borderRadius: 2 }}>
           <BookmarkRemove sx={{ fontSize: 64, color: 'grey.600', mb: 2 }} />
-          <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'common.white', mb: 1 }}>Your Wishlist is Empty</Typography>
+          <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'common.white', mb: 1 }}>Tu Lista de Deseos está Vacía</Typography>
           <Typography variant="body2" color="grey.500" sx={{ maxWidth: 400, mx: 'auto', mb: 4 }}>
-            You haven't marked any artifacts yet. Browse the archives to find miniatures worthy of your campaign.
+            Aún no has marcado ningún artefacto. Explora los archivos para encontrar miniaturas dignas de tu campaña.
           </Typography>
           <Button variant="outlined" color="secondary" onClick={() => setView(ViewState.CATALOG)} sx={{ fontWeight: 'bold', letterSpacing: 2, px: 4, py: 1.5, '&:hover': { bgcolor: 'secondary.main', color: 'background.default' } }}>
-            Browse Archives
+            Explorar Archivos
           </Button>
         </Paper>
       ) : (
@@ -80,7 +81,7 @@ const Wishlist: React.FC<WishlistProps> = ({ products, setView, onProductClick, 
                   <IconButton
                     onClick={(e) => { e.stopPropagation(); toggleWishlist(product.id); }}
                     sx={{ position: 'absolute', top: 8, right: 8, bgcolor: (t) => alpha(t.palette.common.black, 0.5), backdropFilter: 'blur(4px)', color: 'error.main', '&:hover': { bgcolor: 'error.dark', color: 'common.white' }, zIndex: 1 }}
-                    title="Remove from Wishlist"
+                    title="Eliminar de la Lista de Deseos"
                   >
                     <Delete fontSize="small" />
                   </IconButton>
@@ -92,7 +93,7 @@ const Wishlist: React.FC<WishlistProps> = ({ products, setView, onProductClick, 
                 </CardContent>
 
                 <CardActions sx={{ justifyContent: 'space-between', px: 2, pb: 2, borderTop: '1px dashed', borderColor: (t) => alpha(t.palette.grey[800], 0.5) }}>
-                  <Typography variant="h6" sx={{ color: 'secondary.main', fontWeight: 'bold' }}>{product.price.toFixed(0)} GP</Typography>
+                  <Typography variant="h6" sx={{ color: 'secondary.main', fontWeight: 'bold' }}>{formatCurrency(product.price)}</Typography>
                   <Button
                     variant="contained"
                     color="primary"
@@ -101,7 +102,7 @@ const Wishlist: React.FC<WishlistProps> = ({ products, setView, onProductClick, 
                     onClick={(e) => { e.stopPropagation(); addToCart(product); }}
                     sx={{ fontWeight: 'bold', letterSpacing: 1, textTransform: 'uppercase', fontSize: '0.65rem' }}
                   >
-                    Add to Loot
+                    Añadir al Botín
                   </Button>
                 </CardActions>
               </Card>

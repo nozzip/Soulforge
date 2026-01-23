@@ -156,7 +156,7 @@ const Layout: React.FC<LayoutProps> = ({
   const drawerContent = (
     <Box onClick={handleDrawerToggle} sx={{ textAlign: 'center', height: '100%', bgcolor: 'background.default', color: 'text.primary' }}>
       <Typography variant="h6" sx={{ my: 2, fontFamily: 'Cinzel, serif', fontWeight: 'bold', letterSpacing: 2 }}>
-        MENU
+        MENÚ
       </Typography>
       <Box sx={{ px: 2, mb: 2, position: 'relative' }}>
         <Search onClick={(e) => e.stopPropagation()}>
@@ -164,7 +164,7 @@ const Layout: React.FC<LayoutProps> = ({
             <SearchIcon />
           </SearchIconWrapper>
           <StyledInputBase
-            placeholder="Search archives..."
+            placeholder="Buscar archivos..."
             inputProps={{ 'aria-label': 'search' }}
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
@@ -183,12 +183,12 @@ const Layout: React.FC<LayoutProps> = ({
             <ListItemIcon sx={{ color: 'secondary.main' }}>
               {isWarhammer ? <ConstructionIcon /> : <TokenIcon /> /* Using generic icons for swords/skull substitution */}
             </ListItemIcon>
-            <ListItemText primary={isWarhammer ? 'Switch to Fantasy' : 'Switch to Grimdark'} />
+            <ListItemText primary={isWarhammer ? 'Cambiar a Fantasía' : 'Cambiar a Grimdark'} />
           </ListItemButton>
         </ListItem>
         <ListItem disablePadding>
           <ListItemButton onClick={() => setView(ViewState.CATALOG)}>
-            <ListItemText primary="CATALOG" />
+            <ListItemText primary="CATÁLOGO" />
           </ListItemButton>
         </ListItem>
         <ListItem disablePadding>
@@ -199,31 +199,31 @@ const Layout: React.FC<LayoutProps> = ({
         {user ? (
           <>
             <ListSubheader sx={{ bgcolor: 'transparent', color: 'secondary.main', mt: 2 }}>
-              Signed in as {user}
+              Sesión iniciada como {user}
             </ListSubheader>
             <ListItem disablePadding>
               <ListItemButton onClick={() => setView(ViewState.WISHLIST)}>
                 <ListItemIcon><FavoriteIcon sx={{ color: 'secondary.main' }} /></ListItemIcon>
-                <ListItemText primary="Wishlist" />
+                <ListItemText primary="Lista de Deseos" />
               </ListItemButton>
             </ListItem>
             <ListItem disablePadding>
               <ListItemButton onClick={() => setView(ViewState.ORDERS)}>
                 <ListItemIcon><HistoryIcon sx={{ color: 'secondary.main' }} /></ListItemIcon>
-                <ListItemText primary="Orders" />
+                <ListItemText primary="Pedidos" />
               </ListItemButton>
             </ListItem>
             <ListItem disablePadding>
               <ListItemButton onClick={() => { if (onLogout) onLogout(); }}>
                 <ListItemIcon><LogoutIcon color="error" /></ListItemIcon>
-                <ListItemText primary="Logout" sx={{ color: 'error.main' }} />
+                <ListItemText primary="Cerrar Sesión" sx={{ color: 'error.main' }} />
               </ListItemButton>
             </ListItem>
           </>
         ) : (
           <ListItem disablePadding>
             <ListItemButton onClick={() => setView(ViewState.LOGIN)} sx={{ mt: 2, bgcolor: 'secondary.main', color: 'background.default', '&:hover': { bgcolor: 'primary.main' } }}>
-              <ListItemText primary="LOGIN / JOIN GUILD" sx={{ textAlign: 'center', fontWeight: 'bold' }} />
+              <ListItemText primary="INICIAR SESIÓN / UNIRSE AL GREMIO" sx={{ textAlign: 'center', fontWeight: 'bold' }} />
             </ListItemButton>
           </ListItem>
         )}
@@ -260,7 +260,7 @@ const Layout: React.FC<LayoutProps> = ({
                   onClick={() => setView(ViewState.CATALOG)}
                   sx={{ my: 2, color: currentView === ViewState.CATALOG ? 'primary.main' : 'text.primary', display: 'block', letterSpacing: 2, borderBottom: currentView === ViewState.CATALOG ? 2 : 0 }}
                 >
-                  Catalog
+                  Catálogo
                 </Button>
                 <Button
                   onClick={() => setView(ViewState.ADMIN)}
@@ -277,14 +277,14 @@ const Layout: React.FC<LayoutProps> = ({
               {isCheckout ? (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                   <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'secondary.main', display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 1 }}>
-                    <SecurityIcon fontSize="small" /> Enchanted Encryption Active
+                    <SecurityIcon fontSize="small" /> Encriptación Encantada Activa
                   </Typography>
                   <Button
                     startIcon={<MapIcon />}
                     onClick={() => setView(ViewState.CART)}
                     sx={{ color: 'secondary.main' }}
                   >
-                    Back
+                    Volver
                   </Button>
                 </Box>
               ) : (
@@ -298,7 +298,7 @@ const Layout: React.FC<LayoutProps> = ({
                             <SearchIcon />
                           </SearchIconWrapper>
                           <StyledInputBase
-                            placeholder="Search the archives..."
+                            placeholder="Buscar en los archivos..."
                             inputProps={{ 'aria-label': 'search' }}
                             value={searchInput}
                             onChange={(e) => setSearchInput(e.target.value)}
@@ -333,13 +333,13 @@ const Layout: React.FC<LayoutProps> = ({
                                   ))}
                                   <ListItem disablePadding>
                                     <ListItemButton onClick={handleSearchClick} sx={{ justifyContent: 'center' }}>
-                                      <Typography variant="caption" sx={{ color: 'secondary.main', fontWeight: 'bold' }}>VIEW ALL RESULTS</Typography>
+                                      <Typography variant="caption" sx={{ color: 'secondary.main', fontWeight: 'bold' }}>VER TODOS LOS RESULTADOS</Typography>
                                     </ListItemButton>
                                   </ListItem>
                                 </>
                               ) : (
                                 <ListItem>
-                                  <ListItemText secondary={`No artifacts found matching "${searchInput}"`} sx={{ fontStyle: 'italic', textAlign: 'center' }} />
+                                  <ListItemText secondary={`No se encontraron artefactos que coincidan con "${searchInput}"`} sx={{ fontStyle: 'italic', textAlign: 'center' }} />
                                 </ListItem>
                               )}
                             </List>
@@ -350,7 +350,7 @@ const Layout: React.FC<LayoutProps> = ({
                   </Box>
 
                   {/* Theme Toggle */}
-                  <IconButton onClick={onToggleTheme} color="inherit" title={isWarhammer ? "Return to Fantasy" : "Activate Grimdark Protocol"}>
+                  <IconButton onClick={onToggleTheme} color="inherit" title={isWarhammer ? "Volver a Fantasía" : "Activar Protocolo Grimdark"}>
                     {isWarhammer ? <ConstructionIcon /> : <TokenIcon /> /* TODO: Better icons for skull/swords */}
                   </IconButton>
 
@@ -363,15 +363,8 @@ const Layout: React.FC<LayoutProps> = ({
 
                   {/* User Menu */}
                   <Box sx={{ flexGrow: 0, display: { xs: 'none', md: 'flex' } }}>
-                    <IconButton onClick={handleOpenUserMenu} sx={{ p: 0, ml: 1, border: user ? 1 : 0, borderColor: 'secondary.main' }}>
-                      {user ? (
-                        <Box sx={{ display: 'flex', alignItems: 'center', px: 1, gap: 1 }}>
-                          <PersonIcon sx={{ color: 'secondary.main' }} />
-                          <Typography variant="button" sx={{ color: 'text.primary', display: { xs: 'none', lg: 'block' } }}>{user}</Typography>
-                        </Box>
-                      ) : (
-                        <PersonIcon />
-                      )}
+                    <IconButton onClick={handleOpenUserMenu} sx={{ p: 0.5, ml: 1, border: user ? 1 : 0, borderColor: 'secondary.main', borderRadius: '50%' }}>
+                      <PersonIcon sx={{ color: user ? 'secondary.main' : 'inherit' }} />
                     </IconButton>
                     <Menu
                       sx={{ mt: '45px' }}
@@ -384,20 +377,20 @@ const Layout: React.FC<LayoutProps> = ({
                       onClose={handleCloseUserMenu}
                     >
                       <Box sx={{ px: 2, py: 1, borderBottom: 1, borderColor: 'divider' }}>
-                        <Typography variant="caption" color="text.secondary">Signed in as</Typography>
+                        <Typography variant="caption" color="text.secondary">Sesión iniciada como</Typography>
                         <Typography variant="subtitle2">{user}</Typography>
                       </Box>
                       <MenuItem onClick={() => { setView(ViewState.WISHLIST); handleCloseUserMenu(); }}>
                         <ListItemIcon><FavoriteIcon fontSize="small" /></ListItemIcon>
-                        <Typography textAlign="center">My Wishlist</Typography>
+                        <Typography textAlign="center">Mi Lista de Deseos</Typography>
                       </MenuItem>
                       <MenuItem onClick={() => { setView(ViewState.ORDERS); handleCloseUserMenu(); }}>
                         <ListItemIcon><HistoryIcon fontSize="small" /></ListItemIcon>
-                        <Typography textAlign="center">My Orders</Typography>
+                        <Typography textAlign="center">Mis Pedidos</Typography>
                       </MenuItem>
                       <MenuItem onClick={() => { if (onLogout) onLogout(); handleCloseUserMenu(); }}>
                         <ListItemIcon><LogoutIcon fontSize="small" color="error" /></ListItemIcon>
-                        <Typography textAlign="center" color="error">Log Out</Typography>
+                        <Typography textAlign="center" color="error">Cerrar Sesión</Typography>
                       </MenuItem>
                     </Menu>
                   </Box>
@@ -448,9 +441,9 @@ const Layout: React.FC<LayoutProps> = ({
               </Typography>
             </Box>
             <Box>
-              <Typography variant="subtitle2" color="common.white" gutterBottom sx={{ letterSpacing: 2 }}>ARCHIVES</Typography>
+              <Typography variant="subtitle2" color="common.white" gutterBottom sx={{ letterSpacing: 2 }}>ARCHIVOS</Typography>
               <List dense disablePadding>
-                {['Catalogues', 'Limited Editions', 'Subscription Box', 'Painting Guides'].map((text) => (
+                {['Catálogos', 'Ediciones Limitadas', 'Caja de Suscripción', 'Guías de Pintura'].map((text) => (
                   <ListItem key={text} disablePadding sx={{ py: 0.5 }}>
                     <Typography variant="body2" color="text.secondary" sx={{ '&:hover': { color: 'primary.main', cursor: 'pointer' } }}>{text}</Typography>
                   </ListItem>
@@ -458,9 +451,9 @@ const Layout: React.FC<LayoutProps> = ({
               </List>
             </Box>
             <Box>
-              <Typography variant="subtitle2" color="common.white" gutterBottom sx={{ letterSpacing: 2 }}>LORE & LAW</Typography>
+              <Typography variant="subtitle2" color="common.white" gutterBottom sx={{ letterSpacing: 2 }}>LORE Y LEYES</Typography>
               <List dense disablePadding>
-                {['Shipping Rituals', 'The Alchemist\'s Oath', 'Merchant Scrolls', 'Privacy Sigil'].map((text) => (
+                {['Rituales de Envío', 'El Juramento del Alquimista', 'Pergaminos del Mercader', 'Sigilo de Privacidad'].map((text) => (
                   <ListItem key={text} disablePadding sx={{ py: 0.5 }}>
                     <Typography variant="body2" color="text.secondary" sx={{ '&:hover': { color: 'primary.main', cursor: 'pointer' } }}>{text}</Typography>
                   </ListItem>
@@ -468,16 +461,16 @@ const Layout: React.FC<LayoutProps> = ({
               </List>
             </Box>
             <Box>
-              <Typography variant="subtitle2" color="common.white" gutterBottom sx={{ letterSpacing: 2 }}>DISPATCH</Typography>
+              <Typography variant="subtitle2" color="common.white" gutterBottom sx={{ letterSpacing: 2 }}>DESPACHO</Typography>
               <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1, fontStyle: 'italic' }}>
-                Subscribe for new drop alerts.
+                Suscríbete para alertas de nuevos lanzamientos.
               </Typography>
               <Box sx={{ display: 'flex' }}>
                 <InputBase
                   placeholder="Email"
                   sx={{ bgcolor: 'background.paper', px: 2, py: 0.5, borderRadius: '4px 0 0 4px', border: 1, borderColor: 'secondary.main', color: 'common.white', width: '100%' }}
                 />
-                <Button variant="contained" sx={{ borderRadius: '0 4px 4px 0' }}>Join</Button>
+                <Button variant="contained" sx={{ borderRadius: '0 4px 4px 0' }}>Unirse</Button>
               </Box>
               <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
                 <RssFeedIcon sx={{ color: 'secondary.main', '&:hover': { color: 'white' }, cursor: 'pointer' }} />
@@ -487,7 +480,7 @@ const Layout: React.FC<LayoutProps> = ({
             </Box>
           </Box>
           <Typography variant="caption" display="block" align="center" sx={{ mt: 8, pt: 4, borderTop: 1, borderColor: 'rgba(197, 160, 89, 0.1)', color: 'text.secondary', letterSpacing: 2 }}>
-            © 2024 ResinForge Miniatures. All Rights Reserved. Not a Wizard of the Coast product.
+            © {new Date().getFullYear()} ResinForge Miniatures. Todos los derechos reservados. No es un producto de Wizards of the Coast.
           </Typography>
         </Container>
       </Box>

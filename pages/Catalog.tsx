@@ -1,7 +1,8 @@
 /// <reference lib="dom" />
 import React, { useState, useMemo, useEffect } from 'react';
-import { Product } from '../types';
+import { Product, ViewState } from '../types';
 import { useCart } from '../context/CartContext';
+import { formatCurrency } from '../utils/currency';
 import {
   Box,
   Container,
@@ -35,6 +36,7 @@ import {
 import { Search, FilterList, Add, Favorite, FavoriteBorder, Public, Straighten, AutoStories, SentimentDissatisfied, Close } from '@mui/icons-material';
 
 import { SectionHeader } from '../components/StyledComponents';
+import ForgeLoader from '../components/ForgeLoader';
 
 interface CatalogProps {
   products: Product[];
@@ -44,6 +46,7 @@ interface CatalogProps {
   initialSearchQuery?: string;
   wishlist: string[];
   toggleWishlist: (id: string) => void;
+  loading?: boolean;
 }
 
 const ITEMS_PER_PAGE = 9;
@@ -55,7 +58,8 @@ const Catalog: React.FC<CatalogProps> = ({
   onProductClick,
   initialSearchQuery,
   wishlist,
-  toggleWishlist
+  toggleWishlist,
+  loading = false
 }) => {
   const { addToCart } = useCart();
   const theme = useTheme();
@@ -86,13 +90,13 @@ const Catalog: React.FC<CatalogProps> = ({
   const FILTER_GROUPS = [
     {
       id: 'category',
-      title: "World Origin",
+      title: "Origen del Mundo",
       icon: <Public fontSize="small" />,
       options: categories
     },
     {
       id: 'scale',
-      title: "Scale Class",
+      title: "Clase de Escala",
       icon: <Straighten fontSize="small" />,
       options: scales
     },
@@ -146,19 +150,19 @@ const Catalog: React.FC<CatalogProps> = ({
     <Box sx={{ p: 3, height: '100%', overflowY: 'auto', background: (theme) => `linear-gradient(to bottom, ${alpha(theme.palette.background.paper, 0.9)}, ${theme.palette.background.default})` }}>
       {isMobile && (
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography variant="h6" color="secondary.main">Filters</Typography>
+          <Typography variant="h6" color="secondary.main">Filtros</Typography>
           <IconButton onClick={() => setShowFilters(false)}><Close /></IconButton>
         </Box>
       )}
 
       <Box sx={{ position: 'relative', mb: 4 }}>
         <Typography variant="subtitle2" sx={{ color: 'secondary.main', textTransform: 'uppercase', letterSpacing: 1, mb: 1, pb: 1, borderBottom: 1, borderColor: (theme) => alpha(theme.palette.secondary.main, 0.2) }}>
-          Index Search
+          Búsqueda en el Índice
         </Typography>
         <TextField
           fullWidth
           variant="outlined"
-          placeholder="Search the archives..."
+          placeholder="Buscar en los archivos..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           slotProps={{
@@ -211,7 +215,7 @@ const Catalog: React.FC<CatalogProps> = ({
         onClick={handleReset}
         sx={{ mt: 4, letterSpacing: 2 }}
       >
-        Reset Index
+        Reiniciar Índice
       </Button>
     </Box>
   );
@@ -219,12 +223,12 @@ const Catalog: React.FC<CatalogProps> = ({
   return (
     <Container maxWidth="xl" sx={{ py: 6, px: { xs: 2, lg: 8 } }}>
       <SectionHeader
-        title="The Miniature Archives"
-        description="Where legends are forged in resin."
+        title="Los Archivos de Miniaturas"
+        description="Donde las leyendas se forjan en resina."
         icon={<AutoStories />}
         rightElement={
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-            <Typography variant="body2" sx={{ color: 'grey.500' }}>Showing {filteredProducts.length} Artifacts</Typography>
+            <Typography variant="body2" sx={{ color: 'grey.500' }}>Mostrando {filteredProducts.length} Artefactos</Typography>
             <FormControl size="small" sx={{ minWidth: 180 }}>
               <Select
                 value={sortOption}
@@ -238,9 +242,9 @@ const Catalog: React.FC<CatalogProps> = ({
                   '.MuiSvgIcon-root': { color: 'secondary.main' }
                 }}
               >
-                <MenuItem value="newest">Sort by: Newest</MenuItem>
-                <MenuItem value="price-asc">Price: Low to High</MenuItem>
-                <MenuItem value="price-desc">Price: High to Low</MenuItem>
+                <MenuItem value="newest">Ordenar por: Más reciente</MenuItem>
+                <MenuItem value="price-asc">Precio: Menor a Mayor</MenuItem>
+                <MenuItem value="price-desc">Precio: Mayor a Menor</MenuItem>
               </Select>
             </FormControl>
           </Box>
@@ -264,7 +268,7 @@ const Catalog: React.FC<CatalogProps> = ({
             startIcon={<FilterList />}
             onClick={() => setShowFilters(true)}
           >
-            Index Search & Filters
+            Index Search & Filtros
           </Button>
           <Drawer open={showFilters} onClose={() => setShowFilters(false)} PaperProps={{ sx: { width: 300, bgcolor: 'background.default' } }}>
             <FilterContent />
@@ -273,12 +277,16 @@ const Catalog: React.FC<CatalogProps> = ({
 
         {/* Product Grid */}
         <Grid size={{ xs: 12, lg: 9 }}>
-          {filteredProducts.length === 0 ? (
+          {loading ? (
+            <Box sx={{ py: 10, display: 'flex', justifyContent: 'center', alignItems: 'center', bgcolor: (theme) => alpha(theme.palette.common.white, 0.02), borderRadius: 2, border: 1, borderColor: (theme) => alpha(theme.palette.secondary.main, 0.1) }}>
+              <ForgeLoader message="Invocando artefactos..." size="large" />
+            </Box>
+          ) : filteredProducts.length === 0 ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 10, bgcolor: (theme) => alpha(theme.palette.common.white, 0.02), borderRadius: 2, border: 1, borderColor: (theme) => alpha(theme.palette.secondary.main, 0.1) }}>
               <SentimentDissatisfied sx={{ fontSize: 60, color: 'secondary.main', mb: 2, opacity: 0.5 }} />
-              <Typography variant="h5" color="common.white" gutterBottom>No Artifacts Found</Typography>
-              <Typography color="grey.500" paragraph>The archives hold no records matching your query.</Typography>
-              <Button onClick={handleReset} sx={{ color: 'secondary.main', textDecoration: 'underline' }}>Clear Filters</Button>
+              <Typography variant="h5" color="common.white" gutterBottom>No se encontraron artefactos</Typography>
+              <Typography color="grey.500" paragraph>Los archivos no contienen registros que coincidan con tu búsqueda.</Typography>
+              <Button onClick={handleReset} sx={{ color: 'secondary.main', textDecoration: 'underline' }}>Limpiar Filtros</Button>
             </Box>
           ) : (
             <>
@@ -350,7 +358,7 @@ const Catalog: React.FC<CatalogProps> = ({
                         </CardContent>
 
                         <CardActions sx={{ justifyContent: 'space-between', px: 2, pt: 0, pb: 2, borderTop: '1px dashed', borderColor: (theme) => alpha(theme.palette.common.white, 0.1), mt: 2 }}>
-                          <Typography variant="h6" color="secondary.main" sx={{ fontWeight: 'bold' }}>{product.price.toFixed(0)} GP</Typography>
+                          <Typography variant="h6" color="secondary.main" sx={{ fontWeight: 'bold' }}>{formatCurrency(product.price)}</Typography>
                           <IconButton
                             onClick={(e) => { e.stopPropagation(); addToCart(product); }}
                             color="primary"
@@ -361,6 +369,7 @@ const Catalog: React.FC<CatalogProps> = ({
                               boxShadow: 3,
                               '&:hover': { bgcolor: 'primary.main', transform: 'scale(1.1)' }
                             }}
+                            title="Añadir al Tesoro"
                           >
                             <Add />
                           </IconButton>

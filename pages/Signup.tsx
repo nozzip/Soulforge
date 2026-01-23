@@ -34,23 +34,36 @@ const Signup: React.FC<SignupProps> = ({ setView, onLogin }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Regex: solo letras (incluyendo acentos), números y guiones bajos. Sin espacios ni símbolos raros.
+  const validNameRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ0-9_]+$/;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
     if (!name.trim()) {
-      setError("Please inscribe your name to continue.");
+      setError("Por favor, inscribe tu nombre para continuar.");
+      return;
+    }
+
+    if (!validNameRegex.test(name)) {
+      setError("El nombre solo puede contener letras, números y guiones bajos. Sin espacios ni símbolos especiales.");
+      return;
+    }
+
+    if (name.length < 3 || name.length > 20) {
+      setError("El nombre debe tener entre 3 y 20 caracteres.");
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      setError("The email scroll appears malformed.");
+      setError("El pergamino de email parece estar mal escrito.");
       return;
     }
 
     if (password.length < 6) {
-      setError("Your secret rune must be at least 6 characters.");
+      setError("Tu runa secreta debe tener al menos 6 caracteres.");
       return;
     }
 
@@ -85,8 +98,8 @@ const Signup: React.FC<SignupProps> = ({ setView, onLogin }) => {
           <Box sx={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 64, height: 64, borderRadius: '50%', bgcolor: (t) => alpha(t.palette.secondary.main, 0.1), border: 1, borderColor: (t) => alpha(t.palette.secondary.main, 0.3), mb: 2, color: 'secondary.main' }}>
             <HistoryEdu sx={{ fontSize: 28 }} />
           </Box>
-          <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'common.white', textTransform: 'uppercase', letterSpacing: 3 }}>Join The Guild</Typography>
-          <Typography variant="body2" sx={{ color: 'grey.500', fontStyle: 'italic', mt: 1 }}>Begin your legend today.</Typography>
+          <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'common.white', textTransform: 'uppercase', letterSpacing: 3 }}>Únete al Gremio</Typography>
+          <Typography variant="body2" sx={{ color: 'grey.500', fontStyle: 'italic', mt: 1 }}>Comienza tu leyenda hoy.</Typography>
         </Box>
 
         <Collapse in={!!error}>
@@ -99,25 +112,27 @@ const Signup: React.FC<SignupProps> = ({ setView, onLogin }) => {
           <Stack spacing={3}>
             <TextField
               fullWidth
-              label="Adventurer Name"
+              label="Nombre del Aventurero"
               type="text"
               disabled={isLoading}
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Galdor the Brave"
+              placeholder="GaldorElValiente"
+              helperText="Solo letras, números y guiones bajos. Sin espacios (3-20 caracteres)."
+              inputProps={{ maxLength: 20 }}
             />
             <TextField
               fullWidth
-              label="Email Scroll"
+              label="Pergamino de Email"
               type="email"
               disabled={isLoading}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="wizard@resinforge.com"
+              placeholder="mago@resinforge.com"
             />
             <TextField
               fullWidth
-              label="Secret Rune"
+              label="Runa Secreta"
               type="password"
               disabled={isLoading}
               value={password}
@@ -143,10 +158,10 @@ const Signup: React.FC<SignupProps> = ({ setView, onLogin }) => {
               {isLoading ? (
                 <Stack direction="row" spacing={1} alignItems="center">
                   <CircularProgress size={20} color="inherit" />
-                  <span>Forging Profile...</span>
+                  <span>Forjando Perfil...</span>
                 </Stack>
               ) : (
-                "Inscribe Name"
+                "Inscribir Nombre"
               )}
             </Button>
           </Stack>
@@ -155,7 +170,7 @@ const Signup: React.FC<SignupProps> = ({ setView, onLogin }) => {
         <Divider sx={{ my: 4 }} />
 
         <Box sx={{ textAlign: 'center' }}>
-          <Typography variant="body2" sx={{ color: 'grey.500', fontStyle: 'italic', mb: 1 }}>Already a member?</Typography>
+          <Typography variant="body2" sx={{ color: 'grey.500', fontStyle: 'italic', mb: 1 }}>¿Ya eres miembro?</Typography>
           <Button
             onClick={() => !isLoading && setView(ViewState.LOGIN)}
             disabled={isLoading}
@@ -168,7 +183,7 @@ const Signup: React.FC<SignupProps> = ({ setView, onLogin }) => {
               '&:hover': { color: 'common.white' }
             }}
           >
-            Access Archives
+            Acceder a los Archivos
           </Button>
         </Box>
       </FancyPaper>
