@@ -125,6 +125,21 @@ CREATE TABLE cart_items (
 
 ---
 
+## ⚠️ Pendiente: Problema en Índice del Catálogo
+
+### 📋 Observación
+Se detectó un problema visual o funcional en el **índice del catálogo** que requiere revisión y corrección.
+
+### 🔍 Investigar
+- Revisar componentes de catálogo
+- Verificar listado de productos
+- Identificar anomalías en UI/UX
+- Corregir problemas de visualización o filtrado
+
+**Nota para futura revisión cuando inicies sesión.**
+
+---
+
 **Desarrollado por: OpenCode Assistant**  
 **Fecha: 25 de Enero de 2026**  
 **Proyecto: ResinForge - Miniatures Shop**
