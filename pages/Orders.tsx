@@ -60,6 +60,7 @@ const getActiveStep = (status: string): number => {
 
 interface Order {
     id: string;
+    contract_number: string;
     created_at: string;
     status: 'Recibido' | 'En la Forja' | 'Limpieza y Curado' | 'Enviado' | 'Cancelado';
     total_ars: number;
@@ -181,8 +182,8 @@ const Orders: React.FC<OrdersProps> = ({ setView }) => {
                                     <Grid size={{ xs: 12, md: 8 }}>
                                         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={{ xs: 1, sm: 4 }}>
                                             <Box>
-                                                <Typography variant="caption" sx={{ color: 'grey.500', textTransform: 'uppercase', letterSpacing: 2, fontWeight: 'bold', display: 'block' }}>Pacto</Typography>
-                                                <Typography variant="body2" sx={{ color: 'common.white', fontFamily: 'monospace' }}>#{order.id.slice(0, 8)}</Typography>
+                                                <Typography variant="caption" sx={{ color: 'grey.500', textTransform: 'uppercase', letterSpacing: 2, fontWeight: 'bold', display: 'block' }}>Contrato</Typography>
+                                                <Typography variant="body2" sx={{ color: 'common.white', fontFamily: 'monospace' }}>{order.contract_number}</Typography>
                                             </Box>
                                             <Box>
                                                 <Typography variant="caption" sx={{ color: 'grey.500', textTransform: 'uppercase', letterSpacing: 2, fontWeight: 'bold', display: 'block' }}>Fecha</Typography>

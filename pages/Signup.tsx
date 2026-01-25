@@ -62,8 +62,19 @@ const Signup: React.FC<SignupProps> = ({ setView, onLogin }) => {
       return;
     }
 
-    if (password.length < 6) {
-      setError("Tu runa secreta debe tener al menos 6 caracteres.");
+    // Validate password strength
+    if (password.length < 8) {
+      setError("Tu runa secreta debe tener al menos 8 caracteres.");
+      return;
+    }
+
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+    if (!hasUpperCase || !hasLowerCase || !hasNumber || !hasSpecialChar) {
+      setError("Tu runa secreta debe contener mayúsculas, minúsculas, números y caracteres especiales.");
       return;
     }
 
@@ -83,8 +94,19 @@ const Signup: React.FC<SignupProps> = ({ setView, onLogin }) => {
       setError(signupError.message);
       setIsLoading(false);
     } else if (data.user) {
-      // Note: If email confirmation is enabled, data.user might be present but session null.
-      // But for this demo, we'll assume it works or wait for session.
+      // Create user profile with username
+      const { error: profileError } = await supabase
+        .from('user_profiles')
+        .insert({
+          user_id: data.user.id,
+          username: name
+        });
+
+      if (profileError) {
+        console.error('Error creating profile:', profileError);
+        // Continue anyway, profile can be created later
+      }
+
       onLogin(data.user);
     }
   };

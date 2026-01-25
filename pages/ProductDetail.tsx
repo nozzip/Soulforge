@@ -4,6 +4,8 @@ import { ViewState, Product, SubItem } from '../types';
 import { useCart } from '../context/CartContext';
 import { formatCurrency } from '../utils/currency';
 import { supabase } from '../src/supabase';
+import DOMPurify from 'isomorphic-dompurify';
+import { safeReadImageAsDataURL } from '../utils/imageValidation';
 import {
   Box,
   Container,
@@ -343,15 +345,18 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setV
   };
 
   // Review Handlers
-  const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        if (ev.target?.result) {
-          setNewReview(prev => ({ ...prev, image: ev.target!.result as string }));
-        }
-      };
-      reader.readAsDataURL(e.target.files[0]);
+      const file = e.target.files[0];
+      
+      try {
+        const imageData = await safeReadImageAsDataURL(file, 5); // 5MB max
+        setNewReview(prev => ({ ...prev, image: imageData }));
+      } catch (error) {
+        alert(error instanceof Error ? error.message : 'Error al cargar la imagen');
+        // Reset file input
+        e.target.value = '';
+      }
     }
   };
 
@@ -359,11 +364,30 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setV
     if (!user || !newReview.text || !productId) return;
     setSubmittingReview(true);
 
+    // Sanitize review text to prevent XSS
+    const sanitizedText = DOMPurify.sanitize(newReview.text, {
+      ALLOWED_TAGS: [], // No HTML tags allowed
+      ALLOWED_ATTR: []
+    });
+
+    // Validate text length
+    if (sanitizedText.length < 10) {
+      alert('La crónica debe tener al menos 10 caracteres.');
+      setSubmittingReview(false);
+      return;
+    }
+
+    if (sanitizedText.length > 1000) {
+      alert('La crónica no puede exceder 1000 caracteres.');
+      setSubmittingReview(false);
+      return;
+    }
+
     const reviewData = {
       product_id: productId,
       user_name: user.name,
       rating: newReview.rating,
-      text: newReview.text,
+      text: sanitizedText,
       image: newReview.image
     };
 
