@@ -51,7 +51,11 @@ import {
   LocalShipping,
   HourglassEmpty,
   CleaningServices,
-  Handyman
+  Handyman,
+  RateReview,
+  DeleteForever,
+  Search,
+  FilterList
 } from '@mui/icons-material';
 import { SectionHeader } from '../components/StyledComponents';
 import { supabase } from '../src/supabase';
@@ -107,6 +111,12 @@ const Admin: React.FC<AdminProps> = ({
   const [allOrders, setAllOrders] = useState<any[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
 
+  // Reviews State
+  const [allReviews, setAllReviews] = useState<any[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [reviewSearch, setReviewSearch] = useState('');
+  const [reviewFilter, setReviewFilter] = useState('all');
+
   const fetchOrders = async () => {
     setOrdersLoading(true);
     const { data, error } = await supabase
@@ -119,9 +129,23 @@ const Admin: React.FC<AdminProps> = ({
     setOrdersLoading(false);
   };
 
+  const fetchReviews = async () => {
+    setReviewsLoading(true);
+    const { data, error } = await supabase
+      .from('product_reviews')
+      .select('*, products(name, category)')
+      .order('created_at', { ascending: false });
+
+    if (error) console.error('Error fetching reviews:', error);
+    else setAllReviews(data || []);
+    setReviewsLoading(false);
+  };
+
   React.useEffect(() => {
     if (currentTab === 1) {
       fetchOrders();
+    } else if (currentTab === 2) {
+      fetchReviews();
     }
   }, [currentTab]);
 
@@ -135,6 +159,38 @@ const Admin: React.FC<AdminProps> = ({
       alert("Error al actualizar estado: " + error.message);
     } else {
       setAllOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+    }
+  };
+
+  const handleDeleteReview = async (reviewId: string) => {
+    if (!confirm('¿Estás seguro de eliminar esta crónica? Esta acción es permanente.')) return;
+    
+    const { error } = await supabase
+      .from('product_reviews')
+      .delete()
+      .eq('id', reviewId);
+
+    if (error) {
+      console.error('Error deleting review:', error);
+      alert('Error al eliminar la crónica.');
+    } else {
+      setAllReviews(prev => prev.filter(r => r.id !== reviewId));
+    }
+  };
+
+  const handleRemoveReviewImage = async (reviewId: string) => {
+    if (!confirm('¿Estás seguro de eliminar la imagen de esta crónica?')) return;
+    
+    const { error } = await supabase
+      .from('product_reviews')
+      .update({ image: null })
+      .eq('id', reviewId);
+
+    if (error) {
+      console.error('Error removing review image:', error);
+      alert('Error al eliminar la imagen.');
+    } else {
+      setAllReviews(prev => prev.map(r => r.id === reviewId ? { ...r, image: null } : r));
     }
   };
 
@@ -262,10 +318,11 @@ const Admin: React.FC<AdminProps> = ({
         <Tabs value={currentTab} onChange={(_e, v) => setCurrentTab(v)} textColor="secondary" indicatorColor="secondary">
           <Tab icon={<Inventory />} label="Forjar Artefactos" sx={{ fontWeight: 'bold', letterSpacing: 1 }} />
           <Tab icon={<ReceiptLong />} label="Gestión de Requisiciones" sx={{ fontWeight: 'bold', letterSpacing: 1 }} />
+          <Tab icon={<RateReview />} label="Crónicas de Aventureros" sx={{ fontWeight: 'bold', letterSpacing: 1 }} />
         </Tabs>
       </Box>
 
-      {currentTab === 0 ? (
+      {currentTab === 0 && (
         <Grid container spacing={6}>
           {/* Form Section */}
           <Grid size={{ xs: 12, lg: 7 }}>
@@ -481,7 +538,9 @@ const Admin: React.FC<AdminProps> = ({
             </Box>
           </Grid>
         </Grid>
-      ) : (
+      )}
+      
+      {currentTab === 1 && (
         <Box>
           {ordersLoading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
@@ -562,6 +621,236 @@ const Admin: React.FC<AdminProps> = ({
                 </TableBody>
               </Table>
             </TableContainer>
+          )}
+        </Box>
+      )}
+      
+      {currentTab === 2 && (
+        <Box>
+          {reviewsLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
+              <CircularProgress color="secondary" />
+            </Box>
+          ) : (
+            <Box>
+              {/* Search and Filter Controls */}
+              <Paper sx={{ p: 3, mb: 3, bgcolor: 'background.paper', border: 1, borderColor: (t) => alpha(t.palette.secondary.main, 0.2), borderRadius: 2 }}>
+                <Grid container spacing={2} alignItems="center">
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      placeholder="Buscar crónicas por usuario, texto o producto..."
+                      value={reviewSearch}
+                      onChange={(e) => setReviewSearch(e.target.value)}
+                      InputProps={{
+                        startAdornment: <Search sx={{ color: 'secondary.main', mr: 1 }} />
+                      }}
+                      sx={{
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          borderColor: (t) => alpha(t.palette.secondary.main, 0.3)
+                        },
+                        '&:hover .MuiOutlinedInput-notchedOutline': {
+                          borderColor: 'secondary.main'
+                        }
+                      }}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, md: 4 }}>
+                    <FormControl fullWidth size="small">
+                      <Select
+                        value={reviewFilter}
+                        onChange={(e) => setReviewFilter(e.target.value)}
+                        displayEmpty
+                        startAdornment={<FilterList sx={{ color: 'secondary.main', mr: 1 }} />}
+                        sx={{
+                          '& .MuiOutlinedInput-notchedOutline': {
+                            borderColor: (t) => alpha(t.palette.secondary.main, 0.3)
+                          },
+                          '&:hover .MuiOutlinedInput-notchedOutline': {
+                            borderColor: 'secondary.main'
+                          }
+                        }}
+                      >
+                        <MenuItem value="all">Todas las Crónicas</MenuItem>
+                        <MenuItem value="withImage">Con Imágenes</MenuItem>
+                        <MenuItem value="withoutImage">Sin Imágenes</MenuItem>
+                        <MenuItem value="lowRating">Baja Calificación (≤2)</MenuItem>
+                        <MenuItem value="highRating">Alta Calificación (≥4)</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid size={{ xs: 12, md: 2 }}>
+                    <Typography variant="caption" sx={{ color: 'grey.500', display: 'block', textAlign: 'center' }}>
+                      {allReviews.length} crónicas encontradas
+                    </Typography>
+                  </Grid>
+                </Grid>
+              </Paper>
+
+              {/* Reviews Table */}
+              <TableContainer component={Paper} sx={{ bgcolor: 'background.paper', borderRadius: 2, border: 1, borderColor: (t) => alpha(t.palette.secondary.main, 0.2), boxShadow: 6 }}>
+                <Table>
+                  <TableHead sx={{ bgcolor: (t) => alpha(t.palette.common.black, 0.3) }}>
+                    <TableRow>
+                      <TableCell sx={{ color: 'secondary.main', fontWeight: 'bold' }}>ID</TableCell>
+                      <TableCell sx={{ color: 'secondary.main', fontWeight: 'bold' }}>Aventurero</TableCell>
+                      <TableCell sx={{ color: 'secondary.main', fontWeight: 'bold' }}>Artefacto</TableCell>
+                      <TableCell sx={{ color: 'secondary.main', fontWeight: 'bold' }}>Calificación</TableCell>
+                      <TableCell sx={{ color: 'secondary.main', fontWeight: 'bold' }}>Crónica</TableCell>
+                      <TableCell sx={{ color: 'secondary.main', fontWeight: 'bold' }}>Imagen</TableCell>
+                      <TableCell sx={{ color: 'secondary.main', fontWeight: 'bold' }}>Fecha</TableCell>
+                      <TableCell sx={{ color: 'secondary.main', fontWeight: 'bold' }}>Acciones</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {allReviews
+                      .filter(review => {
+                        // Apply search filter
+                        const searchMatch = reviewSearch === '' || 
+                          review.user_name?.toLowerCase().includes(reviewSearch.toLowerCase()) ||
+                          review.text?.toLowerCase().includes(reviewSearch.toLowerCase()) ||
+                          review.products?.name?.toLowerCase().includes(reviewSearch.toLowerCase());
+                        
+                        // Apply category filter
+                        let filterMatch = true;
+                        switch (reviewFilter) {
+                          case 'withImage':
+                            filterMatch = !!review.image;
+                            break;
+                          case 'withoutImage':
+                            filterMatch = !review.image;
+                            break;
+                          case 'lowRating':
+                            filterMatch = review.rating <= 2;
+                            break;
+                          case 'highRating':
+                            filterMatch = review.rating >= 4;
+                            break;
+                          default:
+                            filterMatch = true;
+                        }
+                        
+                        return searchMatch && filterMatch;
+                      })
+                      .map((review) => (
+                      <TableRow key={review.id} sx={{ '&:hover': { bgcolor: (t) => alpha(t.palette.common.white, 0.05) } }}>
+                        <TableCell sx={{ color: 'grey.300', fontFamily: 'monospace' }}>
+                          <Typography variant="caption">#{review.id.slice(0, 8)}</Typography>
+                        </TableCell>
+                        <TableCell sx={{ color: 'grey.400' }}>
+                          <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'common.white' }}>
+                            {review.user_name}
+                          </Typography>
+                        </TableCell>
+                        <TableCell sx={{ color: 'grey.400' }}>
+                          <Typography variant="body2" sx={{ color: 'common.white' }}>
+                            {review.products?.name || 'Producto desconocido'}
+                          </Typography>
+                          <Typography variant="caption" sx={{ color: 'grey.600' }}>
+                            {review.products?.category || 'Sin categoría'}
+                          </Typography>
+                        </TableCell>
+                        <TableCell sx={{ color: 'grey.400' }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            {[...Array(5)].map((_, i) => (
+                              <Box
+                                key={i}
+                                sx={{
+                                  width: 16,
+                                  height: 16,
+                                  borderRadius: '50%',
+                                  bgcolor: i < review.rating ? 'warning.main' : 'grey.700',
+                                  border: 1,
+                                  borderColor: i < review.rating ? 'warning.dark' : 'grey.600'
+                                }}
+                              />
+                            ))}
+                            <Typography variant="caption" sx={{ color: 'grey.600', ml: 0.5 }}>
+                              {review.rating}/5
+                            </Typography>
+                          </Box>
+                        </TableCell>
+                        <TableCell sx={{ color: 'grey.400', maxWidth: 300 }}>
+                          <Typography 
+                            variant="body2" 
+                            sx={{ 
+                              overflow: 'hidden', 
+                              textOverflow: 'ellipsis', 
+                              whiteSpace: 'nowrap',
+                              display: 'block'
+                            }}
+                            title={review.text}
+                          >
+                            {review.text}
+                          </Typography>
+                        </TableCell>
+                        <TableCell sx={{ color: 'grey.400' }}>
+                          {review.image ? (
+                            <Box sx={{ position: 'relative' }}>
+                              <Box
+                                component="img"
+                                src={review.image}
+                                alt="Review"
+                                sx={{
+                                  width: 40,
+                                  height: 40,
+                                  borderRadius: 1,
+                                  objectFit: 'cover',
+                                  border: 1,
+                                  borderColor: (t) => alpha(t.palette.secondary.main, 0.2)
+                                }}
+                              />
+                              <IconButton
+                                size="small"
+                                onClick={() => handleRemoveReviewImage(review.id)}
+                                sx={{
+                                  position: 'absolute',
+                                  top: -8,
+                                  right: -8,
+                                  bgcolor: 'error.main',
+                                  color: 'white',
+                                  width: 20,
+                                  height: 20,
+                                  '&:hover': { bgcolor: 'error.dark' }
+                                }}
+                              >
+                                <Close sx={{ fontSize: 14 }} />
+                              </IconButton>
+                            </Box>
+                          ) : (
+                            <Typography variant="caption" sx={{ color: 'grey.600' }}>Sin imagen</Typography>
+                          )}
+                        </TableCell>
+                        <TableCell sx={{ color: 'grey.400' }}>
+                          <Typography variant="caption" sx={{ color: 'grey.500' }}>
+                            {new Date(review.created_at).toLocaleDateString()}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <IconButton
+                            onClick={() => handleDeleteReview(review.id)}
+                            sx={{ 
+                              color: 'error.main', 
+                              '&:hover': { bgcolor: (t) => alpha(t.palette.error.main, 0.1) } 
+                            }}
+                          >
+                            <DeleteForever />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {allReviews.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={8} sx={{ textAlign: 'center', py: 6, color: 'grey.600', fontStyle: 'italic' }}>
+                          No hay crónicas inscritas en los archivos.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Box>
           )}
         </Box>
       )}

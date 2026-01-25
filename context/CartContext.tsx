@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Product, CartItem } from '../types';
+import { supabase } from '../src/supabase';
 import { playCoinSound, playSwordSound } from '../utils/sounds';
 
 interface CartContextType {
@@ -12,64 +13,177 @@ interface CartContextType {
   clearCart: () => void;
   playAddSound: () => void;
   playRemoveSound: () => void;
+  loading: boolean;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [items, setItems] = useState<CartItem[]>([
-    // Pre-populate with some data as seen in the mockup for "Review Your Loot"
-    {
-      id: '1',
-      name: "Ancient Cinder Wyrm",
-      category: "D&D",
-      scale: "Colossal",
-      price: 85.00,
-      quantity: 1,
-      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCOt5aQZidteyosgKEH6adeFrjY70HvrEfGe899g00U3xAIYG56c8fgeqBKxO8l7H88pIM9fvKCjOFj31ZRGXSNJMm0amjBByouYk2tQS9cJlO5tRXVypnfYTl4GOedXMMTeHteiT4YEek0yhThUIU-I3adq46F_jGdWXWA81N4fXwHAGu-qCKql3q3IOj_6RX7xJ3VDGhUy-IG7TOmabJh_2bG_B3XyQLiG6dKr1cd6iFYDBbZoCfADZlGEJy_eQT0j1kbKsuRM9c"
-    },
-    {
-      id: '4',
-      name: "Oathbreaker Vanguard",
-      category: "D&D",
-      scale: "Medium",
-      price: 44.00,
-      quantity: 2,
-      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuB3o4U20eQujlqlLivp6dfCAP5GGzSX_QIVGCsZjAW44J4Cn5dH3fh--dQTkyhXBkrF8FhFqEkEYr9RQT-DUD067sGwueG54R6I2D9AWpl0SZeHcNNNBlpw-hJcGf44E_evb6KJAvH1iUIbN3XlyqFqu1eAkxpckNTqSho97MfodGIWlijVtftnohk4UDHDDFQLMabvPPyGlPuNecTztgQfAeFoes10LMhaiBmRzvnS1bSmrAv4HZDh04MXIr9oLJX0zf3HFw_Us5E"
-    }
-  ]);
+  const [items, setItems] = useState<CartItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const addToCart = (product: Product) => {
+  // Load cart from Supabase when user changes
+  useEffect(() => {
+    const loadCart = async () => {
+      try {
+        setLoading(true);
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (user) {
+          const { data: cartItems, error } = await supabase
+            .from('cart_items')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
+
+          if (error) throw error;
+
+          // Transform database items to CartItem format
+          const transformedItems: CartItem[] = cartItems.map(item => ({
+            id: item.product_id,
+            name: item.product_name,
+            category: item.product_category,
+            scale: item.product_scale,
+            price: item.price,
+            quantity: item.quantity,
+            image: item.image
+          }));
+
+          setItems(transformedItems);
+        } else {
+          // User not logged in, clear cart
+          setItems([]);
+        }
+      } catch (error) {
+        console.error('Error loading cart:', error);
+        setItems([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCart();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      loadCart();
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Helper function to save to database
+  const saveToDatabase = async (userId: string, cartItems: CartItem[]) => {
+    try {
+      // Clear existing cart items
+      await supabase
+        .from('cart_items')
+        .delete()
+        .eq('user_id', userId);
+
+      // Insert new items
+      if (cartItems.length > 0) {
+        const itemsToInsert = cartItems.map(item => ({
+          user_id: userId,
+          product_id: item.id,
+          product_name: item.name,
+          product_category: item.category,
+          product_scale: item.scale,
+          price: item.price,
+          quantity: item.quantity,
+          image: item.image
+        }));
+
+        await supabase
+          .from('cart_items')
+          .insert(itemsToInsert);
+      }
+    } catch (error) {
+      console.error('Error saving cart to database:', error);
+    }
+  };
+
+  const addToCart = async (product: Product) => {
     playAddSound();
     setItems(prev => {
       const existing = prev.find(item => item.id === product.id);
+      let newItems: CartItem[];
+      
       if (existing) {
-        return prev.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
+        newItems = prev.map(item => 
+          item.id === product.id 
+            ? { ...item, quantity: item.quantity + 1 } 
+            : item
+        );
+      } else {
+        newItems = [...prev, { ...product, quantity: 1 }];
       }
-      return [...prev, { ...product, quantity: 1 }];
+
+      // Save to database asynchronously
+      (async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await saveToDatabase(user.id, newItems);
+        }
+      })();
+
+      return newItems;
     });
   };
 
-  const removeFromCart = (productId: string) => {
+  const removeFromCart = async (productId: string) => {
     playRemoveSound();
-    setItems(prev => prev.filter(item => item.id !== productId));
+    setItems(prev => {
+      const newItems = prev.filter(item => item.id !== productId);
+      
+      // Save to database asynchronously
+      (async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await saveToDatabase(user.id, newItems);
+        }
+      })();
+
+      return newItems;
+    });
   };
 
-  const updateQuantity = (productId: string, delta: number) => {
+  const updateQuantity = async (productId: string, delta: number) => {
     if (delta > 0) playAddSound();
     else playRemoveSound();
 
-    setItems(prev => prev.map(item => {
-      if (item.id === productId) {
-        const newQty = item.quantity + delta;
-        return newQty > 0 ? { ...item, quantity: newQty } : item;
-      }
-      return item;
-    }));
+    setItems(prev => {
+      const newItems = prev.map(item => {
+        if (item.id === productId) {
+          const newQty = item.quantity + delta;
+          return newQty > 0 ? { ...item, quantity: newQty } : item;
+        }
+        return item;
+      }).filter(item => item.quantity > 0); // Remove items with quantity 0
+
+      // Save to database asynchronously
+      (async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await saveToDatabase(user.id, newItems);
+        }
+      })();
+
+      return newItems;
+    });
   };
 
-  const clearCart = () => {
+  const clearCart = async () => {
     setItems([]);
+    
+    // Clear from database
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await supabase
+        .from('cart_items')
+        .delete()
+        .eq('user_id', user.id);
+    }
   };
 
   const playAddSound = () => {
@@ -84,7 +198,18 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const totalPrice = items.reduce((acc, item) => acc + (item.price * item.quantity), 0);
 
   return (
-    <CartContext.Provider value={{ items, addToCart, removeFromCart, updateQuantity, totalItems, totalPrice, clearCart, playAddSound, playRemoveSound }}>
+    <CartContext.Provider value={{ 
+      items, 
+      addToCart, 
+      removeFromCart, 
+      updateQuantity, 
+      totalItems, 
+      totalPrice, 
+      clearCart, 
+      playAddSound, 
+      playRemoveSound,
+      loading
+    }}>
       {children}
     </CartContext.Provider>
   );

@@ -23,8 +23,7 @@ import {
   MonetizationOn,
   Lock,
   Payments,
-  AccountBalanceWallet,
-  CreditCard
+  WaterDrop
 } from '@mui/icons-material';
 import { SectionHeader } from '../components/StyledComponents';
 
@@ -37,9 +36,7 @@ const Cart: React.FC<CartProps> = ({ setView }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const taxes = 0;
-  const shipping = 12.50;
-  const grandTotal = totalPrice + shipping + taxes;
+  const grandTotal = totalPrice;
 
   return (
     <Container maxWidth="lg" sx={{ py: 6, px: { xs: 2, lg: 4 } }}>
@@ -169,9 +166,8 @@ const Cart: React.FC<CartProps> = ({ setView }) => {
               </Stack>
             )}
 
-            <Box sx={{ mt: 6, pt: 4, borderTop: 1, borderColor: (theme) => alpha(theme.palette.secondary.main, 0.2), display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: 'center', gap: 1, color: (theme) => alpha(theme.palette.secondary.main, 0.5), fontStyle: 'italic', textAlign: { xs: 'center', sm: 'left' } }}>
+            <Box sx={{ mt: 6, pt: 4, borderTop: 1, borderColor: (theme) => alpha(theme.palette.secondary.main, 0.2), display: 'flex', justifyContent: 'center', color: (theme) => alpha(theme.palette.secondary.main, 0.5), fontStyle: 'italic' }}>
               <Typography variant="caption">Tu inventario está protegido por guardas mágicas.</Typography>
-              <Typography variant="caption">Peso Total: 12.4 lbs</Typography>
             </Box>
           </Box>
         </Grid>
@@ -199,14 +195,7 @@ const Cart: React.FC<CartProps> = ({ setView }) => {
                   <Typography variant="body2" sx={{ color: 'grey.500', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 'bold', minWidth: '120px' }}>Subtotal</Typography>
                   <Typography variant="body2" sx={{ color: 'secondary.main', fontWeight: 'bold', textAlign: 'right' }}>{formatCurrencyDecimal(totalPrice)}</Typography>
                 </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <Typography variant="body2" sx={{ color: 'grey.500', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 'bold', minWidth: '120px' }}>Tarifa Portal</Typography>
-                  <Typography variant="body2" sx={{ color: 'secondary.main', fontWeight: 'bold', textAlign: 'right' }}>{formatCurrencyDecimal(shipping)}</Typography>
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', pb: 2, borderBottom: 1, borderColor: (theme) => alpha(theme.palette.secondary.main, 0.1) }}>
-                  <Typography variant="body2" sx={{ color: 'grey.500', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 'bold', minWidth: '120px' }}>Impuestos</Typography>
-                  <Typography variant="body2" sx={{ color: 'secondary.main', fontWeight: 'bold', textAlign: 'right' }}>{formatCurrencyDecimal(taxes)}</Typography>
-                </Box>
+
 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pt: 2, mt: 1, borderTop: 1, borderColor: (theme) => alpha(theme.palette.secondary.main, 0.2) }}>
                   <Typography variant="h5" sx={{ fontWeight: 'bold', fontStyle: 'italic', color: 'common.white', textTransform: 'uppercase', letterSpacing: 2 }}>Total</Typography>
@@ -240,10 +229,10 @@ const Cart: React.FC<CartProps> = ({ setView }) => {
               <Box sx={{ mt: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5 }}>
                 <Divider flexItem sx={{ borderColor: (theme) => alpha(theme.palette.secondary.main, 0.3), width: '100%' }} />
                 <Typography variant="caption" sx={{ color: 'grey.600', textTransform: 'uppercase', letterSpacing: 1 }}>Monedas Aceptadas</Typography>
-                <Box sx={{ display: 'flex', gap: 2, opacity: 0.5, color: 'common.white' }}>
-                  <Payments />
-                  <AccountBalanceWallet />
-                  <CreditCard />
+                <Box sx={{ display: 'flex', gap: 2, opacity: 0.5, color: 'common.white', alignItems: 'center' }}>
+                  <Payments sx={{ fontSize: '1.2rem' }} />
+                  <Typography variant="caption" sx={{ fontSize: '0.7rem', fontStyle: 'italic', color: 'red.400' }}>o</Typography>
+                  <WaterDrop sx={{ fontSize: '1rem', color: 'red.600' }} />
                 </Box>
               </Box>
             </Paper>

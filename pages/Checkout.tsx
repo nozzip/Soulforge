@@ -9,24 +9,18 @@ import {
   Grid,
   Typography,
   TextField,
-  Select,
   MenuItem,
   Button,
   Paper,
   Stack,
   Divider,
-  Radio,
-  RadioGroup,
-  FormControlLabel,
   FormControl,
   alpha,
-  useTheme,
   Chip,
   Collapse,
   IconButton
 } from '@mui/material';
-import { Pentagon, AutoFixHigh, Payments, CreditCard, Policy, LocationOn, Delete, Add, ExpandMore, ExpandLess } from '@mui/icons-material';
-import { DecorativeCorners } from '../components/StyledComponents';
+import { Pentagon, AutoFixHigh, Payments, LocationOn, Delete, Add, ExpandMore, ExpandLess, ArrowBack, Lock } from '@mui/icons-material';
 import { playSuccessSound } from '../utils/sounds';
 
 interface SavedAddress {
@@ -35,25 +29,48 @@ interface SavedAddress {
   address: string;
   city: string;
   zip: string;
-  realm: string;
-  phone: string;
+  province: string;
   is_default: boolean;
 }
 
+const ARGENTINA_PROVINCES = [
+  'Buenos Aires',
+  'Ciudad Autónoma de Buenos Aires',
+  'Catamarca',
+  'Chaco',
+  'Chubut',
+  'Córdoba',
+  'Corrientes',
+  'Entre Ríos',
+  'Formosa',
+  'Jujuy',
+  'La Pampa',
+  'La Rioja',
+  'Mendoza',
+  'Misiones',
+  'Neuquén',
+  'Río Negro',
+  'Salta',
+  'San Juan',
+  'San Luis',
+  'Santa Cruz',
+  'Santa Fe',
+  'Santiago del Estero',
+  'Tierra del Fuego',
+  'Tucumán'
+];
+
 const Checkout: React.FC = () => {
-  const theme = useTheme();
   const { items, totalPrice, clearCart } = useCart();
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<User | null>(null);
 
   const [formData, setFormData] = useState({
     name: '',
-    realm: 'north',
+    province: '',
     address: '',
     city: '',
-    zip: '',
-    phone: '',
-    delivery: 'standard'
+    zip: ''
   });
 
   // Saved Addresses State
@@ -91,8 +108,7 @@ const Checkout: React.FC = () => {
               address: defaultAddr.address,
               city: defaultAddr.city,
               zip: defaultAddr.zip,
-              realm: defaultAddr.realm,
-              phone: defaultAddr.phone,
+              province: defaultAddr.province,
             }));
           }
         }
@@ -108,8 +124,7 @@ const Checkout: React.FC = () => {
       address: addr.address,
       city: addr.city,
       zip: addr.zip,
-      realm: addr.realm,
-      phone: addr.phone,
+      province: addr.province,
     }));
     setShowSavedAddresses(false);
   };
@@ -128,8 +143,7 @@ const Checkout: React.FC = () => {
       address: formData.address,
       city: formData.city,
       zip: formData.zip,
-      realm: formData.realm,
-      phone: formData.phone,
+      province: formData.province,
       is_default: savedAddresses.length === 0,
       label: addressName.trim()
     };
@@ -152,15 +166,10 @@ const Checkout: React.FC = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleDeliveryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({ ...prev, delivery: e.target.value }));
-  };
-
-  const shippingCost = formData.delivery === 'express' ? 25.00 : 5.00;
-  const grandTotal = totalPrice + 12.50 + shippingCost;
+  const grandTotal = totalPrice;
 
   const handleWhatsAppCheckout = async () => {
-    if (!formData.name || !formData.address || !formData.phone) {
+    if (!formData.name || !formData.address || !formData.province || !formData.city) {
       alert("Por favor completa los campos obligatorios para sellar el pacto.");
       return;
     }
@@ -174,9 +183,8 @@ const Checkout: React.FC = () => {
           user_id: user?.id,
           total_gp: grandTotal,
           total_ars: grandTotal * 1000,
-          shipping_address: `${formData.address}, ${formData.city} (${formData.zip}), ${formData.realm}`,
-          shipping_method: formData.delivery === 'express' ? 'Expreso Griffon' : 'Caravana Estándar',
-          phone: formData.phone,
+          shipping_address: `${formData.address}, ${formData.city} (${formData.zip}), ${formData.province}, Argentina`,
+          shipping_method: 'A coordinar',
           status: 'Recibido'
         })
         .select()
@@ -203,13 +211,11 @@ const Checkout: React.FC = () => {
       // 3. Generar mensaje de WhatsApp
       const WHATSAPP_NUMBER = '543815621699';
       let message = `*📜 NUEVA REQUISICIÓN EN RESINFORGE*\n`;
-      message += `ID DE PACTO: ${orderData.id.slice(0, 8)}\n\n`;
+      message += `CONTRATO: ${orderData.contract_number}\n\n`;
       message += `*I. DETALLES DEL AVENTURERO*\n`;
       message += `👤 Nombre: ${formData.name}\n`;
-      message += `📍 Reino: ${formData.realm}\n`;
-      message += `🏰 Dirección: ${formData.address}, ${formData.city} (${formData.zip})\n`;
-      message += `📞 Contacto: ${formData.phone}\n`;
-      message += `📦 Método: ${formData.delivery === 'express' ? 'Expreso Griffon' : 'Caravana Estándar'}\n\n`;
+      message += `📍 Provincia: ${formData.province}, Argentina\n`;
+      message += `🏰 Dirección: ${formData.address}, ${formData.city} (${formData.zip})\n\n`;
 
       message += `*II. DETALLE DEL BOTÍN*\n`;
       items.forEach(item => {
@@ -241,11 +247,28 @@ const Checkout: React.FC = () => {
         {/* Form Section */}
         <Grid size={{ xs: 12, lg: 8 }}>
           <Stack spacing={6}>
+            {/* Back Button */}
+            <Button
+              startIcon={<ArrowBack />}
+              onClick={() => window.history.back()}
+              sx={{ alignSelf: 'flex-start', color: 'grey.500', textTransform: 'none', '&:hover': { color: 'secondary.main' } }}
+            >
+              Volver al catálogo
+            </Button>
+
             {/* Header */}
             <Box sx={{ borderBottom: 1, borderColor: (t) => alpha(t.palette.secondary.main, 0.3), pb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Typography variant="h4" sx={{ fontWeight: 'bold', fontStyle: 'italic', color: 'secondary.main' }}>El Pacto del Mercader</Typography>
-              <Typography variant="caption" sx={{ color: (t) => alpha(t.palette.common.white, 0.5), textTransform: 'uppercase', letterSpacing: 3 }}>Contrato #RF-2024-0892</Typography>
+              <Typography variant="caption" sx={{ color: (t) => alpha(t.palette.common.white, 0.5), textTransform: 'uppercase', letterSpacing: 3 }}>Contrato asignado al sellar</Typography>
             </Box>
+
+            {/* Encryption Badge */}
+            <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: -4 }}>
+              <Lock sx={{ fontSize: 16, color: 'success.main' }} />
+              <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'success.main' }}>
+                Encriptación Encantada Activa
+              </Typography>
+            </Stack>
 
             {/* Shipping Section */}
             <Box component="section">
@@ -315,25 +338,25 @@ const Checkout: React.FC = () => {
                   <TextField fullWidth name="name" value={formData.name} onChange={handleInputChange} label="Nombre del Destinatario" placeholder="Galdor el Veloz" required />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField fullWidth name="phone" value={formData.phone} onChange={handleInputChange} label="Contacto (Teléfono)" placeholder="+54 9 11 ..." required />
+                  <TextField fullWidth value="Argentina" label="País" disabled />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
                   <FormControl fullWidth>
-                    <TextField select name="realm" value={formData.realm} onChange={handleInputChange} label="Reino / País">
-                      <MenuItem value="north">Los Reinos del Norte</MenuItem>
-                      <MenuItem value="shadow">Enclaves de Shadowfell</MenuItem>
-                      <MenuItem value="iron">Imperio de las Colinas de Hierro</MenuItem>
+                    <TextField select name="province" value={formData.province} onChange={handleInputChange} label="Provincia" required>
+                      {ARGENTINA_PROVINCES.map(prov => (
+                        <MenuItem key={prov} value={prov}>{prov}</MenuItem>
+                      ))}
                     </TextField>
                   </FormControl>
                 </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField fullWidth name="city" value={formData.city} onChange={handleInputChange} label="Ciudad / Localidad" placeholder="Ej: San Miguel de Tucumán" required />
+                </Grid>
                 <Grid size={{ xs: 12 }}>
-                  <TextField fullWidth name="address" value={formData.address} onChange={handleInputChange} label="Dirección de la Fortaleza" placeholder="12 Citadel Row, Distrito de la Torre" required />
+                  <TextField fullWidth name="address" value={formData.address} onChange={handleInputChange} label="Dirección" placeholder="Calle, número, piso, depto" required />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField fullWidth name="city" value={formData.city} onChange={handleInputChange} label="Ciudad / Ciudadela" placeholder="Waterdeep" required />
-                </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField fullWidth name="zip" value={formData.zip} onChange={handleInputChange} label="Código de Cuervo (Zip)" placeholder="90210" required />
+                  <TextField fullWidth name="zip" value={formData.zip} onChange={handleInputChange} label="Código Postal" placeholder="4000" required />
                 </Grid>
 
                 {/* Save Address Option */}
@@ -373,52 +396,14 @@ const Checkout: React.FC = () => {
               </Grid>
             </Box>
 
-            {/* Delivery Method */}
-            <Box component="section">
-              <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 3 }}>
-                <AutoFixHigh sx={{ fontSize: 36, color: 'secondary.main' }} />
-                <Typography variant="h5" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 2, color: 'common.white' }}>II. Ritual de Entrega</Typography>
-              </Stack>
-              <RadioGroup name="delivery" value={formData.delivery} onChange={handleDeliveryChange}>
-                <Grid container spacing={2}>
-                  <Grid size={{ xs: 12, md: 6 }}>
-                    <Paper sx={{ p: 3, border: 1, borderColor: (t) => alpha(t.palette.secondary.main, 0.3), bgcolor: (t) => alpha(t.palette.background.paper, 0.5), cursor: 'pointer', '&:has(input:checked)': { borderColor: 'secondary.main', bgcolor: (t) => alpha(t.palette.secondary.main, 0.1) } }}>
-                      <FormControlLabel value="standard" control={<Radio sx={{ color: 'secondary.main', '&.Mui-checked': { color: 'secondary.main' } }} />} label={
-                        <Box>
-                          <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 1 }}>
-                            <Typography variant="body1" sx={{ fontWeight: 'bold', color: 'common.white' }}>Caravana Estándar</Typography>
-                            <Typography variant="body2" sx={{ color: 'secondary.main' }}>5 Oro</Typography>
-                          </Stack>
-                          <Typography variant="body2" sx={{ color: (t) => alpha(t.palette.common.white, 0.6), fontStyle: 'italic' }}>Llega en 7-10 ciclos lunares. Paso seguro garantizado.</Typography>
-                        </Box>
-                      } sx={{ m: 0, width: '100%', alignItems: 'flex-start' }} />
-                    </Paper>
-                  </Grid>
-                  <Grid size={{ xs: 12, md: 6 }}>
-                    <Paper sx={{ p: 3, border: 1, borderColor: (t) => alpha(t.palette.secondary.main, 0.3), bgcolor: (t) => alpha(t.palette.background.paper, 0.5), cursor: 'pointer', '&:has(input:checked)': { borderColor: 'secondary.main', bgcolor: (t) => alpha(t.palette.secondary.main, 0.1) } }}>
-                      <FormControlLabel value="express" control={<Radio sx={{ color: 'secondary.main', '&.Mui-checked': { color: 'secondary.main' } }} />} label={
-                        <Box>
-                          <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 1 }}>
-                            <Typography variant="body1" sx={{ fontWeight: 'bold', color: 'common.white' }}>Expreso Griffon</Typography>
-                            <Typography variant="body2" sx={{ color: 'secondary.main' }}>25 Oro</Typography>
-                          </Stack>
-                          <Typography variant="body2" sx={{ color: (t) => alpha(t.palette.common.white, 0.6), fontStyle: 'italic' }}>Entrega aérea en 2 ciclos. Manejo prioritario.</Typography>
-                        </Box>
-                      } sx={{ m: 0, width: '100%', alignItems: 'flex-start' }} />
-                    </Paper>
-                  </Grid>
-                </Grid>
-              </RadioGroup>
-            </Box>
-
-            {/* Payment (Disabled/Informational for WhatsApp flow) */}
+            {/* Delivery & Payment - Managed via WhatsApp */}
             <Box component="section" sx={{ opacity: 0.6 }}>
               <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 3 }}>
                 <Payments sx={{ fontSize: 36, color: 'secondary.main' }} />
-                <Typography variant="h5" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 2, color: 'common.white' }}>III. Pago (Gestionado vía Chat)</Typography>
+                <Typography variant="h5" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 2, color: 'common.white' }}>II. Envío y Pago</Typography>
               </Stack>
               <Typography variant="body2" sx={{ color: 'grey.500', fontStyle: 'italic' }}>
-                Los rituales tradicionales de transferencia de oro se gestionan actualmente a través de un diálogo encriptado de WhatsApp. Por favor, procede al siguiente paso.
+                El método de envío y los rituales de transferencia de oro se coordinan a través de WhatsApp. Al sellar el pacto, serás contactado para definir estos detalles.
               </Typography>
             </Box>
           </Stack>
@@ -455,12 +440,8 @@ const Checkout: React.FC = () => {
                   <Typography variant="body2" sx={{ textAlign: 'right' }}>{formatCurrencyDecimal(totalPrice)}</Typography>
                 </Stack>
                 <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                  <Typography variant="body2" sx={{ opacity: 0.6, fontStyle: 'italic', minWidth: '100px' }}>Diezmos</Typography>
-                  <Typography variant="body2" sx={{ textAlign: 'right' }}>{formatCurrencyDecimal(12.50)}</Typography>
-                </Stack>
-                <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                  <Typography variant="body2" sx={{ opacity: 0.6, fontStyle: 'italic', minWidth: '100px' }}>Sello de Envío</Typography>
-                  <Typography variant="body2" sx={{ textAlign: 'right' }}>{formatCurrencyDecimal(shippingCost)}</Typography>
+                  <Typography variant="body2" sx={{ opacity: 0.6, fontStyle: 'italic', minWidth: '100px' }}>Envío</Typography>
+                  <Typography variant="body2" sx={{ textAlign: 'right', fontStyle: 'italic', color: 'grey.500' }}>A coordinar</Typography>
                 </Stack>
                 <Divider sx={{ borderColor: (t) => alpha(t.palette.secondary.main, 0.2), my: 1 }} />
                 <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ pt: 1 }}>

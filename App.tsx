@@ -79,6 +79,7 @@ const App: React.FC = () => {
 
   // User State
   const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     // Check active session
@@ -93,6 +94,55 @@ const App: React.FC = () => {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Check if user is admin
+  // Check if user is admin
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (!user) {
+        setIsAdmin(false);
+        return;
+      }
+
+      console.log("Checking admin status for user:", user.id);
+      
+      const { data, error } = await supabase
+        .from("admin_users")
+        .select("user_id")
+        .eq("user_id", user.id)
+        .single();
+
+      const adminStatus = !error && !!data;
+      console.log("Admin check result:", { data, error, adminStatus });
+      setIsAdmin(adminStatus);
+    };
+
+    checkAdminStatus();
+  }, [user]);
+
+  // Manual admin refresh function for debugging
+  useEffect(() => {
+    (window as any).refreshAdminStatus = async () => {
+      if (user) {
+        console.log("Manual admin refresh triggered");
+        const { data, error } = await supabase
+          .from("admin_users")
+          .select("user_id")
+          .eq("user_id", user.id)
+          .single();
+
+        const adminStatus = !error && !!data;
+        console.log("Manual admin check result:", { data, error, adminStatus });
+        setIsAdmin(adminStatus);
+      } else {
+        console.log("No user logged in");
+      }
+    };
+
+    return () => {
+      delete (window as any).refreshAdminStatus;
+    };
+  }, [user]);
 
   // Wishlist State - Syncs with Supabase when user is logged in
   const [wishlist, setWishlist] = useState<string[]>(() => {
@@ -241,7 +291,7 @@ const App: React.FC = () => {
             setView={handleSetView}
             wishlist={wishlist}
             toggleWishlist={toggleWishlist}
-            isAdmin={user?.user_metadata?.role === 'admin'}
+            isAdmin={isAdmin}
             user={user ? { name: user.user_metadata?.full_name || user.email || 'Usuario', id: user.id } : null}
           />
         );
@@ -316,6 +366,7 @@ const App: React.FC = () => {
           onSearch={handleSearch}
           onProductSelect={handleProductClick}
           user={user ? (user.user_metadata.full_name || user.email) : null}
+          isAdmin={isAdmin}
           onLogout={handleLogout}
           isWarhammer={isWarhammer}
           onToggleTheme={toggleTheme}

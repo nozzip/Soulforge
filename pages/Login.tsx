@@ -38,8 +38,35 @@ const Login: React.FC<LoginProps> = ({ setView, onLogin }) => {
     setError(null);
     setIsLoading(true);
 
+    let loginEmail = email;
+
+    // Check if input is username (no @ symbol)
+    if (!email.includes('@')) {
+      // Try to get email from username using RPC function
+      const { data: emailData, error: rpcError } = await supabase
+        .rpc('get_email_from_username', { input_username: email.trim() });
+
+      // Better error logging
+      if (rpcError) {
+        console.error('RPC Error:', rpcError);
+        setError(`Error al buscar usuario: ${rpcError.message}`);
+        setIsLoading(false);
+        return;
+      }
+
+      if (!emailData) {
+        console.warn('Username not found in database:', email);
+        setError('Usuario no encontrado. Verifica que el nombre de usuario sea correcto.');
+        setIsLoading(false);
+        return;
+      }
+
+      console.log('Email found for username:', emailData);
+      loginEmail = emailData;
+    }
+
     const { data, error } = await supabase.auth.signInWithPassword({
-      email,
+      email: loginEmail,
       password,
     });
 
@@ -64,7 +91,32 @@ const Login: React.FC<LoginProps> = ({ setView, onLogin }) => {
   };
 
   return (
-    <Container maxWidth="sm" sx={{ minHeight: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center', py: 6 }}>
+    <Container maxWidth="sm" sx={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      py: 6,
+      position: 'relative',
+      '&::before': {
+        content: '""',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: '100vw',
+        height: '100vh',
+        backgroundImage: 'url(https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/sign/Soulforge%20-%20Misc/nozzip_a_fantasy_forest_--ar_8953_--profile_dehgnq4_--stylize_1_5b23a4ac-5a4a-42ee-bb78-6c774444151d.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV84MjAxNjBmNy1jMzIxLTRmMWUtYWEwOC04YzZkMTNkOTgyZTUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJTb3VsZm9yZ2UgLSBNaXNjL25venppcF9hX2ZhbnRhc3lfZm9yZXN0Xy0tYXJfODk1M18tLXByb2ZpbGVfZGVoZ25xNF8tLXN0eWxpemVfMV81YjIzYTRhYy01YTRhLTQyZWUtYmI3OC02Yzc3NDQ0NDE1MWQucG5nIiwiaWF0IjoxNzY5Mzc4Nzk3LCJleHAiOjE5MjcwNTg3OTd9.AldMF4YQdVveQNEZo0Pg-BiqdFlNNRdXbsLtvAylhjk)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        transform: 'scale(1.0)',
+        WebkitTransform: 'scale(1.0)',
+        opacity: 0.35,
+        zIndex: -1
+      }
+    }}>
       <FancyPaper sx={{ width: '100%', maxWidth: 400 }}>
         <DecorativeCorners />
 
@@ -86,13 +138,13 @@ const Login: React.FC<LoginProps> = ({ setView, onLogin }) => {
           <Stack spacing={3}>
             <TextField
               fullWidth
-              label="Pergamino de Email"
-              type="email"
+              label="Email o Usuario"
+              type="text"
               required
               disabled={isLoading}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="mago@resinforge.com"
+              placeholder="mago@soulforge.com o Mago"
             />
             <TextField
               fullWidth
