@@ -598,46 +598,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setV
             </Paper>
           )}
 
-          {/* Resin Selection */}
-        <Box sx={{ mb: 6 }}>
-          <Typography variant="overline" color="secondary.main" fontWeight="bold" letterSpacing={2} display="block" gutterBottom>
-            <Opacity fontSize="inherit" /> Selección de Resina
-          </Typography>
-          <Stack direction="row" spacing={2}>
-            {resinOptions.map((resin) => (
-              <Box
-                key={resin.name}
-                onClick={() => resin.available && setSelectedResin(resin.name)}
-                sx={{
-                  flex: 1,
-                  p: 2,
-                  borderRadius: 1,
-                  border: 2,
-                  borderColor: selectedResin === resin.name ? 'primary.main' : 'rgba(197, 160, 89, 0.1)',
-                  bgcolor: selectedResin === resin.name ? 'rgba(var(--color-primary), 0.1)' : 'rgba(0,0,0,0.2)',
-                  cursor: resin.available ? 'pointer' : 'not-allowed',
-                  opacity: resin.available ? 1 : 0.5,
-                  position: 'relative',
-                  transition: 'all 0.2s',
-                  '&:hover': resin.available ? { borderColor: 'primary.main', bgcolor: 'rgba(var(--color-primary), 0.05)' } : {}
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                  <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: resin.color, border: '1px solid rgba(255,255,255,0.2)' }} />
-                  <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'common.white', lineHeight: 1 }}>{resin.name}</Typography>
-                </Box>
-                {!resin.available && (
-                  <Typography variant="caption" sx={{ fontSize: '0.6rem', color: 'primary.main', fontWeight: 'bold', textTransform: 'uppercase' }}>Próximamente</Typography>
-                )}
-                {selectedResin === resin.name && resin.available && (
-                  <Box sx={{ position: 'absolute', top: 4, right: 4 }}>
-                    <Star sx={{ fontSize: 12, color: 'primary.main' }} />
-                  </Box>
-                )}
-              </Box>
-            ))}
-          </Stack>
-        </Box>
+          
 
         {/* Specs */}
         <Paper variant="outlined" sx={{ p: 3, bgcolor: 'transparent', borderColor: 'rgba(197, 160, 89, 0.1)' }}>
@@ -651,7 +612,17 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setV
             </Grid>
             <Grid size={6}>
               <Typography variant="caption" color="grey.600" display="block">Tamaño de Base</Typography>
-              <Typography variant="body2" color="grey.400">{product.scale === 'Gargantuesco' || product.scale === 'Gargantuan' ? '100mm' : (product.scale === 'Grande' || product.scale === 'Large') ? '50mm' : '32mm'}</Typography>
+              <Typography variant="body2" color="grey.400">
+                {(() => {
+                  const scale = product.scale.toLowerCase();
+                  if (scale.includes('huge')) return '75mm';
+                  if (scale.includes('gargantuesco') || scale.includes('gargantuan')) return '100mm';
+                  if (scale.includes('large') || scale.includes('grande')) return '50mm';
+                  if (scale.includes('medium') || scale.includes('mediano')) return '25mm';
+                  if (scale.includes('small') || scale.includes('pequeño')) return '25mm';
+                  return '25mm'; // Default
+                })()}
+              </Typography>
             </Grid>
             <Grid size={6}>
               <Typography variant="caption" color="grey.600" display="block">Montaje</Typography>
@@ -667,7 +638,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setV
         <Box sx={{ mt: 2, display: 'flex', gap: 1, alignItems: 'flex-start' }}>
           <LocalShipping fontSize="small" color="secondary" />
           <Typography variant="caption" color="text.secondary" fontStyle="italic">
-            Se envía en 3-5 días hábiles. Embalado con encantamientos protectores (plástico de burbujas) para asegurar su llegada a salvo.
+            Embalado con encantamientos protectores (plástico de burbujas) para asegurar su llegada a salvo.
           </Typography>
         </Box>
       </Grid>

@@ -1,5 +1,5 @@
 /// <reference lib="dom" />
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef, memo } from 'react';
 import { Product, ViewState } from '../types';
 import { useCart } from '../context/CartContext';
 import { formatCurrency } from '../utils/currency';
@@ -123,12 +123,36 @@ const Catalog: React.FC<CatalogProps> = ({
   };
 
   const filteredProducts = useMemo(() => {
+    // Early return for empty search and no filters
+    if (!searchQuery && selectedCategories.length === 0 && selectedScales.length === 0) {
+      return products.sort((a, b) => {
+        switch (sortOption) {
+          case 'price-asc': return a.price - b.price;
+          case 'price-desc': return b.price - a.price;
+          case 'newest':
+          default: return Number(b.id) - Number(a.id);
+        }
+      });
+    }
+
+    const searchLower = searchQuery.toLowerCase();
+    
     return products.filter(product => {
-      const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.category.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(product.category);
-      const matchesScale = selectedScales.length === 0 || selectedScales.includes(product.scale);
-      return matchesSearch && matchesCategory && matchesScale;
+      // Quick checks first
+      if (selectedCategories.length > 0 && !selectedCategories.includes(product.category)) {
+        return false;
+      }
+      if (selectedScales.length > 0 && !selectedScales.includes(product.scale)) {
+        return false;
+      }
+      
+      // Search check only if there's a search query
+      if (searchQuery) {
+        return product.name.toLowerCase().includes(searchLower) ||
+          product.category.toLowerCase().includes(searchLower);
+      }
+      
+      return true;
     }).sort((a, b) => {
       switch (sortOption) {
         case 'price-asc': return a.price - b.price;
@@ -146,7 +170,11 @@ const Catalog: React.FC<CatalogProps> = ({
     currentPage * ITEMS_PER_PAGE
   );
 
-  const FilterContent = () => (
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  }, []);
+
+  const FilterContent = useMemo(() => (
     <Box sx={{ p: 3, height: '100%', overflowY: 'auto', background: (theme) => `linear-gradient(to bottom, ${alpha(theme.palette.background.paper, 0.9)}, ${theme.palette.background.default})` }}>
       {isMobile && (
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -164,7 +192,7 @@ const Catalog: React.FC<CatalogProps> = ({
           variant="outlined"
           placeholder="Buscar en los archivos..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={handleSearchChange}
           slotProps={{
             input: {
               startAdornment: <InputAdornment position="start"><Search color="secondary" /></InputAdornment>,
@@ -218,7 +246,7 @@ const Catalog: React.FC<CatalogProps> = ({
         Reiniciar Índice
       </Button>
     </Box>
-  );
+  ), [searchQuery, isMobile, selectedCategories, selectedScales, handleSearchChange, handleReset]);
 
   return (
     <Container maxWidth="xl" sx={{ py: 6, px: { xs: 2, lg: 8 } }}>
@@ -255,7 +283,7 @@ const Catalog: React.FC<CatalogProps> = ({
         {/* Sidebar - Desktop */}
         <Grid size={{ xs: 12, lg: 3 }} sx={{ display: { xs: 'none', lg: 'block' } }}>
           <Paper sx={{ border: 1, borderColor: (theme) => alpha(theme.palette.secondary.main, 0.3), bgcolor: 'background.paper', position: 'sticky', top: 100, boxShadow: (theme) => `0 0 40px ${alpha(theme.palette.common.black, 0.5)}, inset 0 0 30px ${alpha(theme.palette.common.black, 0.3)}` }}>
-            <FilterContent />
+            {FilterContent}
           </Paper>
         </Grid>
 
@@ -271,7 +299,7 @@ const Catalog: React.FC<CatalogProps> = ({
             Index Search & Filtros
           </Button>
           <Drawer open={showFilters} onClose={() => setShowFilters(false)} PaperProps={{ sx: { width: 300, bgcolor: 'background.default' } }}>
-            <FilterContent />
+            {FilterContent}
           </Drawer>
         </Grid>
 

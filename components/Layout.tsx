@@ -398,9 +398,9 @@ const Layout: React.FC<LayoutProps> = ({
                                   </ListItem>
                                 </>
                               ) : (
-                                <ListItem>
-                                  <ListItemText secondary={`No se encontraron artefactos que coincidan con "${searchInput}"`} sx={{ fontStyle: 'italic', textAlign: 'center' }} />
-                                </ListItem>
+                                  <ListItem>
+                                    <ListItemText secondary={`No se encontraron artefactos que coincidan con "${searchInput}"`} sx={{ fontStyle: 'italic', textAlign: 'center' }} />
+                                  </ListItem>
                               )}
                             </List>
                           </Paper>
