@@ -16,7 +16,8 @@ import {
   CardContent,
   CardActions,
   alpha,
-  useTheme
+  useTheme,
+  Tooltip
 } from '@mui/material';
 import { Favorite, Delete, BookmarkRemove, Backpack } from '@mui/icons-material';
 import { SectionHeader } from '../components/StyledComponents';
@@ -78,13 +79,14 @@ const Wishlist: React.FC<WishlistProps> = ({ products, setView, onProductClick, 
               >
                 <Box sx={{ position: 'relative', pt: '100%', overflow: 'hidden', borderBottom: 1, borderColor: 'common.black' }}>
                   <Box sx={{ position: 'absolute', inset: 0, backgroundImage: `url("${product.image}")`, backgroundSize: 'cover', backgroundPosition: 'center', transition: 'transform 0.5s', '&:hover': { transform: 'scale(1.1)' } }} />
-                  <IconButton
-                    onClick={(e) => { e.stopPropagation(); toggleWishlist(product.id); }}
-                    sx={{ position: 'absolute', top: 8, right: 8, bgcolor: (t) => alpha(t.palette.common.black, 0.5), backdropFilter: 'blur(4px)', color: 'error.main', '&:hover': { bgcolor: 'error.dark', color: 'common.white' }, zIndex: 1 }}
-                    title="Eliminar de la Lista de Deseos"
-                  >
-                    <Delete fontSize="small" />
-                  </IconButton>
+                  <Tooltip title="Eliminar de la Lista de Deseos" arrow>
+                    <IconButton
+                      onClick={(e) => { e.stopPropagation(); toggleWishlist(product.id); }}
+                      sx={{ position: 'absolute', top: 8, right: 8, bgcolor: (t) => alpha(t.palette.common.black, 0.5), backdropFilter: 'blur(4px)', color: 'error.main', '&:hover': { bgcolor: 'error.dark', color: 'common.white' }, zIndex: 1 }}
+                    >
+                      <Delete fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
                 </Box>
 
                 <CardContent>

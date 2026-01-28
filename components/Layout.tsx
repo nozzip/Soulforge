@@ -6,7 +6,7 @@ import {
   AppBar, Toolbar, IconButton, Button, InputBase, Badge,
   Menu, MenuItem, Drawer, List, ListItem, ListItemText, ListItemButton,
   Box, Typography, useTheme, Container, ListItemIcon,
-  Paper, ClickAwayListener, Backdrop, Fade, ListSubheader
+  Paper, ClickAwayListener, Backdrop, Fade, ListSubheader, Tooltip
 } from '@mui/material';
 import { styled, alpha } from '@mui/material/styles';
 import {
@@ -132,6 +132,8 @@ const Layout: React.FC<LayoutProps> = ({
   useEffect(() => {
     console.log("Layout received isAdmin:", isAdmin, "for user:", user);
   }, [isAdmin, user]);
+
+
   const theme = useTheme();
   const { totalItems } = useCart();
   const [searchInput, setSearchInput] = useState('');
@@ -303,44 +305,44 @@ const Layout: React.FC<LayoutProps> = ({
             {/* Desktop Nav */}
             {!isCheckout && (
               <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' }, ml: 4, gap: 2 }}>
-                <Button
-                  onClick={() => setView(ViewState.CATALOG)}
-                  sx={{
-                    my: 2,
-                    color: currentView === ViewState.CATALOG ? 'primary.main' : 'common.white',
-                    display: 'block',
-                    letterSpacing: 2,
-                    borderBottom: currentView === ViewState.CATALOG ? 2 : 0,
-                    borderColor: 'primary.main',
-                    '&:hover': {
-                      color: 'secondary.main',
-                      bgcolor: 'transparent',
-                      transform: 'none',
-                    }
-                  }}
-                >
-                  Catálogo
-                </Button>
+                 <Button
+                   onClick={() => setView(ViewState.CATALOG)}
+                   sx={{
+                     my: 2,
+                     color: currentView === ViewState.CATALOG ? 'primary.main' : 'common.white',
+                     display: 'block',
+                     letterSpacing: 2,
+                     borderBottom: currentView === ViewState.CATALOG ? 2 : 0,
+                     borderColor: 'primary.main',
+                     '&:hover': {
+                       color: 'secondary.main',
+                       bgcolor: 'transparent',
+                       transform: 'none',
+                     }
+                   }}
+                 >
+                   Catálogo
+                 </Button>
 {isAdmin && (
-                <Button
-                  onClick={() => setView(ViewState.ADMIN)}
-                  startIcon={<ConstructionIcon />}
-                  sx={{
-                    my: 2,
-                    color: currentView === ViewState.ADMIN ? 'primary.main' : 'common.white',
-                    display: 'flex',
-                    letterSpacing: 2,
-                    borderBottom: currentView === ViewState.ADMIN ? 2 : 0,
-                    borderColor: 'primary.main',
-                    '&:hover': {
-                      color: 'secondary.main',
-                      bgcolor: 'transparent',
-                      transform: 'none',
-                    }
-                  }}
-                >
-                  Admin
-                </Button>
+                 <Button
+                   onClick={() => setView(ViewState.ADMIN)}
+                   startIcon={<ConstructionIcon />}
+                   sx={{
+                     my: 2,
+                     color: currentView === ViewState.ADMIN ? 'primary.main' : 'common.white',
+                     display: 'flex',
+                     letterSpacing: 2,
+                     borderBottom: currentView === ViewState.ADMIN ? 2 : 0,
+                     borderColor: 'primary.main',
+                     '&:hover': {
+                       color: 'secondary.main',
+                       bgcolor: 'transparent',
+                       transform: 'none',
+                     }
+                   }}
+                 >
+                   Admin
+                 </Button>
                 )}
               </Box>
             )}
@@ -353,24 +355,35 @@ const Layout: React.FC<LayoutProps> = ({
                   <Box sx={{ display: { xs: 'none', md: 'block' } }} ref={searchContainerRef}>
                     <ClickAwayListener onClickAway={() => setIsFocused(false)}>
                       <Box>
-                        <Search>
-                          <SearchIconWrapper>
-                            <SearchIcon />
-                          </SearchIconWrapper>
-                          <StyledInputBase
-                            placeholder="Buscar en los archivos..."
-                            inputProps={{ 'aria-label': 'search' }}
-                            value={searchInput}
-                            onChange={(e) => setSearchInput(e.target.value)}
-                            onFocus={() => setIsFocused(true)}
-                            onKeyDown={handleKeyDown}
-                          />
+                         <Search>
+                           <SearchIconWrapper>
+                             <SearchIcon />
+                           </SearchIconWrapper>
+                           <StyledInputBase
+                             placeholder="Buscar en los archivos..."
+                             inputProps={{ 'aria-label': 'search' }}
+                             value={searchInput}
+                             onChange={(e) => setSearchInput(e.target.value)}
+                             onFocus={() => setIsFocused(true)}
+                             onKeyDown={handleKeyDown}
+                           />
                           <IconButton
                             size="small"
-                            sx={{ position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)', color: 'secondary.main' }}
+                            sx={{ 
+                              position: 'absolute', 
+                              right: 4, 
+                              top: '50%', 
+                              transform: 'translateY(-50%)', 
+                              color: 'secondary.main',
+                              transition: 'none',
+                              '&:hover': {
+                                transform: 'translateY(-50%)',
+                                color: 'secondary.main'
+                              }
+                            }}
                             onClick={handleSearchClick}
                           >
-                            <ArrowForwardIcon fontSize="small" />
+                            <ArrowForwardIcon fontSize="small" sx={{ transition: 'none' }} />
                           </IconButton>
                         </Search>
 
@@ -410,22 +423,28 @@ const Layout: React.FC<LayoutProps> = ({
                   </Box>
 
                   {/* Theme Toggle */}
-                  <IconButton onClick={onToggleTheme} color="inherit" title={isWarhammer ? "Volver a Fantasía" : "Activar Protocolo Grimdark"}>
-                    {isWarhammer ? <ConstructionIcon /> : <TokenIcon /> /* TODO: Better icons for skull/swords */}
-                  </IconButton>
+                  <Tooltip title={isWarhammer ? "Volver a Fantasía" : "Activar Protocolo Grimdark"} arrow>
+                    <IconButton onClick={onToggleTheme} color="inherit">
+                      {isWarhammer ? <ConstructionIcon /> : <TokenIcon /> /* TODO: Better icons for skull/swords */}
+                    </IconButton>
+                  </Tooltip>
 
                   {/* Cart */}
-                  <IconButton onClick={() => setView(ViewState.CART)} color="inherit">
-                    <Badge badgeContent={totalItems} color="primary">
-                      <TreasureChestIcon />
-                    </Badge>
-                  </IconButton>
+                  <Tooltip title="Tu Botín" arrow>
+                    <IconButton onClick={() => setView(ViewState.CART)} color="inherit">
+                      <Badge badgeContent={totalItems} color="primary">
+                        <TreasureChestIcon />
+                      </Badge>
+                    </IconButton>
+                  </Tooltip>
 
                   {/* User Menu */}
                   <Box sx={{ flexGrow: 0, display: { xs: 'none', md: 'flex' } }}>
-                    <IconButton onClick={handleOpenUserMenu} sx={{ p: 0.5, ml: 1, border: user ? 1 : 0, borderColor: 'secondary.main', borderRadius: '50%' }}>
-                      <PersonIcon sx={{ color: user ? 'secondary.main' : 'inherit' }} />
-                    </IconButton>
+                    <Tooltip title={user ? "Mi Cuenta" : "Iniciar Sesión"} arrow>
+                      <IconButton onClick={handleOpenUserMenu} sx={{ p: 0.5, ml: 1, border: user ? 1 : 0, borderColor: 'secondary.main', borderRadius: '50%' }}>
+                        <PersonIcon sx={{ color: user ? 'secondary.main' : 'inherit' }} />
+                      </IconButton>
+                    </Tooltip>
                     <Menu
                       sx={{ mt: '45px' }}
                       id="menu-appbar"

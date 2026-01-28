@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ViewState } from '../types';
 import { Box, Typography, Button, Container, Grid, Paper, IconButton, alpha } from '@mui/material';
 import { styled, keyframes, useTheme } from '@mui/material/styles';
-import { ChevronLeft, ChevronRight, MenuBook, AutoAwesome, Straighten, Science, Hub } from '@mui/icons-material';
+import { ChevronLeft, ChevronRight, MenuBook, AutoAwesome, Straighten, Science, Hub, KeyboardArrowDown } from '@mui/icons-material';
 import { RuneDivider, CornerFlourish } from '../components/StyledComponents';
 
 interface HomeProps {
@@ -58,6 +58,17 @@ const logoFade = keyframes`
 const borderGlow = keyframes`
   0%, 100% { box-shadow: 0 0 20px rgba(197, 160, 89, 0.3), inset 0 0 20px rgba(0,0,0,0.3); }
   50% { box-shadow: 0 0 40px rgba(197, 160, 89, 0.5), inset 0 0 30px rgba(0,0,0,0.4); }
+`;
+
+const bounce = keyframes`
+  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-10px); }
+  60% { transform: translateY(-5px); }
+`;
+
+const pulse = keyframes`
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 `;
 
 const textReveal = keyframes`
@@ -314,6 +325,28 @@ const Home: React.FC<HomeProps> = ({ setView }) => {
         </Container>
       </Box>
 
+      {/* Scroll Indicator */}
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center', 
+        py: 4,
+        animation: 'pulse 2s infinite'
+      }}>
+        <Typography variant="body2" sx={{ color: 'secondary.main', mb: 2, letterSpacing: '0.2em', textTransform: 'uppercase' }}>
+          Explorar más
+        </Typography>
+        <KeyboardArrowDown 
+          sx={{ 
+            fontSize: 40, 
+            color: 'secondary.main',
+            animation: 'bounce 2s infinite',
+            cursor: 'pointer'
+          }}
+          onClick={() => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })}
+        />
+      </Box>
+
       {/* Decorative Divider */}
       <ScrollReveal>
         <RuneDivider variant="section" glowing />
@@ -385,8 +418,32 @@ const Home: React.FC<HomeProps> = ({ setView }) => {
         </Container>
       </Box>
 
+      {/* Scroll Indicator after Collections */}
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        py: 2,
+        bgcolor: 'background.default'
+      }}>
+        <KeyboardArrowDown 
+          sx={{ 
+            fontSize: 30, 
+            color: 'secondary.main',
+            animation: 'bounce 2s infinite',
+            cursor: 'pointer',
+            opacity: 0.6
+          }}
+          onClick={() => {
+            const nextSection = document.querySelector('[data-section="rift-chronicles"]');
+            if (nextSection) {
+              nextSection.scrollIntoView({ behavior: 'smooth' });
+            }
+          }}
+        />
+      </Box>
+
       {/* Rift Chronicles Section */}
-      <Box sx={{ position: 'relative', py: 12, px: { xs: 2, lg: 10 }, overflow: 'hidden', bgcolor: 'background.default', borderTop: 1, borderColor: 'rgba(197, 160, 89, 0.2)' }}>
+      <Box data-section="rift-chronicles" sx={{ position: 'relative', py: 12, px: { xs: 2, lg: 10 }, overflow: 'hidden', bgcolor: 'background.default', borderTop: 1, borderColor: 'rgba(197, 160, 89, 0.2)' }}>
         {/* Background Effects */}
         <Box sx={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at center, #2e1065, #1a0b2e, #000000)', opacity: 0.6, zIndex: 0 }} />
 

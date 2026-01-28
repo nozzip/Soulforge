@@ -1,0 +1,15 @@
+{
+  "name": "resinforge-import",
+  "version": "1.0.0",
+  "description": "Script para importar productos de Google Drive a Supabase",
+  "main": "import-products.js",
+  "scripts": {
+    "import": "node import-products.cjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.91.0",
+    "axios": "^1.7.9",
+    "csv-parser": "^3.0.0",
+    "dotenv": "^16.4.7"
+  }
+}

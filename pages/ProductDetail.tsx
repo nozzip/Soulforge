@@ -28,7 +28,8 @@ import {
   Skeleton,
   alpha,
   Dialog,
-  DialogContent
+  DialogContent,
+  Tooltip
 } from '@mui/material';
 import {
   ArrowBack,
@@ -697,14 +698,15 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setV
                 <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, p: 1.5, background: 'linear-gradient(transparent, rgba(0,0,0,0.8))', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Typography variant="caption" sx={{ color: 'white', fontWeight: 'bold' }}>{img.user}</Typography>
                   {isAdmin && (
-                    <IconButton
-                      size="small"
-                      onClick={(e) => { e.stopPropagation(); handleDeleteReview(img.reviewId); }}
-                      sx={{ color: 'grey.400', p: 0.5, '&:hover': { color: 'error.main' } }}
-                      title="Eliminar imagen (Admin)"
-                    >
-                      <Delete sx={{ fontSize: 16 }} />
-                    </IconButton>
+                    <Tooltip title="Eliminar imagen (Admin)" arrow>
+                      <IconButton
+                        size="small"
+                        onClick={(e) => { e.stopPropagation(); handleDeleteReview(img.reviewId); }}
+                        sx={{ color: 'grey.400', p: 0.5, '&:hover': { color: 'error.main' } }}
+                      >
+                        <Delete sx={{ fontSize: 16 }} />
+                      </IconButton>
+                    </Tooltip>
                   )}
                 </Box>
               </Box>
@@ -836,14 +838,15 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setV
                 reviews.map(review => (
                   <Paper key={review.id} elevation={0} sx={{ p: 3, bgcolor: 'background.paper', border: 1, borderColor: 'rgba(197, 160, 89, 0.1)', position: 'relative' }}>
                     {isAdmin && (
-                      <IconButton
-                        size="small"
-                        onClick={() => handleDeleteReview(review.id)}
-                        sx={{ position: 'absolute', top: 8, right: 8, color: 'grey.600', '&:hover': { color: 'error.main' } }}
-                        title="Eliminar crónica (Admin)"
-                      >
-                        <Delete fontSize="small" />
-                      </IconButton>
+                      <Tooltip title="Eliminar crónica (Admin)" arrow>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleDeleteReview(review.id)}
+                          sx={{ position: 'absolute', top: 8, right: 8, color: 'grey.600', '&:hover': { color: 'error.main' } }}
+                        >
+                          <Delete fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
                     )}
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                       <Box sx={{ display: 'flex', gap: 2 }}>

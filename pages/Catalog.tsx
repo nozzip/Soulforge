@@ -31,7 +31,8 @@ import {
   Paper,
   useMediaQuery,
   useTheme,
-  alpha
+  alpha,
+  Tooltip
 } from '@mui/material';
 import { Search, FilterList, Add, Favorite, FavoriteBorder, Public, Straighten, AutoStories, SentimentDissatisfied, Close } from '@mui/icons-material';
 
@@ -387,20 +388,21 @@ const Catalog: React.FC<CatalogProps> = ({
 
                         <CardActions sx={{ justifyContent: 'space-between', px: 2, pt: 0, pb: 2, borderTop: '1px dashed', borderColor: (theme) => alpha(theme.palette.common.white, 0.1), mt: 2 }}>
                           <Typography variant="h6" color="secondary.main" sx={{ fontWeight: 'bold' }}>{formatCurrency(product.price)}</Typography>
-                          <IconButton
-                            onClick={(e) => { e.stopPropagation(); addToCart(product); }}
-                            color="primary"
-                            sx={{
-                              bgcolor: 'primary.dark',
-                              color: 'white',
-                              width: 40, height: 40,
-                              boxShadow: 3,
-                              '&:hover': { bgcolor: 'primary.main', transform: 'scale(1.1)' }
-                            }}
-                            title="Añadir al Tesoro"
-                          >
-                            <Add />
-                          </IconButton>
+                          <Tooltip title="Añadir al Tesoro" arrow>
+                            <IconButton
+                              onClick={(e) => { e.stopPropagation(); addToCart(product); }}
+                              color="primary"
+                              sx={{
+                                bgcolor: 'primary.dark',
+                                color: 'white',
+                                width: 40, height: 40,
+                                boxShadow: 3,
+                                '&:hover': { bgcolor: 'primary.main', transform: 'scale(1.1)' }
+                              }}
+                            >
+                              <Add />
+                            </IconButton>
+                          </Tooltip>
                         </CardActions>
                       </Card>
                     </Grid>
