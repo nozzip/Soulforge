@@ -48,6 +48,14 @@ import {
   Group,
   Grid4x4,
   Opacity,
+  VpnKey,
+  Category,
+  Person,
+  BugReport,
+  Gavel,
+  Straighten,
+  ShoppingCart,
+  AddShoppingCart,
   Collections,
   Delete,
   Brush
@@ -71,6 +79,7 @@ interface ProductDetailProps {
   toggleWishlist: (id: string) => void;
   isAdmin?: boolean;
   user?: { name: string; id: string } | null;
+  onUpdateProduct?: (product: Product) => void;
 }
 
 // Helper to format dates
@@ -79,7 +88,7 @@ const formatRelativeDate = (dateString: string): string => {
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  
+
   if (diffDays === 0) return 'Hoy';
   if (diffDays === 1) return 'Ayer';
   if (diffDays < 7) return `hace ${diffDays} días`;
@@ -88,18 +97,18 @@ const formatRelativeDate = (dateString: string): string => {
 };
 
 // Helper for the tactical grid - using pure CSS/Box for grid
-const BattlemapFootprint = ({ scale }: { scale: string }) => {
-  const size = useMemo(() => {
-    const s = scale.toLowerCase();
+const BattlemapFootprint = ({ size }: { size: string }) => {
+  const footprintSize = useMemo(() => {
+    const s = size.toLowerCase();
     if (s.includes('mediano') || s.includes('pequeño') || s.includes('medium') || s.includes('small')) return 1;
     if (s.includes('grande') || s.includes('large')) return 2;
     if (s.includes('enorme') || s.includes('huge')) return 3;
     if (s.includes('gargantuesco') || s.includes('gargantuan')) return 4;
     if (s.includes('colosal') || s.includes('colossal')) return 5;
     return 1;
-  }, [scale]);
+  }, [size]);
 
-  const totalSquares = size * size;
+  const totalSquares = footprintSize * footprintSize;
 
   return (
     <Box sx={{ mb: 5, p: 3, bgcolor: 'rgba(0,0,0,0.4)', border: 1, borderColor: 'rgba(197, 160, 89, 0.2)', borderRadius: 2, display: 'flex', alignItems: 'center', gap: 3, position: 'relative', overflow: 'hidden' }}>
@@ -109,8 +118,8 @@ const BattlemapFootprint = ({ scale }: { scale: string }) => {
           const row = Math.floor(i / 5);
           const col = i % 5;
           // Center the footprint
-          const offset = Math.floor((5 - size) / 2);
-          const isActive = row >= offset && row < offset + size && col >= offset && col < offset + size;
+          const offset = Math.floor((5 - footprintSize) / 2);
+          const isActive = row >= offset && row < offset + footprintSize && col >= offset && col < offset + footprintSize;
 
           return (
             <Box
@@ -134,10 +143,10 @@ const BattlemapFootprint = ({ scale }: { scale: string }) => {
             borderRadius: '2px',
             pointerEvents: 'none',
             transition: 'all 0.5s',
-            width: `${(size / 5) * 100}%`,
-            height: `${(size / 5) * 100}%`,
-            top: `${(Math.floor((5 - size) / 2) / 5) * 100}%`,
-            left: `${(Math.floor((5 - size) / 2) / 5) * 100}%`,
+            width: `${(footprintSize / 5) * 100}%`,
+            height: `${(footprintSize / 5) * 100}%`,
+            top: `${(Math.floor((5 - footprintSize) / 2) / 5) * 100}%`,
+            left: `${(Math.floor((5 - footprintSize) / 2) / 5) * 100}%`,
           }}
         >
           <Box sx={{ position: 'absolute', inset: 0, bgcolor: 'primary.main', opacity: 0.2, animation: 'pulse 2s infinite' }} />
@@ -153,7 +162,7 @@ const BattlemapFootprint = ({ scale }: { scale: string }) => {
         </Box>
         <Stack spacing={0.5}>
           <Typography variant="caption" sx={{ color: 'grey.400', fontStyle: 'italic' }}>
-            Este artefacto de escala {scale} ocupa una presencia de <Box component="span" sx={{ color: 'secondary.main', fontWeight: 'bold' }}>{size}x{size}</Box> en una cuadrícula táctica estándar de 1".
+            Este artefacto de escala {size} ocupa una presencia de <Box component="span" sx={{ color: 'secondary.main', fontWeight: 'bold' }}>{footprintSize}x{footprintSize}</Box> en una cuadrícula táctica estándar de 1".
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
             <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: 'primary.main' }} />
@@ -195,10 +204,38 @@ const ProductDetailSkeleton = () => (
   </Container>
 );
 
-const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setView, wishlist, toggleWishlist, isAdmin = false, user = null }) => {
+const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setView, wishlist, toggleWishlist, isAdmin = false, user = null, onUpdateProduct }) => {
   const { addToCart } = useCart();
-  const product = products.find(p => p.id === productId);
-  const isWishlisted = product ? wishlist.includes(product.id) : false;
+  const [currentProductId, setCurrentProductId] = useState(productId);
+
+  // The Set/Base context
+  const initialProduct = products.find(p => p.id === productId);
+  const product = useMemo(() => {
+    if (!initialProduct) return initialProduct;
+    if (initialProduct.set_name && initialProduct.set_name !== 'Sin set') {
+      const setProducts = products.filter(p => p.set_name === initialProduct.set_name);
+      const header = setProducts.find(p => p.name.toLowerCase().includes('header')) || initialProduct;
+      const others = setProducts.filter(p => p.id !== header.id);
+      return {
+        ...header,
+        subItems: others.map(item => ({
+          id: item.id,
+          name: item.name,
+          image: item.image,
+          description: item.description
+        })).sort((a, b) => a.name.localeCompare(b.name))
+      };
+    }
+    return initialProduct;
+  }, [initialProduct, products]);
+
+  // The actual item being viewed
+  const activeProduct = useMemo(() =>
+    products.find(p => p.id === currentProductId) || product,
+    [currentProductId, products, product]
+  );
+
+  const isWishlisted = activeProduct ? wishlist.includes(activeProduct.id) : false;
 
   // Loading State
   const [isLoading, setIsLoading] = useState(true);
@@ -209,6 +246,11 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setV
 
   // State for zoom effect
   const [zoomProps, setZoomProps] = useState({ x: 0, y: 0, show: false });
+
+  // Admin Edit State
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState<Partial<Product>>({});
+  const [isSaving, setIsSaving] = useState(false);
 
   // State for Reviews
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -256,19 +298,19 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setV
 
   // Community Gallery Images (derived from reviews with images)
   const communityImages = useMemo(() => {
-    return reviews.filter(r => r.image).map(r => ({ 
-      url: r.image!, 
+    return reviews.filter(r => r.image).map(r => ({
+      url: r.image!,
       user: r.user_name,
-      reviewId: r.id 
+      reviewId: r.id
     }));
   }, [reviews]);
 
-  // Sync main image
+  // Sync main image when active product changes
   useEffect(() => {
-    if (product) {
-      setDisplayImageUrl(product.image);
+    if (activeProduct) {
+      setDisplayImageUrl(activeProduct.image);
     }
-  }, [product]);
+  }, [activeProduct]);
 
   // Simulate loading delay
   useEffect(() => {
@@ -297,29 +339,79 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setV
   }, [product, products]);
 
   // Structured gallery data with names for the chips
-  const galleryViews = useMemo(() => {
+  const galleryItems = useMemo(() => {
     if (!product) return [];
-    const views = [
-      { name: "Vista Frontal", url: product.image },
-      { name: "Perfil Lateral", url: product.image },
-      { name: "Detalle", url: product.image }
+    return [
+      { url: product.image, label: 'Forja 12k' },
+      ...communityImages.map(img => ({ url: img.url, label: `Gesta de ${img.user}` }))
     ];
-    // Add sub-items if they have unique images
-    if (product.subItems) {
+  }, [product, communityImages]);
+
+  const handleEditToggle = () => {
+    if (!isEditing && product) {
+      setEditForm({ ...product });
+    }
+    setIsEditing(!isEditing);
+  };
+
+  const handleEditChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setEditForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSave = async () => {
+    if (!product || !onUpdateProduct) return;
+    setIsSaving(true);
+
+    // Convert price to number if it's a string
+    const updatedData = {
+      ...editForm,
+      price: typeof editForm.price === 'string' ? parseFloat(editForm.price) : editForm.price
+    };
+
+    const { data, error } = await supabase
+      .from('products')
+      .update(updatedData)
+      .eq('id', product.id)
+      .select();
+
+    if (error) {
+      alert("Error al guardar cambios: " + error.message);
+    } else if (data && data[0]) {
+      onUpdateProduct(data[0] as Product);
+      setIsEditing(false);
+    }
+    setIsSaving(false);
+  };
+  const galleryViews = useMemo(() => {
+    if (!activeProduct) return [];
+    const views: { name: string; url: string; id?: string }[] = [
+      { name: "Principal", url: activeProduct.image, id: activeProduct.id }
+    ];
+    // Add sub-items images from the set context (product)
+    if (product?.subItems) {
       product.subItems.forEach(item => {
-        if (item.image && item.image !== product.image) {
-          views.push({ name: item.name, url: item.image });
+        if (item.image && item.image !== activeProduct.image) {
+          views.push({ name: item.name, url: item.image, id: item.id });
         }
       });
     }
+    // If we're viewing a set member, we should also include the header image if it's different
+    if (product && product.id !== activeProduct.id) {
+      views.push({ name: product.name, url: product.image, id: product.id });
+    }
     return views;
-  }, [product]);
+  }, [activeProduct, product]);
 
   const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
     const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
     const x = ((e.clientX - left) / width) * 100;
     const y = ((e.clientY - top) / height) * 100;
-    setZoomProps({ x, y, show: true });
+
+    // Check if cursor is in navigation gutters (15% each side)
+    const isInGutter = galleryViews.length > 1 && (x < 15 || x > 85);
+
+    setZoomProps({ x, y, show: !isInGutter });
   };
 
   const handleMouseLeave = () => {
@@ -330,26 +422,48 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setV
     e?.stopPropagation();
     const nextIdx = (activeImageIndex + 1) % galleryViews.length;
     setActiveImageIndex(nextIdx);
-    setDisplayImageUrl(galleryViews[nextIdx].url);
+    const view = galleryViews[nextIdx];
+    setDisplayImageUrl(view.url);
+    if (view.id) setCurrentProductId(view.id);
   };
 
   const prevImage = (e?: React.MouseEvent) => {
     e?.stopPropagation();
     const prevIdx = (activeImageIndex - 1 + galleryViews.length) % galleryViews.length;
     setActiveImageIndex(prevIdx);
-    setDisplayImageUrl(galleryViews[prevIdx].url);
+    const view = galleryViews[prevIdx];
+    setDisplayImageUrl(view.url);
+    if (view.id) setCurrentProductId(view.id);
   };
 
   const selectView = (idx: number) => {
     setActiveImageIndex(idx);
-    setDisplayImageUrl(galleryViews[idx].url);
+    const view = galleryViews[idx];
+    setDisplayImageUrl(view.url);
+    if (view.id) setCurrentProductId(view.id);
   };
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (galleryViews.length <= 1) return;
+
+      if (e.key === 'ArrowLeft') {
+        prevImage();
+      } else if (e.key === 'ArrowRight') {
+        nextImage();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [galleryViews, nextImage, prevImage]);
 
   // Review Handlers
   const handleImageUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      
+
       try {
         const imageData = await safeReadImageAsDataURL(file, 5); // 5MB max
         setNewReview(prev => ({ ...prev, image: imageData }));
@@ -410,7 +524,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setV
 
   const handleDeleteReview = async (reviewId: string) => {
     if (!confirm('¿Estás seguro de eliminar esta crónica?')) return;
-    
+
     const { error } = await supabase
       .from('product_reviews')
       .delete()
@@ -443,18 +557,12 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setV
   return (
     <Container maxWidth="xl" sx={{ py: 6, px: { xs: 2, lg: 8 } }}>
       {/* Breadcrumb / Back Navigation */}
-      <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Button
-          onClick={() => setView(ViewState.CATALOG)}
-          startIcon={<ArrowBack />}
-          sx={{ color: 'text.secondary', '&:hover': { color: 'secondary.main' } }}
-        >
-          Catálogo
-        </Button>
+      <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 1, color: 'text.secondary', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: 1 }}>
+        <Typography sx={{ cursor: 'pointer', '&:hover': { color: 'primary.main' } }} onClick={() => setView('catalog' as any)}>Catálogo</Typography>
         <Typography color="text.secondary">/</Typography>
-        <Typography color="text.secondary">{product.category}</Typography>
+        <Typography color="text.secondary">{activeProduct.category}</Typography>
         <Typography color="text.secondary">/</Typography>
-        <Typography color="secondary.main" fontWeight="bold" noWrap>{product.name}</Typography>
+        <Typography color="secondary.main" fontWeight="bold" noWrap>{activeProduct.name.replace(/\s*Header\s*/gi, '').trim()}</Typography>
       </Box>
 
       <Grid container spacing={8}>
@@ -489,25 +597,95 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setV
                 }}
               />
 
-              {/* Navigation Arrows */}
+              {/* Navigation Gutters & Arrows */}
               {galleryViews.length > 1 && (
                 <>
-                  <IconButton onClick={prevImage} sx={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', bgcolor: 'rgba(0,0,0,0.6)', color: 'white', '&:hover': { bgcolor: 'primary.main' } }}>
-                    <ChevronLeft />
-                  </IconButton>
-                  <IconButton onClick={nextImage} sx={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', bgcolor: 'rgba(0,0,0,0.6)', color: 'white', '&:hover': { bgcolor: 'primary.main' } }}>
-                    <ChevronRight />
-                  </IconButton>
+                  {/* Left Gutter */}
+                  <Box
+                    onClick={prevImage}
+                    sx={{
+                      position: 'absolute',
+                      left: 0, top: 0, bottom: 0,
+                      width: '15%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      zIndex: 2,
+                      userSelect: 'none',
+                      '&:hover .nav-arrow': { opacity: 1, color: 'primary.main' }
+                    }}
+                  >
+                    <IconButton
+                      className="nav-arrow"
+                      disableRipple
+                      sx={{
+                        bgcolor: 'rgba(0,0,0,0.6)',
+                        color: 'white',
+                        opacity: 0.7,
+                        transition: 'none',
+                        pointerEvents: 'none' // Allow click to pass to gutter
+                      }}
+                    >
+                      <ChevronLeft />
+                    </IconButton>
+                  </Box>
+
+                  {/* Right Gutter */}
+                  <Box
+                    onClick={nextImage}
+                    sx={{
+                      position: 'absolute',
+                      right: 0, top: 0, bottom: 0,
+                      width: '15%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      zIndex: 2,
+                      userSelect: 'none',
+                      '&:hover .nav-arrow': { opacity: 1, color: 'primary.main' }
+                    }}
+                  >
+                    <IconButton
+                      className="nav-arrow"
+                      disableRipple
+                      sx={{
+                        bgcolor: 'rgba(0,0,0,0.6)',
+                        color: 'white',
+                        opacity: 0.7,
+                        transition: 'none',
+                        pointerEvents: 'none' // Allow click to pass to gutter
+                      }}
+                    >
+                      <ChevronRight />
+                    </IconButton>
+                  </Box>
                 </>
               )}
 
               {/* Badges and Hints */}
-              {product.badge && !zoomProps.show && (
-                <Chip label={product.badge} color="primary" sx={{ position: 'absolute', top: 16, right: 16, fontWeight: 'bold', borderRadius: 0 }} />
-              )}
 
               {!zoomProps.show && (
-                <Box sx={{ position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)', bgcolor: 'rgba(0,0,0,0.6)', borderRadius: 4, px: 2, py: 0.5, display: 'flex', alignItems: 'center', gap: 1, backdropFilter: 'blur(4px)', border: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                <Box sx={{
+                  position: 'absolute',
+                  bottom: 16,
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  bgcolor: 'rgba(0,0,0,0.6)',
+                  borderRadius: 4,
+                  px: 2,
+                  py: 0.5,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  backdropFilter: 'blur(4px)',
+                  border: 1,
+                  borderColor: 'rgba(255,255,255,0.1)',
+                  userSelect: 'none',
+                  pointerEvents: 'none',
+                  zIndex: 3
+                }}>
                   <ZoomIn sx={{ fontSize: 16, color: 'white' }} />
                   <Typography variant="caption" sx={{ color: 'white', letterSpacing: 1, textTransform: 'uppercase' }}>Mira de cerca para Inspeccionar</Typography>
                 </Box>
@@ -543,20 +721,55 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setV
         {/* Right Column: Details */}
         <Grid size={{ xs: 12, lg: 6 }}>
           <Box sx={{ mb: 1, display: 'flex', gap: 2, alignItems: 'center' }}>
-            <Chip label={`Escala ${product.scale}`} variant="outlined" color="primary" size="small" sx={{ fontWeight: 'bold' }} />
+            <Chip label={`Escala ${activeProduct.size || 'M'}`} variant="outlined" color="primary" size="small" sx={{ fontWeight: 'bold' }} />
             <Typography variant="caption" color="text.secondary" sx={{ letterSpacing: 1 }}>
-              REF: {product.category.toUpperCase()}-{product.id.padStart(3, '0')}
+              REF: {activeProduct.category.toUpperCase()}-{activeProduct.id.padStart(3, '0')}
             </Typography>
           </Box>
 
-          <Typography variant="h2" sx={{ fontWeight: 'bold', fontStyle: 'italic', mb: 2, color: 'common.white' }}>
-            {product.name}
-          </Typography>
+          {isAdmin && (
+            <Paper sx={{ mb: 3, p: 2, bgcolor: (t) => alpha(t.palette.secondary.main, 0.05), border: 1, borderStyle: 'dashed', borderColor: 'secondary.main', borderRadius: 2 }}>
+              <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
+                <Typography variant="caption" sx={{ color: 'secondary.main', fontWeight: 'bold', letterSpacing: 1 }}>CONTROLES DEL ALTO SUPERVISOR</Typography>
+                <Stack direction="row" spacing={1}>
+                  {!isEditing ? (
+                    <Button size="small" variant="outlined" color="secondary" startIcon={<Brush />} onClick={handleEditToggle}>Editar Pergamino</Button>
+                  ) : (
+                    <>
+                      <Button size="small" variant="contained" color="primary" onClick={handleSave} disabled={isSaving}>{isSaving ? 'Guardando...' : 'Guardar Cambios'}</Button>
+                      <Button size="small" variant="text" color="inherit" onClick={handleEditToggle} disabled={isSaving}>Cancelar</Button>
+                    </>
+                  )}
+                </Stack>
+              </Stack>
+            </Paper>
+          )}
+
+          {isEditing ? (
+            <TextField fullWidth name="name" label="Nombre del Artefacto" value={editForm.name} onChange={handleEditChange} sx={{ mb: 2 }} />
+          ) : (
+            <Typography variant="h2" sx={{
+              fontWeight: 'bold',
+              fontStyle: 'italic',
+              mb: 2,
+              color: 'common.white',
+              minHeight: '8rem', // Safely reserve space for 2 large lines
+              display: 'flex',
+              alignItems: 'flex-start',
+              lineHeight: 1.2
+            }}>
+              {activeProduct.name.replace(/\s*Header\s*/gi, '').trim()}
+            </Typography>
+          )}
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, mb: 4, pb: 4, borderBottom: 1, borderColor: 'rgba(197, 160, 89, 0.1)' }}>
-            <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'secondary.main' }}>
-              {formatCurrency(product.price)}
-            </Typography>
+            {isEditing ? (
+              <TextField name="price" type="number" label="Precio (GP)" value={editForm.price} onChange={handleEditChange} size="small" sx={{ width: 120 }} />
+            ) : (
+              <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'secondary.main' }}>
+                {formatCurrency(activeProduct.price)}
+              </Typography>
+            )}
             <Divider orientation="vertical" flexItem sx={{ bgcolor: 'grey.800' }} />
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Rating value={averageRating} readOnly precision={0.5} emptyIcon={<Star style={{ opacity: 0.3, color: 'grey' }} fontSize="inherit" />} />
@@ -566,84 +779,129 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setV
 
           <Box sx={{ mb: 5 }}>
             <Typography variant="overline" color="secondary.main" fontWeight="bold" letterSpacing={2} display="block" gutterBottom>Lore y Descripción</Typography>
-            <Typography variant="body1" color="text.secondary" paragraph fontStyle="italic" sx={{ opacity: 0.9 }}>
-              "{product.description || "Un raro artefacto recuperado de las mazmorras más profundas. Los detalles de su origen están envueltos en misterio, pero su artesanía es innegable."}"
-            </Typography>
+            {isEditing ? (
+              <TextField fullWidth multiline rows={4} name="description" label="Lore del Artefacto" value={editForm.description} onChange={handleEditChange} />
+            ) : (
+              <Typography variant="body1" color="text.secondary" paragraph fontStyle="italic" sx={{
+                opacity: 0.9,
+                minHeight: '100px', // Reserve space for lore
+                display: 'flex',
+                alignItems: 'flex-start'
+              }}>
+                "{activeProduct.description || "Un raro artefacto recuperado de las mazmorras más profundas. Los detalles de su origen están envueltos en misterio, pero su artesanía es innegable."}"
+              </Typography>
+            )}
           </Box>
 
-          <BattlemapFootprint scale={product.scale} />
-
-          {/* Unit Composition */}
-          {product.subItems && product.subItems.length > 0 && (
-            <Paper elevation={0} sx={{ mb: 5, p: 3, bgcolor: 'background.paper', border: 1, borderColor: 'rgba(197, 160, 89, 0.2)', position: 'relative' }}>
-              <Typography variant="overline" color="common.white" fontWeight="bold" letterSpacing={2} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <AccountTree fontSize="small" color="secondary" /> Composición de la Unidad
-              </Typography>
-              <Grid container spacing={2}>
-                {product.subItems.map((item) => (
-                  <Grid key={item.id} size={{ xs: 3, sm: 2.4 }}>
-                    <Box
-                      onClick={() => item.image && setDisplayImageUrl(item.image)}
-                      sx={{ cursor: 'pointer', textAlign: 'center', '&:hover img': { opacity: 1 }, '&:hover span': { color: 'secondary.main' } }}
-                    >
-                      <Box sx={{ aspectRatio: '1/1', borderRadius: 1, border: 1, borderColor: 'rgba(197, 160, 89, 0.2)', bgcolor: 'black', overflow: 'hidden', mb: 0.5 }}>
-                        <Box component="img" src={item.image || product.image} sx={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.6, transition: 'opacity 0.2s' }} />
-                      </Box>
-                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem', display: 'block', lineHeight: 1, transition: 'color 0.2s' }}>
-                        {item.name}
-                      </Typography>
-                    </Box>
-                  </Grid>
-                ))}
-              </Grid>
-            </Paper>
+          {/* Unit Composition as Chips */}
+          {product?.subItems && product.subItems.length > 0 && (
+            <Box sx={{ mb: 4, display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
+              {/* Header Chip (Principal) */}
+              <Chip
+                label={product.name.replace(/\s*Header\s*/gi, '').trim()}
+                onClick={() => setCurrentProductId(product.id)}
+                variant={activeProduct.id === product.id ? "filled" : "outlined"}
+                color="secondary"
+                sx={{
+                  fontFamily: 'Cinzel',
+                  fontWeight: 'bold',
+                  boxShadow: activeProduct.id === product.id ? (theme) => `0 0 15px ${alpha(theme.palette.secondary.main, 0.3)}` : 'none'
+                }}
+              />
+              {/* Other Set Members */}
+              {product.subItems.map((item) => (
+                <Chip
+                  key={item.id}
+                  label={item.name}
+                  onClick={() => setCurrentProductId(item.id)}
+                  variant={activeProduct.id === item.id ? "filled" : "outlined"}
+                  color="secondary"
+                  sx={{
+                    fontFamily: 'Cinzel',
+                    fontWeight: 600,
+                    boxShadow: activeProduct.id === item.id ? (theme) => `0 0 15px ${alpha(theme.palette.secondary.main, 0.3)}` : 'none'
+                  }}
+                />
+              ))}
+            </Box>
           )}
 
-          
+          <BattlemapFootprint size={activeProduct.size || 'Medium'} />
+          {isEditing && (
+            <Box sx={{ mt: 3, mb: 3 }}>
+              <TextField fullWidth name="designer" label="Gran Maestro (Diseñador)" value={editForm.designer} onChange={handleEditChange} size="small" />
+            </Box>
+          )}
 
-        {/* Specs */}
-        <Paper variant="outlined" sx={{ p: 3, bgcolor: 'transparent', borderColor: 'rgba(197, 160, 89, 0.1)' }}>
-          <Typography variant="overline" color="common.white" fontWeight="bold" letterSpacing={2} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Build fontSize="small" color="secondary" /> Especificaciones Técnicas
-          </Typography>
-          <Grid container spacing={2}>
-            <Grid size={6}>
-              <Typography variant="caption" color="grey.600" display="block">Material</Typography>
-              <Typography variant="body2" color="grey.400">Resina Gris de Alta Fidelidad</Typography>
+          {/* Specs */}
+          <Paper variant="outlined" sx={{ p: 3, bgcolor: 'transparent', borderColor: 'rgba(197, 160, 89, 0.1)' }}>
+            <Typography variant="overline" color="common.white" fontWeight="bold" letterSpacing={2} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Build fontSize="small" color="secondary" /> Especificaciones Técnicas
+            </Typography>
+            <Grid container spacing={2}>
+              {[
+                { label: 'Identificador', value: `#${activeProduct.id.slice(0, 8)}`, icon: <VpnKey fontSize="small" /> },
+                { label: 'Categoría', value: activeProduct.category, icon: <Category fontSize="small" /> },
+                { label: 'Gran Maestro', value: activeProduct.designer, icon: <Person fontSize="small" /> },
+                { label: 'Especie', value: activeProduct.creature_type, icon: <BugReport fontSize="small" /> },
+                { label: 'Arsenales', value: activeProduct.weapon, icon: <Gavel fontSize="small" /> },
+                { label: 'Escala Comandante', value: activeProduct.size, icon: <Straighten fontSize="small" /> },
+              ].map((spec, i) => (
+                <Grid key={i} size={{ xs: 6, sm: 4 }}>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Box sx={{ color: 'secondary.main', display: 'flex' }}>{spec.icon}</Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 1 }}>{spec.label}</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: 'common.white' }}>{spec.value || "Desconocido"}</Typography>
+                    </Box>
+                  </Stack>
+                </Grid>
+              ))}
             </Grid>
-            <Grid size={6}>
-              <Typography variant="caption" color="grey.600" display="block">Tamaño de Base</Typography>
-              <Typography variant="body2" color="grey.400">
-                {(() => {
-                  const scale = product.scale.toLowerCase();
-                  if (scale.includes('huge')) return '75mm';
-                  if (scale.includes('gargantuesco') || scale.includes('gargantuan')) return '100mm';
-                  if (scale.includes('large') || scale.includes('grande')) return '50mm';
-                  if (scale.includes('medium') || scale.includes('mediano')) return '25mm';
-                  if (scale.includes('small') || scale.includes('pequeño')) return '25mm';
-                  return '25mm'; // Default
-                })()}
-              </Typography>
-            </Grid>
-            <Grid size={6}>
-              <Typography variant="caption" color="grey.600" display="block">Montaje</Typography>
-              <Typography variant="body2" color="grey.400">Sin Montar y Sin Pintar</Typography>
-            </Grid>
-            <Grid size={6}>
-              <Typography variant="caption" color="grey.600" display="block">Altura de Capa</Typography>
-              <Typography variant="body2" color="grey.400">0.03mm (30 micras)</Typography>
-            </Grid>
-          </Grid>
-        </Paper>
+          </Paper>
 
-        <Box sx={{ mt: 2, display: 'flex', gap: 1, alignItems: 'flex-start' }}>
-          <LocalShipping fontSize="small" color="secondary" />
-          <Typography variant="caption" color="text.secondary" fontStyle="italic">
-            Embalado con encantamientos protectores (plástico de burbujas) para asegurar su llegada a salvo.
-          </Typography>
-        </Box>
+          <Box sx={{ mt: 2, display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+            <LocalShipping fontSize="small" color="secondary" />
+            <Typography variant="caption" color="text.secondary" fontStyle="italic">
+              Embalado con encantamientos protectores (plástico de burbujas) para asegurar su llegada a salvo.
+            </Typography>
+          </Box>
+          <Box sx={{ mt: 4 }}>
+            <Button
+              variant="contained"
+              size="large"
+              fullWidth
+              startIcon={<ShoppingCart />}
+              onClick={() => {
+                addToCart(activeProduct);
+                setView('cart' as any);
+              }}
+              sx={{ py: 2, fontSize: '1.1rem', mb: 2 }}
+            >
+              Comprar Ahora
+            </Button>
+            <Button
+              variant="outlined"
+              size="large"
+              fullWidth
+              startIcon={<AddShoppingCart />}
+              onClick={() => addToCart(activeProduct)}
+              sx={{ py: 2, fontSize: '1.1rem', mb: 2 }}
+            >
+              Añadir al Carrito
+            </Button>
+            <Button
+              variant="text"
+              fullWidth
+              startIcon={isWishlisted ? <Favorite sx={{ color: 'primary.main' }} /> : <FavoriteBorder />}
+              onClick={() => toggleWishlist(activeProduct.id)}
+              sx={{ py: 1 }}
+            >
+              {isWishlisted ? 'En Lista de Deseos' : 'Añadir a Deseos'}
+            </Button>
+          </Box>
+        </Grid>
       </Grid>
-    </Grid>
 
       {/* Related Artifacts */}
       {relatedProducts.length > 0 && (
@@ -687,10 +945,10 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setV
           <Typography variant="body2" color="grey.500" sx={{ textAlign: 'center', mb: 3, fontStyle: 'italic' }}>
             Obras de arte pintadas por nuestra comunidad de aventureros
           </Typography>
-          <Box sx={{ display: 'flex', gap: 2, overflowX: 'auto', pb: 2, '&::-webkit-scrollbar': { height: 8 }, '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(197, 160, 89, 0.2)', borderRadius: 4 } }}>
+          <Box sx={{ display: 'flex', gap: 2, overflowX: 'auto', pb: 2 }}>
             {communityImages.map((img, i) => (
-              <Box 
-                key={i} 
+              <Box
+                key={i}
                 onClick={() => { setSelectedGalleryImage(img.url); setGalleryOpen(true); }}
                 sx={{ minWidth: 200, maxWidth: 200, position: 'relative', borderRadius: 2, overflow: 'hidden', border: 1, borderColor: 'rgba(197, 160, 89, 0.1)', cursor: 'pointer', '&:hover img': { transform: 'scale(1.1)' } }}
               >
@@ -716,8 +974,8 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setV
       )}
 
       {/* Image Lightbox Dialog */}
-      <Dialog 
-        open={galleryOpen} 
+      <Dialog
+        open={galleryOpen}
         onClose={() => setGalleryOpen(false)}
         maxWidth="lg"
         PaperProps={{ sx: { bgcolor: 'transparent', boxShadow: 'none' } }}
@@ -730,10 +988,10 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setV
             <Close />
           </IconButton>
           {selectedGalleryImage && (
-            <Box 
-              component="img" 
-              src={selectedGalleryImage} 
-              sx={{ maxWidth: '90vw', maxHeight: '80vh', objectFit: 'contain', borderRadius: 2 }} 
+            <Box
+              component="img"
+              src={selectedGalleryImage}
+              sx={{ maxWidth: '90vw', maxHeight: '80vh', objectFit: 'contain', borderRadius: 2 }}
             />
           )}
         </DialogContent>
@@ -860,12 +1118,12 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setV
                     </Box>
                     <Typography variant="body2" color="text.secondary" fontStyle="italic" paragraph>"{review.text}"</Typography>
                     {review.image && (
-                      <Box 
-                        component="img" 
-                        src={review.image} 
-                        alt="User upload" 
+                      <Box
+                        component="img"
+                        src={review.image}
+                        alt="User upload"
                         onClick={() => { setSelectedGalleryImage(review.image); setGalleryOpen(true); }}
-                        sx={{ height: 100, borderRadius: 1, border: 1, borderColor: 'rgba(255,255,255,0.1)', cursor: 'pointer', '&:hover': { opacity: 0.8 } }} 
+                        sx={{ height: 100, borderRadius: 1, border: 1, borderColor: 'rgba(255,255,255,0.1)', cursor: 'pointer', '&:hover': { opacity: 0.8 } }}
                       />
                     )}
                   </Paper>

@@ -15,6 +15,8 @@ FOR INSERT WITH CHECK (
 -- Update tabla de productos para incluir nuevos campos
 ALTER TABLE products 
 ADD COLUMN IF NOT EXISTS set_name TEXT,
+ADD COLUMN IF NOT EXISTS designer TEXT,
+ADD COLUMN IF NOT EXISTS creature_type TEXT,
 ADD COLUMN IF NOT EXISTS mime_type TEXT,
 ADD COLUMN IF NOT EXISTS size TEXT,
 ADD COLUMN IF NOT EXISTS weapon TEXT,
@@ -27,6 +29,8 @@ ADD COLUMN IF NOT EXISTS checked BOOLEAN DEFAULT FALSE; -- Para control de aprob
 CREATE INDEX IF NOT EXISTS idx_products_size ON products(size);
 CREATE INDEX IF NOT EXISTS idx_products_grade ON products(grade);
 CREATE INDEX IF NOT EXISTS idx_products_set_name ON products(set_name);
+CREATE INDEX IF NOT EXISTS idx_products_designer ON products(designer);
+CREATE INDEX IF NOT EXISTS idx_products_creature_type ON products(creature_type);
 CREATE INDEX IF NOT EXISTS idx_products_checked ON products(checked);
 
 -- Constraint para grade (solo permite C, R, L)

@@ -34,7 +34,7 @@ import {
   alpha,
   Tooltip
 } from '@mui/material';
-import { Search, FilterList, Add, Favorite, FavoriteBorder, Public, Straighten, AutoStories, SentimentDissatisfied, Close } from '@mui/icons-material';
+import { Search, FilterList, Add, Favorite, FavoriteBorder, Public, Straighten, AutoStories, SentimentDissatisfied, Close, Delete } from '@mui/icons-material';
 
 import { SectionHeader } from '../components/StyledComponents';
 import ForgeLoader from '../components/ForgeLoader';
@@ -42,12 +42,19 @@ import ForgeLoader from '../components/ForgeLoader';
 interface CatalogProps {
   products: Product[];
   categories: string[];
-  scales: string[];
+  sizes: string[];
   onProductClick: (id: string) => void;
   initialSearchQuery?: string;
   wishlist: string[];
   toggleWishlist: (id: string) => void;
   loading?: boolean;
+  designers?: string[];
+  creatureTypes?: string[];
+  weapons?: string[];
+  isAdmin: boolean;
+  user?: { name: string; id: string } | null;
+  onDeleteProduct?: (id: string) => void;
+  onUpdateProduct?: (product: Product) => void;
 }
 
 const ITEMS_PER_PAGE = 9;
@@ -55,12 +62,17 @@ const ITEMS_PER_PAGE = 9;
 const Catalog: React.FC<CatalogProps> = ({
   products,
   categories,
-  scales,
+  sizes,
   onProductClick,
   initialSearchQuery,
   wishlist,
   toggleWishlist,
-  loading = false
+  loading = false,
+  designers = [],
+  creatureTypes = [],
+  weapons = [],
+  isAdmin,
+  onDeleteProduct
 }) => {
   const { addToCart } = useCart();
   const theme = useTheme();
@@ -68,7 +80,10 @@ const Catalog: React.FC<CatalogProps> = ({
 
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery || '');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [selectedScales, setSelectedScales] = useState<string[]>([]);
+  const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
+  const [selectedDesigners, setSelectedDesigners] = useState<string[]>([]);
+  const [selectedCreatureTypes, setSelectedCreatureTypes] = useState<string[]>([]);
+  const [selectedWeapons, setSelectedWeapons] = useState<string[]>([]);
   const [sortOption, setSortOption] = useState('newest');
 
   // Pagination State
@@ -86,7 +101,7 @@ const Catalog: React.FC<CatalogProps> = ({
   // Reset pagination when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, selectedCategories, selectedScales, sortOption]);
+  }, [searchQuery, selectedCategories, selectedSizes, selectedDesigners, selectedCreatureTypes, selectedWeapons, sortOption]);
 
   const FILTER_GROUPS = [
     {
@@ -96,21 +111,51 @@ const Catalog: React.FC<CatalogProps> = ({
       options: categories
     },
     {
-      id: 'scale',
+      id: 'size',
       title: "Clase de Escala",
       icon: <Straighten fontSize="small" />,
-      options: scales
+      options: sizes
+    },
+    {
+      id: 'designer',
+      title: "Gran Maestro (Diseñador)",
+      icon: <Search fontSize="small" />,
+      options: designers
+    },
+    {
+      id: 'creature_type',
+      title: "Naturaleza de Criatura",
+      icon: <SentimentDissatisfied fontSize="small" />,
+      options: creatureTypes
+    },
+    {
+      id: 'weapon',
+      title: "Arsenales (Armas)",
+      icon: <Search fontSize="small" />,
+      options: weapons
     },
   ];
 
-  const toggleFilter = (type: 'category' | 'scale', value: string) => {
+  const toggleFilter = (type: 'category' | 'size' | 'designer' | 'creature_type', value: string) => {
     if (type === 'category') {
       setSelectedCategories(prev =>
         prev.includes(value) ? prev.filter(c => c !== value) : [...prev, value]
       );
-    } else {
-      setSelectedScales(prev =>
+    } else if (type === 'size') {
+      setSelectedSizes(prev =>
         prev.includes(value) ? prev.filter(s => s !== value) : [...prev, value]
+      );
+    } else if (type === 'designer') {
+      setSelectedDesigners(prev =>
+        prev.includes(value) ? prev.filter(d => d !== value) : [...prev, value]
+      );
+    } else if (type === 'creature_type') {
+      setSelectedCreatureTypes(prev =>
+        prev.includes(value) ? prev.filter(ct => ct !== value) : [...prev, value]
+      );
+    } else if (type === 'weapon') {
+      setSelectedWeapons(prev =>
+        prev.includes(value) ? prev.filter(w => w !== value) : [...prev, value]
       );
     }
   };
@@ -118,14 +163,22 @@ const Catalog: React.FC<CatalogProps> = ({
   const handleReset = () => {
     setSearchQuery('');
     setSelectedCategories([]);
-    setSelectedScales([]);
+    setSelectedSizes([]);
+    setSelectedDesigners([]);
+    setSelectedCreatureTypes([]);
+    setSelectedWeapons([]);
     setSortOption('newest');
     setCurrentPage(1);
   };
 
   const filteredProducts = useMemo(() => {
     // Early return for empty search and no filters
-    if (!searchQuery && selectedCategories.length === 0 && selectedScales.length === 0) {
+    if (!searchQuery &&
+      selectedCategories.length === 0 &&
+      selectedSizes.length === 0 &&
+      selectedDesigners.length === 0 &&
+      selectedCreatureTypes.length === 0 &&
+      selectedWeapons.length === 0) {
       return products.sort((a, b) => {
         switch (sortOption) {
           case 'price-asc': return a.price - b.price;
@@ -137,24 +190,81 @@ const Catalog: React.FC<CatalogProps> = ({
     }
 
     const searchLower = searchQuery.toLowerCase();
-    
-    return products.filter(product => {
+
+    const baseFiltered = products.filter(product => {
       // Quick checks first
       if (selectedCategories.length > 0 && !selectedCategories.includes(product.category)) {
         return false;
       }
-      if (selectedScales.length > 0 && !selectedScales.includes(product.scale)) {
+      if (selectedSizes.length > 0 && product.size && !selectedSizes.includes(product.size)) {
         return false;
       }
-      
+      if (selectedDesigners.length > 0 && product.designer && !selectedDesigners.includes(product.designer)) {
+        return false;
+      }
+      if (selectedCreatureTypes.length > 0 && product.creature_type && !selectedCreatureTypes.includes(product.creature_type)) {
+        return false;
+      }
+      if (selectedWeapons.length > 0) {
+        if (!product.weapon) return false;
+        const productWeapons = product.weapon.split('/').map(w => w.trim());
+        if (!selectedWeapons.some(sw => productWeapons.includes(sw))) {
+          return false;
+        }
+      }
+
       // Search check only if there's a search query
       if (searchQuery) {
         return product.name.toLowerCase().includes(searchLower) ||
-          product.category.toLowerCase().includes(searchLower);
+          product.category.toLowerCase().includes(searchLower) ||
+          (product.designer && product.designer.toLowerCase().includes(searchLower)) ||
+          (product.creature_type && product.creature_type.toLowerCase().includes(searchLower));
       }
-      
+
       return true;
-    }).sort((a, b) => {
+    });
+
+    // Grouping Logic
+    const groupedProducts: Product[] = [];
+    const setsMap = new Map<string, { header?: Product; items: Product[] }>();
+
+    baseFiltered.forEach(p => {
+      if (p.set_name && p.set_name !== 'Sin set') {
+        if (!setsMap.has(p.set_name)) {
+          setsMap.set(p.set_name, { items: [] });
+        }
+        const set = setsMap.get(p.set_name)!;
+        if (p.name.toLowerCase().includes('header')) {
+          set.header = p;
+        } else {
+          set.items.push(p);
+        }
+      } else {
+        groupedProducts.push(p);
+      }
+    });
+
+    // Add sets to the list
+    setsMap.forEach((set, setName) => {
+      if (set.header) {
+        groupedProducts.push({
+          ...set.header,
+          subItems: set.items.map(item => ({
+            id: item.id,
+            name: item.name,
+            image: item.image,
+            description: item.description
+          }))
+        });
+      } else if (set.items.length > 0) {
+        // If no header found, but items exist, show them individually or just the first one?
+        // User said "putting the image that indicates 'Header' as main image", 
+        // which implies there should be one. If not, we fall back to showing them individually.
+        groupedProducts.push(...set.items);
+      }
+    });
+
+    return groupedProducts.sort((a, b) => {
       switch (sortOption) {
         case 'price-asc': return a.price - b.price;
         case 'price-desc': return b.price - a.price;
@@ -162,7 +272,7 @@ const Catalog: React.FC<CatalogProps> = ({
         default: return Number(b.id) - Number(a.id);
       }
     });
-  }, [searchQuery, selectedCategories, selectedScales, sortOption, products]);
+  }, [searchQuery, selectedCategories, selectedSizes, selectedDesigners, selectedCreatureTypes, selectedWeapons, sortOption, products]);
 
   // Pagination Logic
   const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
@@ -210,13 +320,19 @@ const Catalog: React.FC<CatalogProps> = ({
             </Typography>
             <List dense disablePadding sx={{ borderLeft: 1, borderColor: (theme) => alpha(theme.palette.secondary.main, 0.1), pl: 1 }}>
               {group.options.map(opt => {
-                const isSelected = group.id === 'category' ? selectedCategories.includes(opt) : selectedScales.includes(opt);
+                let isSelected = false;
+                if (group.id === 'category') isSelected = selectedCategories.includes(opt);
+                else if (group.id === 'size') isSelected = selectedSizes.includes(opt);
+                else if (group.id === 'designer') isSelected = selectedDesigners.includes(opt);
+                else if (group.id === 'creature_type') isSelected = selectedCreatureTypes.includes(opt);
+                else if (group.id === 'weapon') isSelected = selectedWeapons.includes(opt);
+
                 return (
                   <ListItem
                     key={opt}
                     component="div"
                     disablePadding
-                    onClick={() => toggleFilter(group.id as 'category' | 'scale', opt)}
+                    onClick={() => toggleFilter(group.id as any, opt)}
                     sx={{ cursor: 'pointer', '&:hover': { bgcolor: 'transparent' } }}
                   >
                     <ListItemIcon sx={{ minWidth: 32 }}>
@@ -247,7 +363,7 @@ const Catalog: React.FC<CatalogProps> = ({
         Reiniciar Índice
       </Button>
     </Box>
-  ), [searchQuery, isMobile, selectedCategories, selectedScales, handleSearchChange, handleReset]);
+  ), [searchQuery, isMobile, selectedCategories, selectedSizes, selectedDesigners, selectedCreatureTypes, selectedWeapons, handleSearchChange, handleReset]);
 
   return (
     <Container maxWidth="xl" sx={{ py: 6, px: { xs: 2, lg: 8 } }}>
@@ -356,14 +472,6 @@ const Catalog: React.FC<CatalogProps> = ({
                       >
                         <Box sx={{ position: 'relative', pt: '100%', borderBottom: 1, borderColor: 'common.black' }}>
                           <Box sx={{ position: 'absolute', inset: 0, backgroundImage: `url("${product.image}")`, backgroundSize: 'cover', backgroundPosition: 'center', transition: 'transform 0.5s', '&:hover': { transform: 'scale(1.05)' } }} />
-                          {product.badge && (
-                            <Chip
-                              label={product.badge}
-                              size="small"
-                              color="primary"
-                              sx={{ position: 'absolute', top: 8, left: 8, borderRadius: 0, fontWeight: 'bold', letterSpacing: 1 }}
-                            />
-                          )}
                           <IconButton
                             onClick={(e) => { e.stopPropagation(); toggleWishlist(product.id); }}
                             sx={{
@@ -378,31 +486,56 @@ const Catalog: React.FC<CatalogProps> = ({
                         </Box>
 
                         <CardContent sx={{ flexGrow: 1, pb: 1 }}>
-                          <Typography variant="h6" gutterBottom noWrap sx={{ fontWeight: 'bold', fontFamily: 'Cinzel', color: 'common.white' }}>
-                            {product.name}
+                          <Typography variant="h6" gutterBottom noWrap sx={{ fontWeight: 'bold', fontFamily: 'Cinzel', color: 'common.white', mb: 0 }}>
+                            {product.name.replace(/\s*Header\s*/gi, '').trim()}
+                          </Typography>
+                          <Typography variant="caption" color="primary.main" sx={{ display: 'block', mb: 1, textTransform: 'uppercase', fontWeight: 'bold', fontSize: '0.7rem' }}>
+                            {product.designer ? `Diseñado por ${product.designer}` : 'Forja Original'}
                           </Typography>
                           <Typography variant="body2" color="grey.500" sx={{ fontStyle: 'italic' }}>
-                            {product.scale} • {product.category}
+                            {product.size || 'Sin tamaño'} • {product.category}
+                            {product.set_name && ` • ${product.set_name}`}
                           </Typography>
                         </CardContent>
 
                         <CardActions sx={{ justifyContent: 'space-between', px: 2, pt: 0, pb: 2, borderTop: '1px dashed', borderColor: (theme) => alpha(theme.palette.common.white, 0.1), mt: 2 }}>
                           <Typography variant="h6" color="secondary.main" sx={{ fontWeight: 'bold' }}>{formatCurrency(product.price)}</Typography>
-                          <Tooltip title="Añadir al Tesoro" arrow>
-                            <IconButton
-                              onClick={(e) => { e.stopPropagation(); addToCart(product); }}
-                              color="primary"
-                              sx={{
-                                bgcolor: 'primary.dark',
-                                color: 'white',
-                                width: 40, height: 40,
-                                boxShadow: 3,
-                                '&:hover': { bgcolor: 'primary.main', transform: 'scale(1.1)' }
-                              }}
-                            >
-                              <Add />
-                            </IconButton>
-                          </Tooltip>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            {isAdmin && onDeleteProduct && (
+                              <Tooltip title="Eliminar del Archivo" arrow>
+                                <IconButton
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (window.confirm(`¿Estás seguro de eliminar "${product.name}"? Esta acción es irreversible.`)) {
+                                      onDeleteProduct(product.id);
+                                    }
+                                  }}
+                                  sx={{
+                                    color: 'error.main',
+                                    bgcolor: (t) => alpha(t.palette.error.main, 0.1),
+                                    '&:hover': { bgcolor: 'error.main', color: 'white' }
+                                  }}
+                                >
+                                  <Delete fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                            <Tooltip title="Añadir al Tesoro" arrow>
+                              <IconButton
+                                onClick={(e) => { e.stopPropagation(); addToCart(product); }}
+                                color="primary"
+                                sx={{
+                                  bgcolor: 'primary.dark',
+                                  color: 'white',
+                                  width: 40, height: 40,
+                                  boxShadow: 3,
+                                  '&:hover': { bgcolor: 'primary.main', transform: 'scale(1.1)' }
+                                }}
+                              >
+                                <Add />
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
                         </CardActions>
                       </Card>
                     </Grid>

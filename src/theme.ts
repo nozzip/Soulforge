@@ -42,7 +42,7 @@ export const fantasyTheme = createTheme({
       main: '#c5a059',
       light: '#e8c978',
       dark: '#9d7a3d',
-      contrastText: '#221010',
+      contrastText: '#1a0d0d', // Obsidian/Dark Brown for better legibility on gold
     },
     background: {
       default: '#1a0d0d',
@@ -100,6 +100,23 @@ export const fantasyTheme = createTheme({
         '::selection': {
           backgroundColor: '#c5a059',
           color: '#1a0d0d',
+        },
+        '*::-webkit-scrollbar': {
+          width: '8px',
+          height: '8px',
+        },
+        '*::-webkit-scrollbar-track': {
+          backgroundColor: 'rgba(0, 0, 0, 0.2)',
+          borderRadius: '4px',
+        },
+        '*::-webkit-scrollbar-thumb': {
+          backgroundColor: 'rgba(197, 160, 89, 0.3)',
+          borderRadius: '4px',
+          border: '2px solid transparent',
+          backgroundClip: 'content-box',
+          '&:hover': {
+            backgroundColor: 'rgba(197, 160, 89, 0.6)',
+          },
         },
       },
     },
@@ -190,11 +207,28 @@ export const fantasyTheme = createTheme({
     },
     MuiChip: {
       styleOverrides: {
-        root: {
+        root: ({ theme }) => ({
           fontFamily: '"Cinzel", serif',
           fontWeight: 600,
           letterSpacing: '0.05em',
-        },
+          ...(theme.palette.mode === 'dark' && {
+            '&.MuiChip-outlinedSecondary': {
+              borderColor: alpha(theme.palette.secondary.main, 0.5),
+              color: theme.palette.secondary.main,
+            },
+            '&.MuiChip-filledSecondary': {
+              backgroundColor: '#1a0d0d', // Obsidian/Dark Brown background
+              color: '#c5a059', // Gold text
+              border: '1px solid #c5a059',
+              fontWeight: 800,
+              letterSpacing: '0.1em',
+              '&:hover': {
+                backgroundColor: '#2d1b1b',
+                color: '#e8c978',
+              }
+            }
+          })
+        }),
         filled: {
           boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
         },
@@ -282,6 +316,23 @@ export const warhammerTheme = createTheme({
         '::selection': {
           backgroundColor: '#0ea5e9',
           color: '#030712',
+        },
+        '*::-webkit-scrollbar': {
+          width: '8px',
+          height: '8px',
+        },
+        '*::-webkit-scrollbar-track': {
+          backgroundColor: 'rgba(0, 0, 0, 0.2)',
+          borderRadius: '4px',
+        },
+        '*::-webkit-scrollbar-thumb': {
+          backgroundColor: 'rgba(14, 165, 233, 0.3)',
+          borderRadius: '4px',
+          border: '2px solid transparent',
+          backgroundClip: 'content-box',
+          '&:hover': {
+            backgroundColor: 'rgba(14, 165, 233, 0.6)',
+          },
         },
       },
     },

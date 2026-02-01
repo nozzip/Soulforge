@@ -9,12 +9,19 @@ export interface Product {
   id: string;
   name: string;
   category: string;
-  scale: string;
   price: number;
   image: string;
-  badge?: string;
+  size?: string;
   description?: string;
   subItems?: SubItem[];
+  // New fields from CSV/Supabase
+  designer?: string;
+  set_name?: string;
+  creature_type?: string;
+  weapon?: string;
+  title?: string;
+  grade?: string;
+  image_url?: string;
 }
 
 export interface CartItem extends Product {

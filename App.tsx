@@ -58,12 +58,12 @@ const App: React.FC = () => {
     }
   });
 
-  const [scales, setScales] = useState<string[]>(() => {
+  const [sizes, setSizes] = useState<string[]>(() => {
     try {
-      const saved = localStorage.getItem('resinforge_scales');
-      return saved ? JSON.parse(saved) : ["Mediano", "Grande", "Gargantuesco", "Colosal"];
+      const saved = localStorage.getItem('resinforge_sizes');
+      return saved ? JSON.parse(saved) : ["Small", "Medium", "Large", "Huge", "Gargantuan"];
     } catch (e) {
-      return ["Mediano", "Grande", "Gargantuesco", "Colosal"];
+      return ["Small", "Medium", "Large", "Huge", "Gargantuan"];
     }
   });
 
@@ -74,8 +74,8 @@ const App: React.FC = () => {
   }, [categories]);
 
   useEffect(() => {
-    localStorage.setItem('resinforge_scales', JSON.stringify(scales));
-  }, [scales]);
+    localStorage.setItem('resinforge_sizes', JSON.stringify(sizes));
+  }, [sizes]);
 
   // User State
   const [user, setUser] = useState<User | null>(null);
@@ -105,7 +105,7 @@ const App: React.FC = () => {
       }
 
       console.log("Checking admin status for user:", user.id);
-      
+
       const { data, error } = await supabase
         .from("admin_users")
         .select("user_id")
@@ -182,7 +182,7 @@ const App: React.FC = () => {
 
   const toggleWishlist = async (productId: string) => {
     const isInWishlist = wishlist.includes(productId);
-    
+
     // Optimistic update
     setWishlist(prev => {
       if (isInWishlist) {
@@ -246,23 +246,45 @@ const App: React.FC = () => {
     setProducts(prev => [newProduct, ...prev]);
   };
 
+  const handleDeleteProduct = async (id: string) => {
+    const { error } = await supabase.from('products').delete().eq('id', id);
+    if (error) {
+      alert("Error al eliminar producto: " + error.message);
+    } else {
+      setProducts(prev => prev.filter(p => p.id !== id));
+    }
+  };
+
+  const handleUpdateProduct = (updatedProduct: Product) => {
+    setProducts(prev => prev.map(p => p.id === updatedProduct.id ? updatedProduct : p));
+  };
+
   const handleAddCategory = (cat: string) => {
     if (!categories.includes(cat)) setCategories(prev => [...prev, cat]);
   };
 
-  const handleAddScale = (scale: string) => {
-    if (!scales.includes(scale)) setScales(prev => [...prev, scale]);
+  const handleAddSize = (size: string) => {
+    if (!sizes.includes(size)) setSizes(prev => [...prev, size]);
   };
 
   const handleDeleteCategory = (cat: string) => {
     setCategories(prev => prev.filter(c => c !== cat));
   };
 
-  const handleDeleteScale = (scale: string) => {
-    setScales(prev => prev.filter(s => s !== scale));
+  const handleDeleteSize = (size: string) => {
+    setSizes(prev => prev.filter(s => s !== size));
   };
 
   const renderView = () => {
+    const designers = Array.from(new Set(products.map(p => p.designer).filter(Boolean))) as string[];
+    const creatureTypes = Array.from(new Set(products.map(p => p.creature_type).filter(Boolean))) as string[];
+    const weapons = Array.from(new Set(
+      products
+        .map(p => p.weapon)
+        .filter(Boolean)
+        .flatMap(w => (w as string).split('/').map(s => s.trim()))
+    )).sort() as string[];
+
     switch (currentView) {
       case ViewState.HOME:
         return <Home setView={handleSetView} />;
@@ -271,12 +293,17 @@ const App: React.FC = () => {
           <Catalog
             products={products}
             categories={categories}
-            scales={scales}
+            sizes={sizes}
             onProductClick={handleProductClick}
             initialSearchQuery={globalSearchQuery}
             wishlist={wishlist}
             toggleWishlist={toggleWishlist}
             loading={loading}
+            designers={designers}
+            creatureTypes={creatureTypes}
+            weapons={weapons}
+            isAdmin={isAdmin}
+            onDeleteProduct={handleDeleteProduct}
           />
         );
       case ViewState.CART:
@@ -293,6 +320,7 @@ const App: React.FC = () => {
             toggleWishlist={toggleWishlist}
             isAdmin={isAdmin}
             user={user ? { name: user.user_metadata?.full_name || user.email || 'Usuario', id: user.id } : null}
+            onUpdateProduct={handleUpdateProduct}
           />
         );
       case ViewState.LOGIN:
@@ -317,11 +345,11 @@ const App: React.FC = () => {
             setView={handleSetView}
             onAddProduct={handleAddProduct}
             categories={categories}
-            scales={scales}
+            sizes={sizes}
             onAddCategory={handleAddCategory}
-            onAddScale={handleAddScale}
+            onAddSize={handleAddSize}
             onDeleteCategory={handleDeleteCategory}
-            onDeleteScale={handleDeleteScale}
+            onDeleteSize={handleDeleteSize}
           />
         );
       default:

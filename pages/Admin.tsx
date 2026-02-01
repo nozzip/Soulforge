@@ -65,33 +65,32 @@ interface AdminProps {
   onAddProduct: (product: Product) => void;
   setView: (view: ViewState) => void;
   categories: string[];
-  scales: string[];
+  sizes: string[];
   onAddCategory: (cat: string) => void;
-  onAddScale: (scale: string) => void;
+  onAddSize: (size: string) => void;
   onDeleteCategory: (cat: string) => void;
-  onDeleteScale: (scale: string) => void;
+  onDeleteSize: (size: string) => void;
 }
 
 const Admin: React.FC<AdminProps> = ({
   onAddProduct,
   setView,
   categories,
-  scales,
+  sizes,
   onAddCategory,
-  onAddScale,
+  onAddSize,
   onDeleteCategory,
-  onDeleteScale
+  onDeleteSize
 }) => {
   const theme = useTheme();
 
   const [formData, setFormData] = useState({
     name: '',
     category: categories[0] || '',
-    scale: scales[0] || '',
+    size: sizes[0] || '',
     price: '',
     image: '',
     description: '',
-    badge: ''
   });
 
   const [subItems, setSubItems] = useState<SubItem[]>([]);
@@ -99,8 +98,8 @@ const Admin: React.FC<AdminProps> = ({
 
   const [showManageCat, setShowManageCat] = useState(false);
   const [newCat, setNewCat] = useState('');
-  const [showManageScale, setShowManageScale] = useState(false);
-  const [newScale, setNewScale] = useState('');
+  const [showManageSize, setShowManageSize] = useState(false);
+  const [newSize, setNewSize] = useState('');
 
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -164,7 +163,7 @@ const Admin: React.FC<AdminProps> = ({
 
   const handleDeleteReview = async (reviewId: string) => {
     if (!confirm('¿Estás seguro de eliminar esta crónica? Esta acción es permanente.')) return;
-    
+
     const { error } = await supabase
       .from('product_reviews')
       .delete()
@@ -180,7 +179,7 @@ const Admin: React.FC<AdminProps> = ({
 
   const handleRemoveReviewImage = async (reviewId: string) => {
     if (!confirm('¿Estás seguro de eliminar la imagen de esta crónica?')) return;
-    
+
     const { error } = await supabase
       .from('product_reviews')
       .update({ image: null })
@@ -228,11 +227,11 @@ const Admin: React.FC<AdminProps> = ({
     }
   };
 
-  const handleCreateScale = () => {
-    if (newScale.trim()) {
-      onAddScale(newScale.trim());
-      setFormData(prev => ({ ...prev, scale: newScale.trim() }));
-      setNewScale('');
+  const handleCreateSize = () => {
+    if (newSize.trim()) {
+      onAddSize(newSize.trim());
+      setFormData(prev => ({ ...prev, size: newSize.trim() }));
+      setNewSize('');
     }
   };
 
@@ -258,11 +257,10 @@ const Admin: React.FC<AdminProps> = ({
     const productToInsert = {
       name: formData.name,
       category: formData.category,
-      scale: formData.scale,
+      size: formData.size,
       price: parseFloat(formData.price) || 0,
       image: formData.image || 'https://via.placeholder.com/400?text=No+Image',
       description: formData.description,
-      badge: formData.badge || null,
     };
 
     const { data, error } = await supabase
@@ -282,11 +280,10 @@ const Admin: React.FC<AdminProps> = ({
       setFormData({
         name: '',
         category: categories[0] || '',
-        scale: scales[0] || '',
+        size: sizes[0] || '',
         price: '',
         image: '',
         description: '',
-        badge: ''
       });
       setSubItems([]);
       setPreviewImage(null);
@@ -386,24 +383,24 @@ const Admin: React.FC<AdminProps> = ({
                       </Box>
                     </Grid>
 
-                    {/* Scale */}
+                    {/* Size */}
                     <Grid size={{ xs: 12, md: 6 }}>
                       <Box sx={{ position: 'relative' }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                           <Typography variant="caption" sx={{ color: 'secondary.main', textTransform: 'uppercase', letterSpacing: 2, fontWeight: 'bold' }}>Clase de Escala</Typography>
-                          <IconButton size="small" onClick={() => setShowManageScale(!showManageScale)} sx={{ color: 'secondary.main' }}>
-                            {showManageScale ? <Close fontSize="small" /> : <Settings fontSize="small" />}
+                          <IconButton size="small" onClick={() => setShowManageSize(!showManageSize)} sx={{ color: 'secondary.main' }}>
+                            {showManageSize ? <Close fontSize="small" /> : <Settings fontSize="small" />}
                           </IconButton>
                         </Box>
-                        {showManageScale ? (
+                        {showManageSize ? (
                           <Paper sx={{ p: 2, bgcolor: 'background.paper', border: 1, borderColor: 'secondary.main' }}>
                             <Typography variant="caption" sx={{ color: 'secondary.main', display: 'block', mb: 1, borderBottom: 1, borderColor: (t) => alpha(t.palette.secondary.main, 0.2), pb: 1 }}>Gestionar Clases de Escala</Typography>
                             <List dense sx={{ maxHeight: 150, overflowY: 'auto', mb: 2 }}>
-                              {scales.map(s => (
+                              {sizes.map(s => (
                                 <ListItem key={s} sx={{ bgcolor: (t) => alpha(t.palette.common.black, 0.3), borderRadius: 1, mb: 0.5 }}>
                                   <ListItemText primary={s} primaryTypographyProps={{ variant: 'body2', color: 'grey.300' }} />
                                   <ListItemSecondaryAction>
-                                    <IconButton edge="end" size="small" onClick={() => onDeleteScale(s)} sx={{ color: 'grey.600', '&:hover': { color: 'error.main' } }}>
+                                    <IconButton edge="end" size="small" onClick={() => onDeleteSize(s)} sx={{ color: 'grey.600', '&:hover': { color: 'error.main' } }}>
                                       <Delete fontSize="small" />
                                     </IconButton>
                                   </ListItemSecondaryAction>
@@ -411,14 +408,14 @@ const Admin: React.FC<AdminProps> = ({
                               ))}
                             </List>
                             <Stack direction="row" spacing={1}>
-                              <TextField size="small" fullWidth value={newScale} onChange={(e) => setNewScale(e.target.value)} placeholder="Nueva Escala..." />
-                              <Button variant="contained" color="secondary" onClick={handleCreateScale} sx={{ fontWeight: 'bold' }}>Añadir</Button>
+                              <TextField size="small" fullWidth value={newSize} onChange={(e) => setNewSize(e.target.value)} placeholder="Nueva Escala..." />
+                              <Button variant="contained" color="secondary" onClick={handleCreateSize} sx={{ fontWeight: 'bold' }}>Añadir</Button>
                             </Stack>
                           </Paper>
                         ) : (
                           <FormControl fullWidth size="small">
-                            <Select name="scale" value={formData.scale} onChange={handleInputChange as any} sx={{ bgcolor: 'background.default', color: 'white', '& .MuiOutlinedInput-notchedOutline': { borderColor: (t: typeof theme) => alpha(t.palette.secondary.main, 0.3) }, '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'secondary.main' }, '& .MuiSvgIcon-root': { color: 'secondary.main' } }}>
-                              {scales.map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
+                            <Select name="size" value={formData.size} onChange={handleInputChange as any} sx={{ bgcolor: 'background.default', color: 'white', '& .MuiOutlinedInput-notchedOutline': { borderColor: (t: typeof theme) => alpha(t.palette.secondary.main, 0.3) }, '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'secondary.main' }, '& .MuiSvgIcon-root': { color: 'secondary.main' } }}>
+                              {sizes.map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
                             </Select>
                           </FormControl>
                         )}
@@ -528,7 +525,7 @@ const Admin: React.FC<AdminProps> = ({
                 <Stack direction="row" spacing={2} sx={{ color: 'grey.500', mb: 3 }}>
                   <Typography variant="caption" sx={{ textTransform: 'uppercase', letterSpacing: 2, fontWeight: 'bold' }}>{formData.category}</Typography>
                   <Typography variant="caption">•</Typography>
-                  <Typography variant="caption" sx={{ textTransform: 'uppercase', letterSpacing: 2, fontWeight: 'bold' }}>Escala {formData.scale}</Typography>
+                  <Typography variant="caption" sx={{ textTransform: 'uppercase', letterSpacing: 2, fontWeight: 'bold' }}>Escala {formData.size}</Typography>
                 </Stack>
                 <Divider sx={{ width: '100%', borderColor: (t) => alpha(t.palette.secondary.main, 0.2), my: 2 }} />
                 <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'grey.500', textAlign: 'center', px: 2 }}>
@@ -539,7 +536,7 @@ const Admin: React.FC<AdminProps> = ({
           </Grid>
         </Grid>
       )}
-      
+
       {currentTab === 1 && (
         <Box>
           {ordersLoading ? (
@@ -624,7 +621,7 @@ const Admin: React.FC<AdminProps> = ({
           )}
         </Box>
       )}
-      
+
       {currentTab === 2 && (
         <Box>
           {reviewsLoading ? (
@@ -707,11 +704,11 @@ const Admin: React.FC<AdminProps> = ({
                     {allReviews
                       .filter(review => {
                         // Apply search filter
-                        const searchMatch = reviewSearch === '' || 
+                        const searchMatch = reviewSearch === '' ||
                           review.user_name?.toLowerCase().includes(reviewSearch.toLowerCase()) ||
                           review.text?.toLowerCase().includes(reviewSearch.toLowerCase()) ||
                           review.products?.name?.toLowerCase().includes(reviewSearch.toLowerCase());
-                        
+
                         // Apply category filter
                         let filterMatch = true;
                         switch (reviewFilter) {
@@ -730,116 +727,116 @@ const Admin: React.FC<AdminProps> = ({
                           default:
                             filterMatch = true;
                         }
-                        
+
                         return searchMatch && filterMatch;
                       })
                       .map((review) => (
-                      <TableRow key={review.id} sx={{ '&:hover': { bgcolor: (t) => alpha(t.palette.common.white, 0.05) } }}>
-                        <TableCell sx={{ color: 'grey.300', fontFamily: 'monospace' }}>
-                          <Typography variant="caption">#{review.id.slice(0, 8)}</Typography>
-                        </TableCell>
-                        <TableCell sx={{ color: 'grey.400' }}>
-                          <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'common.white' }}>
-                            {review.user_name}
-                          </Typography>
-                        </TableCell>
-                        <TableCell sx={{ color: 'grey.400' }}>
-                          <Typography variant="body2" sx={{ color: 'common.white' }}>
-                            {review.products?.name || 'Producto desconocido'}
-                          </Typography>
-                          <Typography variant="caption" sx={{ color: 'grey.600' }}>
-                            {review.products?.category || 'Sin categoría'}
-                          </Typography>
-                        </TableCell>
-                        <TableCell sx={{ color: 'grey.400' }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            {[...Array(5)].map((_, i) => (
-                              <Box
-                                key={i}
-                                sx={{
-                                  width: 16,
-                                  height: 16,
-                                  borderRadius: '50%',
-                                  bgcolor: i < review.rating ? 'warning.main' : 'grey.700',
-                                  border: 1,
-                                  borderColor: i < review.rating ? 'warning.dark' : 'grey.600'
-                                }}
-                              />
-                            ))}
-                            <Typography variant="caption" sx={{ color: 'grey.600', ml: 0.5 }}>
-                              {review.rating}/5
+                        <TableRow key={review.id} sx={{ '&:hover': { bgcolor: (t) => alpha(t.palette.common.white, 0.05) } }}>
+                          <TableCell sx={{ color: 'grey.300', fontFamily: 'monospace' }}>
+                            <Typography variant="caption">#{review.id.slice(0, 8)}</Typography>
+                          </TableCell>
+                          <TableCell sx={{ color: 'grey.400' }}>
+                            <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'common.white' }}>
+                              {review.user_name}
                             </Typography>
-                          </Box>
-                        </TableCell>
-                        <TableCell sx={{ color: 'grey.400', maxWidth: 300 }}>
-                          <Typography 
-                            variant="body2" 
-                            sx={{ 
-                              overflow: 'hidden', 
-                              textOverflow: 'ellipsis', 
-                              whiteSpace: 'nowrap',
-                              display: 'block'
-                            }}
-                            title={review.text}
-                          >
-                            {review.text}
-                          </Typography>
-                        </TableCell>
-                        <TableCell sx={{ color: 'grey.400' }}>
-                          {review.image ? (
-                            <Box sx={{ position: 'relative' }}>
-                              <Box
-                                component="img"
-                                src={review.image}
-                                alt="Review"
-                                sx={{
-                                  width: 40,
-                                  height: 40,
-                                  borderRadius: 1,
-                                  objectFit: 'cover',
-                                  border: 1,
-                                  borderColor: (t) => alpha(t.palette.secondary.main, 0.2)
-                                }}
-                              />
-                              <IconButton
-                                size="small"
-                                onClick={() => handleRemoveReviewImage(review.id)}
-                                sx={{
-                                  position: 'absolute',
-                                  top: -8,
-                                  right: -8,
-                                  bgcolor: 'error.main',
-                                  color: 'white',
-                                  width: 20,
-                                  height: 20,
-                                  '&:hover': { bgcolor: 'error.dark' }
-                                }}
-                              >
-                                <Close sx={{ fontSize: 14 }} />
-                              </IconButton>
+                          </TableCell>
+                          <TableCell sx={{ color: 'grey.400' }}>
+                            <Typography variant="body2" sx={{ color: 'common.white' }}>
+                              {review.products?.name || 'Producto desconocido'}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: 'grey.600' }}>
+                              {review.products?.category || 'Sin categoría'}
+                            </Typography>
+                          </TableCell>
+                          <TableCell sx={{ color: 'grey.400' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              {[...Array(5)].map((_, i) => (
+                                <Box
+                                  key={i}
+                                  sx={{
+                                    width: 16,
+                                    height: 16,
+                                    borderRadius: '50%',
+                                    bgcolor: i < review.rating ? 'warning.main' : 'grey.700',
+                                    border: 1,
+                                    borderColor: i < review.rating ? 'warning.dark' : 'grey.600'
+                                  }}
+                                />
+                              ))}
+                              <Typography variant="caption" sx={{ color: 'grey.600', ml: 0.5 }}>
+                                {review.rating}/5
+                              </Typography>
                             </Box>
-                          ) : (
-                            <Typography variant="caption" sx={{ color: 'grey.600' }}>Sin imagen</Typography>
-                          )}
-                        </TableCell>
-                        <TableCell sx={{ color: 'grey.400' }}>
-                          <Typography variant="caption" sx={{ color: 'grey.500' }}>
-                            {new Date(review.created_at).toLocaleDateString()}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <IconButton
-                            onClick={() => handleDeleteReview(review.id)}
-                            sx={{ 
-                              color: 'error.main', 
-                              '&:hover': { bgcolor: (t) => alpha(t.palette.error.main, 0.1) } 
-                            }}
-                          >
-                            <DeleteForever />
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                          </TableCell>
+                          <TableCell sx={{ color: 'grey.400', maxWidth: 300 }}>
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                display: 'block'
+                              }}
+                              title={review.text}
+                            >
+                              {review.text}
+                            </Typography>
+                          </TableCell>
+                          <TableCell sx={{ color: 'grey.400' }}>
+                            {review.image ? (
+                              <Box sx={{ position: 'relative' }}>
+                                <Box
+                                  component="img"
+                                  src={review.image}
+                                  alt="Review"
+                                  sx={{
+                                    width: 40,
+                                    height: 40,
+                                    borderRadius: 1,
+                                    objectFit: 'cover',
+                                    border: 1,
+                                    borderColor: (t) => alpha(t.palette.secondary.main, 0.2)
+                                  }}
+                                />
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleRemoveReviewImage(review.id)}
+                                  sx={{
+                                    position: 'absolute',
+                                    top: -8,
+                                    right: -8,
+                                    bgcolor: 'error.main',
+                                    color: 'white',
+                                    width: 20,
+                                    height: 20,
+                                    '&:hover': { bgcolor: 'error.dark' }
+                                  }}
+                                >
+                                  <Close sx={{ fontSize: 14 }} />
+                                </IconButton>
+                              </Box>
+                            ) : (
+                              <Typography variant="caption" sx={{ color: 'grey.600' }}>Sin imagen</Typography>
+                            )}
+                          </TableCell>
+                          <TableCell sx={{ color: 'grey.400' }}>
+                            <Typography variant="caption" sx={{ color: 'grey.500' }}>
+                              {new Date(review.created_at).toLocaleDateString()}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <IconButton
+                              onClick={() => handleDeleteReview(review.id)}
+                              sx={{
+                                color: 'error.main',
+                                '&:hover': { bgcolor: (t) => alpha(t.palette.error.main, 0.1) }
+                              }}
+                            >
+                              <DeleteForever />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      ))}
                     {allReviews.length === 0 && (
                       <TableRow>
                         <TableCell colSpan={8} sx={{ textAlign: 'center', py: 6, color: 'grey.600', fontStyle: 'italic' }}>
