@@ -14,7 +14,7 @@ import {
   alpha,
   useTheme
 } from '@mui/material';
-import { Lock, ArrowForward, Google } from '@mui/icons-material';
+import { Lock, ArrowForward } from '@mui/icons-material';
 import { DecorativeCorners, FancyPaper } from '../components/StyledComponents';
 import { supabase } from '../src/supabase';
 import { User } from '@supabase/supabase-js';
@@ -76,18 +76,6 @@ const Login: React.FC<LoginProps> = ({ setView, onLogin }) => {
     } else if (data.user) {
       onLogin(data.user);
     }
-  };
-
-  const handleGoogleLogin = async () => {
-    setIsLoading(true);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: window.location.origin,
-      }
-    });
-    if (error) setError(error.message);
-    setIsLoading(false);
   };
 
   return (
@@ -182,24 +170,6 @@ const Login: React.FC<LoginProps> = ({ setView, onLogin }) => {
               ) : (
                 "Entrar al Reino"
               )}
-            </Button>
-
-            <Button
-              fullWidth
-              variant="outlined"
-              color="secondary"
-              disabled={isLoading}
-              onClick={handleGoogleLogin}
-              startIcon={<Google />}
-              sx={{
-                py: 1.5,
-                fontWeight: 'bold',
-                letterSpacing: 1,
-                borderColor: alpha(theme.palette.secondary.main, 0.3),
-                '&:hover': { borderColor: 'secondary.main', bgcolor: alpha(theme.palette.secondary.main, 0.05) }
-              }}
-            >
-              Conectar con Google
             </Button>
           </Stack>
         </Box>

@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { ViewState, Product } from '../types';
 import { useCart } from '../context/CartContext';
-import { formatCurrency } from '../utils/currency';
+import { formatCurrency } from '../utils/currency.tsx';
 import {
   Box,
   Container,
@@ -91,7 +91,7 @@ const Wishlist: React.FC<WishlistProps> = ({ products, setView, onProductClick, 
 
                 <CardContent>
                   <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'grey.100', lineHeight: 1.2, '&:hover': { color: 'primary.main' }, transition: 'color 0.2s' }}>{product.name}</Typography>
-                  <Typography variant="caption" sx={{ color: 'grey.500', fontStyle: 'italic' }}>{product.scale} • {product.category}</Typography>
+                  <Typography variant="caption" sx={{ color: 'grey.500', fontStyle: 'italic' }}>{product.size} • {product.category}</Typography>
                 </CardContent>
 
                 <CardActions sx={{ justifyContent: 'space-between', px: 2, pb: 2, borderTop: '1px dashed', borderColor: (t) => alpha(t.palette.grey[800], 0.5) }}>

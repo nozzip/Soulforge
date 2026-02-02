@@ -63,8 +63,8 @@ export const getSEOForView = (view: ViewState, product?: Product | null): SEODat
         case ViewState.PRODUCT_DETAIL:
             if (product) {
                 return {
-                    title: `${product.name} - ${product.scale} | ${baseName}`,
-                    description: product.description || `Miniatura de ${product.name} en escala ${product.scale}. Categoría: ${product.category}. Impresión de resina de alta calidad.`,
+                    title: `${product.name} - ${product.size} | ${baseName}`,
+                    description: product.description || `Miniatura de ${product.name} en escala ${product.size}. Categoría: ${product.category}. Impresión de resina de alta calidad.`,
                     image: product.image,
                     url: `${baseUrl}/product/${product.id}`
                 };

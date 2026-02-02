@@ -1,8 +1,8 @@
 /// <reference lib="dom" />
-import React, { useState, MouseEvent, useMemo, ChangeEvent, useEffect } from 'react';
+import React, { useState, MouseEvent, useMemo, ChangeEvent, useEffect, useRef } from 'react';
 import { ViewState, Product, SubItem } from '../types';
 import { useCart } from '../context/CartContext';
-import { formatCurrency } from '../utils/currency';
+import { formatCurrency } from '../utils/currency.tsx';
 import { supabase } from '../src/supabase';
 import DOMPurify from 'isomorphic-dompurify';
 import { safeReadImageAsDataURL } from '../utils/imageValidation';
@@ -29,7 +29,9 @@ import {
   alpha,
   Dialog,
   DialogContent,
-  Tooltip
+  Tooltip,
+  Snackbar,
+  Alert
 } from '@mui/material';
 import {
   ArrowBack,
@@ -80,6 +82,7 @@ interface ProductDetailProps {
   isAdmin?: boolean;
   user?: { name: string; id: string } | null;
   onUpdateProduct?: (product: Product) => void;
+  onProductClick?: (id: string) => void;
 }
 
 // Helper to format dates
@@ -187,7 +190,7 @@ const ProductDetailSkeleton = () => (
       <Skeleton variant="rectangular" width={20} height={20} />
       <Skeleton variant="rectangular" width={120} height={20} />
     </Box>
-    <Grid container spacing={8}>
+    <Grid container spacing={6}>
       <Grid size={{ xs: 12, lg: 6 }}>
         <Skeleton variant="rectangular" height={500} sx={{ borderRadius: 2 }} />
         <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
@@ -204,9 +207,13 @@ const ProductDetailSkeleton = () => (
   </Container>
 );
 
-const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setView, wishlist, toggleWishlist, isAdmin = false, user = null, onUpdateProduct }) => {
+const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setView, wishlist, toggleWishlist, isAdmin = false, user = null, onUpdateProduct, onProductClick }) => {
   const { addToCart } = useCart();
   const [currentProductId, setCurrentProductId] = useState(productId);
+
+  useEffect(() => {
+    setCurrentProductId(productId);
+  }, [productId]);
 
   // The Set/Base context
   const initialProduct = products.find(p => p.id === productId);
@@ -247,6 +254,9 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setV
   // State for zoom effect
   const [zoomProps, setZoomProps] = useState({ x: 0, y: 0, show: false });
 
+  // Ref for main image focus
+  const mainImageRef = useRef<HTMLDivElement>(null);
+
   // Admin Edit State
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<Partial<Product>>({});
@@ -266,6 +276,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setV
   // Gallery lightbox state
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [selectedGalleryImage, setSelectedGalleryImage] = useState<string | null>(null);
+  const [zoomImage, setZoomImage] = useState<string | null>(null);
 
   const [selectedResin, setSelectedResin] = useState('Gris Forja');
   const resinOptions = [
@@ -273,6 +284,9 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setV
     { name: 'Transparente Espectral', available: false, color: '#AED6F1' },
     { name: 'Oro de los Enanos', available: false, color: '#F4D03F' }
   ];
+
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
 
   // Fetch reviews from Supabase
   useEffect(() => {
@@ -315,9 +329,12 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setV
   // Simulate loading delay
   useEffect(() => {
     setIsLoading(true);
-    window.scrollTo(0, 0);
     const timer = setTimeout(() => {
       setIsLoading(false);
+      // After loading, scroll to main image
+      setTimeout(() => {
+        mainImageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
     }, 800); // 800ms simulated delay
 
     return () => clearTimeout(timer);
@@ -555,23 +572,46 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setV
   }
 
   return (
-    <Container maxWidth="xl" sx={{ py: 6, px: { xs: 2, lg: 8 } }}>
-      {/* Breadcrumb / Back Navigation */}
-      <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 1, color: 'text.secondary', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: 1 }}>
-        <Typography sx={{ cursor: 'pointer', '&:hover': { color: 'primary.main' } }} onClick={() => setView('catalog' as any)}>Catálogo</Typography>
-        <Typography color="text.secondary">/</Typography>
-        <Typography color="text.secondary">{activeProduct.category}</Typography>
-        <Typography color="text.secondary">/</Typography>
-        <Typography color="secondary.main" fontWeight="bold" noWrap>{activeProduct.name.replace(/\s*Header\s*/gi, '').trim()}</Typography>
+    <Container maxWidth="lg" sx={{ py: 10, px: { xs: 3, sm: 6 } }}>
+      {/* Back Button and Breadcrumbs */}
+      <Box sx={{ mb: 6, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Button
+          startIcon={<ArrowBack />}
+          onClick={() => setView(ViewState.CATALOG)}
+          sx={{
+            alignSelf: 'flex-start',
+            color: 'secondary.main',
+            textTransform: 'uppercase',
+            letterSpacing: 2,
+            fontWeight: 'bold',
+            '&:hover': {
+              color: 'primary.main',
+              bgcolor: 'transparent',
+              transform: 'translateX(-4px)'
+            },
+            transition: 'all 0.3s'
+          }}
+        >
+          Volver a los Archivos
+        </Button>
+
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'text.secondary', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: 1 }}>
+          <Typography sx={{ cursor: 'pointer', '&:hover': { color: 'primary.main' } }} onClick={() => setView(ViewState.CATALOG)}>Catálogo</Typography>
+          <Typography color="text.secondary">/</Typography>
+          <Typography color="text.secondary">{activeProduct.category}</Typography>
+          <Typography color="text.secondary">/</Typography>
+          <Typography color="secondary.main" fontWeight="bold" noWrap>{activeProduct.name.replace(/\s*Header\s*/gi, '').trim()}</Typography>
+        </Box>
       </Box>
 
-      <Grid container spacing={8}>
+      <Grid container spacing={6}>
         {/* Left Column: Image Gallery */}
         <Grid size={{ xs: 12, lg: 6 }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {/* Main Image Container */}
             <Paper
               elevation={6}
+              ref={mainImageRef}
               sx={{
                 position: 'relative',
                 aspectRatio: '1/1',
@@ -748,12 +788,12 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setV
           {isEditing ? (
             <TextField fullWidth name="name" label="Nombre del Artefacto" value={editForm.name} onChange={handleEditChange} sx={{ mb: 2 }} />
           ) : (
-            <Typography variant="h2" sx={{
+            <Typography variant="h3" sx={{
               fontWeight: 'bold',
               fontStyle: 'italic',
               mb: 2,
               color: 'common.white',
-              minHeight: '8rem', // Safely reserve space for 2 large lines
+              minHeight: '6rem', // Proportional space for 2 lines of smaller text
               display: 'flex',
               alignItems: 'flex-start',
               lineHeight: 1.2
@@ -868,27 +908,22 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setV
           </Box>
           <Box sx={{ mt: 4 }}>
             <Button
-              variant="contained"
-              size="large"
-              fullWidth
-              startIcon={<ShoppingCart />}
-              onClick={() => {
-                addToCart(activeProduct);
-                setView('cart' as any);
-              }}
-              sx={{ py: 2, fontSize: '1.1rem', mb: 2 }}
-            >
-              Comprar Ahora
-            </Button>
-            <Button
               variant="outlined"
               size="large"
               fullWidth
+              disabled={isAdding}
               startIcon={<AddShoppingCart />}
-              onClick={() => addToCart(activeProduct)}
+              onClick={async () => {
+                setIsAdding(true);
+                // Simulate a small delay for better UX
+                await new Promise(resolve => setTimeout(resolve, 500));
+                addToCart(activeProduct);
+                setIsAdding(false);
+                setSnackbarOpen(true);
+              }}
               sx={{ py: 2, fontSize: '1.1rem', mb: 2 }}
             >
-              Añadir al Carrito
+              {isAdding ? 'Añadiendo...' : 'Añadir al Carrito'}
             </Button>
             <Button
               variant="text"
@@ -913,11 +948,11 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setV
             </Typography>
             <Divider sx={{ flex: 1, borderColor: 'rgba(197, 160, 89, 0.2)' }} />
           </Box>
-          <Grid container spacing={4}>
+          <Grid container spacing={3}>
             {relatedProducts.map(p => (
               <Grid key={p.id} size={{ xs: 12, md: 4 }}>
                 <Card
-                  onClick={() => { window.scrollTo(0, 0); setView(ViewState.PRODUCT_DETAIL); }}
+                  onClick={() => onProductClick?.(p.id)}
                   sx={{ bgcolor: 'background.paper', border: 1, borderColor: 'rgba(197, 160, 89, 0.2)', cursor: 'pointer', transition: 'all 0.3s', '&:hover': { borderColor: 'secondary.main', transform: 'translateY(-4px)' } }}
                 >
                   <CardMedia component="img" height="250" image={p.image} alt={p.name} sx={{ opacity: 0.8 }} />
@@ -999,7 +1034,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setV
 
       {/* Reviews Section */}
       <Box sx={{ borderTop: 1, borderColor: 'rgba(197, 160, 89, 0.2)', pt: 6 }}>
-        <Grid container spacing={8}>
+        <Grid container spacing={6}>
           {/* Form */}
           <Grid size={{ xs: 12, lg: 4 }}>
             <Typography variant="h6" color="secondary.main" gutterBottom sx={{ textTransform: 'uppercase', letterSpacing: 2, fontWeight: 'bold' }}>Inscribe una Crónica</Typography>
@@ -1133,6 +1168,43 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, productId, setV
           </Grid>
         </Grid>
       </Box>
+      <Dialog
+        open={!!zoomImage}
+        onClose={() => setZoomImage(null)}
+        maxWidth="lg"
+      >
+        <DialogContent sx={{ p: 0, position: 'relative', bgcolor: 'black', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <Box
+            component="img"
+            src={zoomImage || ''}
+            alt="Zoom"
+            sx={{ maxWidth: '100%', maxHeight: '90vh', objectFit: 'contain' }}
+            onClick={() => setZoomImage(null)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={galleryOpen}
+        onClose={() => setGalleryOpen(false)}
+        maxWidth="lg"
+      >
+        <DialogContent sx={{ p: 0, position: 'relative', bgcolor: 'black', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <Box
+            component="img"
+            src={selectedGalleryImage || ''}
+            alt="Gallery Zoom"
+            sx={{ maxWidth: '100%', maxHeight: '90vh', objectFit: 'contain' }}
+            onClick={() => setGalleryOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <Snackbar open={snackbarOpen} autoHideDuration={3000} onClose={() => setSnackbarOpen(false)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+        <Alert onClose={() => setSnackbarOpen(false)} severity="success" sx={{ width: '100%' }}>
+          {activeProduct?.name} añadido a tu inventario.
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };

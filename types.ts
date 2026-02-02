@@ -38,5 +38,7 @@ export enum ViewState {
   SIGNUP = 'SIGNUP',
   WISHLIST = 'WISHLIST',
   ADMIN = 'ADMIN',
-  ORDERS = 'ORDERS'
+  ORDERS = 'ORDERS',
+  FEEDBACK = 'FEEDBACK',
+  HOW_TO_BUY = 'HOW_TO_BUY'
 }

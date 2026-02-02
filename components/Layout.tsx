@@ -24,7 +24,8 @@ import {
   ArrowForward as ArrowForwardIcon,
   RssFeed as RssFeedIcon,
   Share as ShareIcon,
-  Forum as ForumIcon
+  Forum as ForumIcon,
+  HelpOutline as HelpIcon
 } from '@mui/icons-material';
 import SvgIcon, { SvgIconProps } from '@mui/material/SvgIcon';
 import WhatsAppButton from './WhatsAppButton';
@@ -33,22 +34,22 @@ import WhatsAppButton from './WhatsAppButton';
 const TreasureChestIcon = (props: SvgIconProps) => (
   <SvgIcon {...props} viewBox="0 0 24 24">
     {/* Chest body */}
-    <path fill="currentColor" d="M3 11v8c0 .5.5 1 1 1h14c.5 0 1-.5 1-1v-8H3z"/>
+    <path fill="currentColor" d="M3 11v8c0 .5.5 1 1 1h14c.5 0 1-.5 1-1v-8H3z" />
     {/* Open lid - rotated back */}
-    <path fill="currentColor" d="M5 11V9c0-1.7 1.3-3 3-3h6c1.7 0 3 1.3 3 3v2l2-4c0-2.2-1.8-4-4-4H7C4.8 4 3 5.8 3 8l2 3z"/>
+    <path fill="currentColor" d="M5 11V9c0-1.7 1.3-3 3-3h6c1.7 0 3 1.3 3 3v2l2-4c0-2.2-1.8-4-4-4H7C4.8 4 3 5.8 3 8l2 3z" />
     {/* Lid opened back arc */}
-    <ellipse fill="currentColor" cx="14" cy="5" rx="4" ry="2.5" transform="rotate(-20 14 5)"/>
+    <ellipse fill="currentColor" cx="14" cy="5" rx="4" ry="2.5" transform="rotate(-20 14 5)" />
     {/* Treasure/gold inside */}
-    <path fill="currentColor" d="M6 11c1 0 1.5-1 2.5-1s1.5 1 2.5 1 1.5-1 2.5-1 1.5 1 2.5 1v-1c-1 0-1.5-1-2.5-1s-1.5 1-2.5 1-1.5-1-2.5-1-1.5 1-2.5 1v1z" opacity="0.6"/>
+    <path fill="currentColor" d="M6 11c1 0 1.5-1 2.5-1s1.5 1 2.5 1 1.5-1 2.5-1 1.5 1 2.5 1v-1c-1 0-1.5-1-2.5-1s-1.5 1-2.5 1-1.5-1-2.5-1-1.5 1-2.5 1v1z" opacity="0.6" />
     {/* Keyhole */}
-    <circle fill="currentColor" cx="10" cy="15" r="1.2" opacity="0.4"/>
-    <rect fill="currentColor" x="9.4" y="15.5" width="1.2" height="2" opacity="0.4"/>
+    <circle fill="currentColor" cx="10" cy="15" r="1.2" opacity="0.4" />
+    <rect fill="currentColor" x="9.4" y="15.5" width="1.2" height="2" opacity="0.4" />
     {/* Sparkle top left */}
-    <path fill="currentColor" d="M4 6l.8-2L4 2l-.8 2L1 4l2.2.8L4 6z"/>
+    <path fill="currentColor" d="M4 6l.8-2L4 2l-.8 2L1 4l2.2.8L4 6z" />
     {/* Sparkle top right */}
-    <path fill="currentColor" d="M21 9l.6-1.5.6 1.5 1.5.6-1.5.6-.6 1.5-.6-1.5L19 9.6l1.5-.6z"/>
+    <path fill="currentColor" d="M21 9l.6-1.5.6 1.5 1.5.6-1.5.6-.6 1.5-.6-1.5L19 9.6l1.5-.6z" />
     {/* Sparkle small */}
-    <path fill="currentColor" d="M7 3l.4-1L7 1l-.4 1L5.5 2l1.1.4.4 1z"/>
+    <path fill="currentColor" d="M7 3l.4-1L7 1l-.4 1L5.5 2l1.1.4.4 1z" />
   </SvgIcon>
 );
 
@@ -226,12 +227,18 @@ const Layout: React.FC<LayoutProps> = ({
             <ListItemText primary="CATÁLOGO" />
           </ListItemButton>
         </ListItem>
-{isAdmin && (
         <ListItem disablePadding>
-          <ListItemButton onClick={() => setView(ViewState.ADMIN)}>
-            <ListItemText primary="ADMIN" />
+          <ListItemButton onClick={() => setView(ViewState.HOW_TO_BUY)}>
+            <ListItemIcon><HelpIcon sx={{ color: 'secondary.main' }} /></ListItemIcon>
+            <ListItemText primary="CÓMO COMPRAR" />
           </ListItemButton>
         </ListItem>
+        {isAdmin && (
+          <ListItem disablePadding>
+            <ListItemButton onClick={() => setView(ViewState.ADMIN)}>
+              <ListItemText primary="ADMIN" />
+            </ListItemButton>
+          </ListItem>
         )}
         {user ? (
           <>
@@ -305,44 +312,63 @@ const Layout: React.FC<LayoutProps> = ({
             {/* Desktop Nav */}
             {!isCheckout && (
               <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' }, ml: 4, gap: 2 }}>
-                 <Button
-                   onClick={() => setView(ViewState.CATALOG)}
-                   sx={{
-                     my: 2,
-                     color: currentView === ViewState.CATALOG ? 'primary.main' : 'common.white',
-                     display: 'block',
-                     letterSpacing: 2,
-                     borderBottom: currentView === ViewState.CATALOG ? 2 : 0,
-                     borderColor: 'primary.main',
-                     '&:hover': {
-                       color: 'secondary.main',
-                       bgcolor: 'transparent',
-                       transform: 'none',
-                     }
-                   }}
-                 >
-                   Catálogo
-                 </Button>
-{isAdmin && (
-                 <Button
-                   onClick={() => setView(ViewState.ADMIN)}
-                   startIcon={<ConstructionIcon />}
-                   sx={{
-                     my: 2,
-                     color: currentView === ViewState.ADMIN ? 'primary.main' : 'common.white',
-                     display: 'flex',
-                     letterSpacing: 2,
-                     borderBottom: currentView === ViewState.ADMIN ? 2 : 0,
-                     borderColor: 'primary.main',
-                     '&:hover': {
-                       color: 'secondary.main',
-                       bgcolor: 'transparent',
-                       transform: 'none',
-                     }
-                   }}
-                 >
-                   Admin
-                 </Button>
+                <Button
+                  onClick={() => setView(ViewState.CATALOG)}
+                  sx={{
+                    my: 2,
+                    color: currentView === ViewState.CATALOG ? 'primary.main' : 'common.white',
+                    display: 'block',
+                    letterSpacing: 2,
+                    borderBottom: currentView === ViewState.CATALOG ? 2 : 0,
+                    borderColor: 'primary.main',
+                    '&:hover': {
+                      color: 'secondary.main',
+                      bgcolor: 'transparent',
+                      transform: 'none',
+                    }
+                  }}
+                >
+                  Catálogo
+                </Button>
+                <Button
+                  onClick={() => setView(ViewState.HOW_TO_BUY)}
+                  startIcon={<HelpIcon />}
+                  sx={{
+                    my: 2,
+                    color: currentView === ViewState.HOW_TO_BUY ? 'primary.main' : 'common.white',
+                    display: 'flex',
+                    letterSpacing: 2,
+                    borderBottom: currentView === ViewState.HOW_TO_BUY ? 2 : 0,
+                    borderColor: 'primary.main',
+                    '&:hover': {
+                      color: 'secondary.main',
+                      bgcolor: 'transparent',
+                      transform: 'none',
+                    }
+                  }}
+                >
+                  Cómo Comprar
+                </Button>
+                {isAdmin && (
+                  <Button
+                    onClick={() => setView(ViewState.ADMIN)}
+                    startIcon={<ConstructionIcon />}
+                    sx={{
+                      my: 2,
+                      color: currentView === ViewState.ADMIN ? 'primary.main' : 'common.white',
+                      display: 'flex',
+                      letterSpacing: 2,
+                      borderBottom: currentView === ViewState.ADMIN ? 2 : 0,
+                      borderColor: 'primary.main',
+                      '&:hover': {
+                        color: 'secondary.main',
+                        bgcolor: 'transparent',
+                        transform: 'none',
+                      }
+                    }}
+                  >
+                    Admin
+                  </Button>
                 )}
               </Box>
             )}
@@ -355,25 +381,25 @@ const Layout: React.FC<LayoutProps> = ({
                   <Box sx={{ display: { xs: 'none', md: 'block' } }} ref={searchContainerRef}>
                     <ClickAwayListener onClickAway={() => setIsFocused(false)}>
                       <Box>
-                         <Search>
-                           <SearchIconWrapper>
-                             <SearchIcon />
-                           </SearchIconWrapper>
-                           <StyledInputBase
-                             placeholder="Buscar en los archivos..."
-                             inputProps={{ 'aria-label': 'search' }}
-                             value={searchInput}
-                             onChange={(e) => setSearchInput(e.target.value)}
-                             onFocus={() => setIsFocused(true)}
-                             onKeyDown={handleKeyDown}
-                           />
+                        <Search>
+                          <SearchIconWrapper>
+                            <SearchIcon />
+                          </SearchIconWrapper>
+                          <StyledInputBase
+                            placeholder="Buscar en los archivos..."
+                            inputProps={{ 'aria-label': 'search' }}
+                            value={searchInput}
+                            onChange={(e) => setSearchInput(e.target.value)}
+                            onFocus={() => setIsFocused(true)}
+                            onKeyDown={handleKeyDown}
+                          />
                           <IconButton
                             size="small"
-                            sx={{ 
-                              position: 'absolute', 
-                              right: 4, 
-                              top: '50%', 
-                              transform: 'translateY(-50%)', 
+                            sx={{
+                              position: 'absolute',
+                              right: 4,
+                              top: '50%',
+                              transform: 'translateY(-50%)',
                               color: 'secondary.main',
                               transition: 'none',
                               '&:hover': {
@@ -411,9 +437,9 @@ const Layout: React.FC<LayoutProps> = ({
                                   </ListItem>
                                 </>
                               ) : (
-                                  <ListItem>
-                                    <ListItemText secondary={`No se encontraron artefactos que coincidan con "${searchInput}"`} sx={{ fontStyle: 'italic', textAlign: 'center' }} />
-                                  </ListItem>
+                                <ListItem>
+                                  <ListItemText secondary={`No se encontraron artefactos que coincidan con "${searchInput}"`} sx={{ fontStyle: 'italic', textAlign: 'center' }} />
+                                </ListItem>
                               )}
                             </List>
                           </Paper>
@@ -565,8 +591,8 @@ const Layout: React.FC<LayoutProps> = ({
       </Box>
 
       {/* WhatsApp Floating Button */}
-      <WhatsAppButton 
-        phoneNumber="543815621699" 
+      <WhatsAppButton
+        phoneNumber="543815621699"
         message="Saludos desde el portal de ResinForge. Necesito asistencia del Gremio..."
       />
     </Box>

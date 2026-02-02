@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ViewState } from '../types';
-import { formatCurrency, formatCurrencyDecimal } from '../utils/currency';
+import { formatCurrency, formatCurrencyDecimal } from '../utils/currency.tsx';
 import { supabase } from '../src/supabase';
 import { User } from '@supabase/supabase-js';
 import {

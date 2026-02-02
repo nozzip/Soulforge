@@ -14,6 +14,10 @@ interface CartContextType {
   playAddSound: () => void;
   playRemoveSound: () => void;
   loading: boolean;
+  discount: number;
+  couponCode: string | null;
+  applyCoupon: (code: string, percent: number) => void;
+  removeCoupon: () => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -21,6 +25,8 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [items, setItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [discount, setDiscount] = useState(0);
+  const [couponCode, setCouponCode] = useState<string | null>(null);
 
   // Load cart from Supabase when user changes
   useEffect(() => {
@@ -28,7 +34,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       try {
         setLoading(true);
         const { data: { user } } = await supabase.auth.getUser();
-        
+
         if (user) {
           const { data: cartItems, error } = await supabase
             .from('cart_items')
@@ -88,7 +94,6 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           product_id: item.id,
           product_name: item.name,
           product_category: item.category,
-          product_scale: item.scale,
           price: item.price,
           quantity: item.quantity,
           image: item.image
@@ -108,11 +113,11 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setItems(prev => {
       const existing = prev.find(item => item.id === product.id);
       let newItems: CartItem[];
-      
+
       if (existing) {
-        newItems = prev.map(item => 
-          item.id === product.id 
-            ? { ...item, quantity: item.quantity + 1 } 
+        newItems = prev.map(item =>
+          item.id === product.id
+            ? { ...item, quantity: item.quantity + 1 }
             : item
         );
       } else {
@@ -135,7 +140,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     playRemoveSound();
     setItems(prev => {
       const newItems = prev.filter(item => item.id !== productId);
-      
+
       // Save to database asynchronously
       (async () => {
         const { data: { user } } = await supabase.auth.getUser();
@@ -175,7 +180,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const clearCart = async () => {
     setItems([]);
-    
+
     // Clear from database
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
@@ -194,21 +199,35 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     playSwordSound();
   };
 
+  const applyCoupon = (code: string, percent: number) => {
+    setCouponCode(code);
+    setDiscount(percent);
+  };
+
+  const removeCoupon = () => {
+    setCouponCode(null);
+    setDiscount(0);
+  };
+
   const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
   const totalPrice = items.reduce((acc, item) => acc + (item.price * item.quantity), 0);
 
   return (
-    <CartContext.Provider value={{ 
-      items, 
-      addToCart, 
-      removeFromCart, 
-      updateQuantity, 
-      totalItems, 
-      totalPrice, 
-      clearCart, 
-      playAddSound, 
+    <CartContext.Provider value={{
+      items,
+      addToCart,
+      removeFromCart,
+      updateQuantity,
+      totalItems,
+      totalPrice,
+      clearCart,
+      playAddSound,
       playRemoveSound,
-      loading
+      loading,
+      discount,
+      couponCode,
+      applyCoupon,
+      removeCoupon
     }}>
       {children}
     </CartContext.Provider>

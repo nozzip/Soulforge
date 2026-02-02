@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef, memo } from 'react';
 import { Product, ViewState } from '../types';
 import { useCart } from '../context/CartContext';
-import { formatCurrency } from '../utils/currency';
+import { formatCurrency } from '../utils/currency.tsx';
 import {
   Box,
   Container,
@@ -39,6 +39,17 @@ import { Search, FilterList, Add, Favorite, FavoriteBorder, Public, Straighten, 
 import { SectionHeader } from '../components/StyledComponents';
 import ForgeLoader from '../components/ForgeLoader';
 
+interface CatalogState {
+  page: number;
+  searchQuery: string;
+  selectedCategories: string[];
+  selectedSizes: string[];
+  selectedDesigners: string[];
+  selectedCreatureTypes: string[];
+  selectedWeapons: string[];
+  sortOption: string;
+}
+
 interface CatalogProps {
   products: Product[];
   categories: string[];
@@ -55,6 +66,8 @@ interface CatalogProps {
   user?: { name: string; id: string } | null;
   onDeleteProduct?: (id: string) => void;
   onUpdateProduct?: (product: Product) => void;
+  catalogState: CatalogState;
+  onCatalogStateChange: (state: CatalogState) => void;
 }
 
 const ITEMS_PER_PAGE = 9;
@@ -72,36 +85,51 @@ const Catalog: React.FC<CatalogProps> = ({
   creatureTypes = [],
   weapons = [],
   isAdmin,
-  onDeleteProduct
+  onDeleteProduct,
+  catalogState,
+  onCatalogStateChange
 }) => {
   const { addToCart } = useCart();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
 
-  const [searchQuery, setSearchQuery] = useState(initialSearchQuery || '');
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
-  const [selectedDesigners, setSelectedDesigners] = useState<string[]>([]);
-  const [selectedCreatureTypes, setSelectedCreatureTypes] = useState<string[]>([]);
-  const [selectedWeapons, setSelectedWeapons] = useState<string[]>([]);
-  const [sortOption, setSortOption] = useState('newest');
+  const [searchQuery, setSearchQuery] = useState(catalogState.searchQuery || initialSearchQuery || '');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(catalogState.selectedCategories);
+  const [selectedSizes, setSelectedSizes] = useState<string[]>(catalogState.selectedSizes);
+  const [selectedDesigners, setSelectedDesigners] = useState<string[]>(catalogState.selectedDesigners);
+  const [selectedCreatureTypes, setSelectedCreatureTypes] = useState<string[]>(catalogState.selectedCreatureTypes);
+  const [selectedWeapons, setSelectedWeapons] = useState<string[]>(catalogState.selectedWeapons);
+  const [sortOption, setSortOption] = useState(catalogState.sortOption);
 
   // Pagination State
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(catalogState.page);
 
   // Mobile filter visibility state
   const [showFilters, setShowFilters] = useState(false);
 
+  // Sync state back to parent
   useEffect(() => {
-    if (initialSearchQuery !== undefined) {
+    onCatalogStateChange({
+      page: currentPage,
+      searchQuery,
+      selectedCategories,
+      selectedSizes,
+      selectedDesigners,
+      selectedCreatureTypes,
+      selectedWeapons,
+      sortOption
+    });
+  }, [currentPage, searchQuery, selectedCategories, selectedSizes, selectedDesigners, selectedCreatureTypes, selectedWeapons, sortOption, onCatalogStateChange]);
+
+  useEffect(() => {
+    if (initialSearchQuery !== undefined && initialSearchQuery !== searchQuery) {
       setSearchQuery(initialSearchQuery);
+      setCurrentPage(1);
     }
   }, [initialSearchQuery]);
 
-  // Reset pagination when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, selectedCategories, selectedSizes, selectedDesigners, selectedCreatureTypes, selectedWeapons, sortOption]);
+  // Remove the automatic reset pagination effect that runs on mount
+  // and replace it with manual resets in handlers.
 
   const FILTER_GROUPS = [
     {
@@ -136,7 +164,8 @@ const Catalog: React.FC<CatalogProps> = ({
     },
   ];
 
-  const toggleFilter = (type: 'category' | 'size' | 'designer' | 'creature_type', value: string) => {
+  const toggleFilter = (type: 'category' | 'size' | 'designer' | 'creature_type' | 'weapon', value: string) => {
+    setCurrentPage(1);
     if (type === 'category') {
       setSelectedCategories(prev =>
         prev.includes(value) ? prev.filter(c => c !== value) : [...prev, value]
@@ -283,6 +312,7 @@ const Catalog: React.FC<CatalogProps> = ({
 
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
+    setCurrentPage(1);
   }, []);
 
   const FilterContent = useMemo(() => (
@@ -377,7 +407,10 @@ const Catalog: React.FC<CatalogProps> = ({
             <FormControl size="small" sx={{ minWidth: 180 }}>
               <Select
                 value={sortOption}
-                onChange={(e) => setSortOption(e.target.value)}
+                onChange={(e) => {
+                  setSortOption(e.target.value);
+                  setCurrentPage(1);
+                }}
                 variant="outlined"
                 sx={{
                   color: 'common.white',

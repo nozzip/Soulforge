@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 import React, { useState, ChangeEvent } from 'react';
-import { formatCurrency, formatCurrencyDecimal } from '../utils/currency';
+import { formatCurrency, formatCurrencyDecimal } from '../utils/currency.tsx';
 import {
   Box,
   Container,
@@ -55,7 +55,9 @@ import {
   RateReview,
   DeleteForever,
   Search,
-  FilterList
+  FilterList,
+  ContentCopy,
+  SentimentVerySatisfied
 } from '@mui/icons-material';
 import { SectionHeader } from '../components/StyledComponents';
 import { supabase } from '../src/supabase';
@@ -115,6 +117,25 @@ const Admin: React.FC<AdminProps> = ({
   const [reviewsLoading, setReviewsLoading] = useState(false);
   const [reviewSearch, setReviewSearch] = useState('');
   const [reviewFilter, setReviewFilter] = useState('all');
+  const [generatedLink, setGeneratedLink] = useState('');
+
+  const handleGenerateLink = async () => {
+    try {
+      const { data, error } = await supabase.rpc('generate_review_link');
+      if (error) throw error;
+      if (data) {
+        setGeneratedLink(`${window.location.origin}/feedback?token=${data}`);
+      }
+    } catch (e: any) {
+      console.error(e);
+      alert("Error al generar enlace: " + e.message);
+    }
+  };
+
+  const copyLink = () => {
+    navigator.clipboard.writeText(generatedLink);
+    alert("Enlace copiado al portapapeles");
+  };
 
   const fetchOrders = async () => {
     setOrdersLoading(true);
@@ -686,6 +707,28 @@ const Admin: React.FC<AdminProps> = ({
               </Paper>
 
               {/* Reviews Table */}
+              <Box sx={{ p: 3, mb: 4, bgcolor: (t) => alpha(t.palette.success.main, 0.1), border: 1, borderColor: (t) => alpha(t.palette.success.main, 0.3), borderRadius: 1 }}>
+                <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
+                  <SentimentVerySatisfied color="success" />
+                  <Typography variant="h6" color="success.main">Invitar a Aventurero</Typography>
+                </Stack>
+                <Typography variant="body2" sx={{ mb: 2, color: 'grey.500' }}>Genera un enlace único para que un cliente deje una reseña y reciba su recompensa.</Typography>
+
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <Button variant="contained" color="success" onClick={handleGenerateLink} startIcon={<AutoFixHigh />}>
+                    Generar Enlace Mágico
+                  </Button>
+                  {generatedLink && (
+                    <Paper sx={{ p: 1, px: 2, bgcolor: 'background.paper', border: 1, borderColor: 'grey.700', display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{generatedLink}</Typography>
+                      <IconButton size="small" onClick={copyLink}>
+                        <ContentCopy fontSize="small" />
+                      </IconButton>
+                    </Paper>
+                  )}
+                </Stack>
+              </Box>
+
               <TableContainer component={Paper} sx={{ bgcolor: 'background.paper', borderRadius: 2, border: 1, borderColor: (t) => alpha(t.palette.secondary.main, 0.2), boxShadow: 6 }}>
                 <Table>
                   <TableHead sx={{ bgcolor: (t) => alpha(t.palette.common.black, 0.3) }}>
@@ -850,8 +893,9 @@ const Admin: React.FC<AdminProps> = ({
             </Box>
           )}
         </Box>
-      )}
-    </Container>
+      )
+      }
+    </Container >
   );
 };
 

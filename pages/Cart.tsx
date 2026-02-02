@@ -1,6 +1,8 @@
+import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
+import { supabase } from '../src/supabase';
 import { ViewState } from '../types';
-import { formatCurrency, formatCurrencyDecimal } from '../utils/currency';
+import { formatCurrency, formatCurrencyDecimal, formatARS, formatGP } from '../utils/currency.tsx';
 import {
   Box,
   Container,
@@ -13,11 +15,15 @@ import {
   Divider,
   useTheme,
   useMediaQuery,
-  alpha
+  alpha,
+  TextField,
+  InputAdornment,
+  CircularProgress
 } from '@mui/material';
 import {
   Inventory2,
   Add,
+  Check,
   Remove,
   LinkOff,
   MonetizationOn,
@@ -32,11 +38,38 @@ interface CartProps {
 }
 
 const Cart: React.FC<CartProps> = ({ setView }) => {
-  const { items, updateQuantity, removeFromCart, totalPrice } = useCart();
+  const { items, updateQuantity, removeFromCart, totalPrice, discount, applyCoupon, removeCoupon, couponCode } = useCart();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const grandTotal = totalPrice;
+  const [couponInput, setCouponInput] = useState('');
+  const [couponError, setCouponError] = useState('');
+  const [checkingCoupon, setCheckingCoupon] = useState(false);
+
+  const handleApplyCoupon = async () => {
+    if (!couponInput.trim()) return;
+    setCheckingCoupon(true);
+    setCouponError('');
+
+    try {
+      const { data, error } = await supabase.rpc('check_coupon', { input_code: couponInput.trim() });
+      if (error) throw error;
+
+      if (data && data > 0) {
+        applyCoupon(couponInput.trim(), data);
+        setCouponInput('');
+      } else {
+        setCouponError('Código inválido o expirado.');
+      }
+    } catch (err) {
+      console.error(err);
+      setCouponError('Error al verificar el código.');
+    } finally {
+      setCheckingCoupon(false);
+    }
+  };
+
+  const grandTotal = totalPrice * (1 - discount / 100);
 
   return (
     <Container maxWidth="lg" sx={{ py: 6, px: { xs: 2, lg: 4 } }}>
@@ -121,7 +154,7 @@ const Cart: React.FC<CartProps> = ({ setView }) => {
                             {item.name}
                           </Typography>
                           <Typography variant="caption" sx={{ color: 'grey.500', textTransform: 'uppercase', letterSpacing: 1, display: 'block', mt: 0.5, mb: 1 }}>
-                            {item.scale} • {item.category}
+                            {item.size} • {item.category}
                           </Typography>
                         </Box>
                         {isMobile && (
@@ -190,18 +223,67 @@ const Cart: React.FC<CartProps> = ({ setView }) => {
                 Resumen del Tesoro
               </Typography>
 
+              {/* Coupon Section */}
+              <Box sx={{ mb: 3 }}>
+                {!couponCode ? (
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <TextField
+                      placeholder="Código Rúnico"
+                      size="small"
+                      fullWidth
+                      value={couponInput}
+                      onChange={(e) => setCouponInput(e.target.value)}
+                      error={!!couponError}
+                      helperText={couponError}
+                      disabled={checkingCoupon}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          bgcolor: 'rgba(0,0,0,0.2)',
+                          fieldset: { borderColor: 'rgba(197, 160, 89, 0.3)' }
+                        },
+                        '& .MuiFormHelperText-root': { color: 'error.main' }
+                      }}
+                    />
+                    <Button
+                      variant="outlined"
+                      color="secondary"
+                      onClick={handleApplyCoupon}
+                      disabled={checkingCoupon || !couponInput.trim()}
+                    >
+                      {checkingCoupon ? <CircularProgress size={20} color="secondary" /> : 'Aplicar'}
+                    </Button>
+                  </Box>
+                ) : (
+                  <Paper variant="outlined" sx={{ p: 2, bgcolor: 'rgba(76, 175, 80, 0.1)', borderColor: 'success.main', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Box>
+                      <Typography variant="subtitle2" color="success.main" fontWeight="bold">Cupón Aplicado</Typography>
+                      <Typography variant="caption" color="text.secondary">{couponCode} (-{discount}%)</Typography>
+                    </Box>
+                    <IconButton size="small" onClick={removeCoupon} color="error">
+                      <Typography variant="caption" sx={{ fontWeight: 'bold' }}>X</Typography>
+                    </IconButton>
+                  </Paper>
+                )}
+              </Box>
+
               <Stack spacing={2} sx={{ mb: 4 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <Typography variant="body2" sx={{ color: 'grey.500', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 'bold', minWidth: '120px' }}>Subtotal</Typography>
-                  <Typography variant="body2" sx={{ color: 'secondary.main', fontWeight: 'bold', textAlign: 'right' }}>{formatCurrencyDecimal(totalPrice)}</Typography>
+                  <Box sx={{ textAlign: 'right' }}>
+                    <Typography variant="body2" sx={{ color: 'secondary.main', fontWeight: 'bold' }}>{formatARS(totalPrice)}</Typography>
+                    <Typography variant="caption" sx={{ color: (theme) => alpha(theme.palette.secondary.main, 0.4), fontSize: '0.65rem' }}>{formatGP(totalPrice, 2)}</Typography>
+                  </Box>
                 </Box>
 
 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pt: 2, mt: 1, borderTop: 1, borderColor: (theme) => alpha(theme.palette.secondary.main, 0.2) }}>
                   <Typography variant="h5" sx={{ fontWeight: 'bold', fontStyle: 'italic', color: 'common.white', textTransform: 'uppercase', letterSpacing: 2 }}>Total</Typography>
                   <Box sx={{ textAlign: 'right' }}>
-                    <Typography variant="h4" sx={{ fontWeight: 900, color: 'secondary.main', lineHeight: 1 }}>{formatCurrencyDecimal(grandTotal)}</Typography>
-                    <Typography variant="caption" sx={{ color: (theme) => alpha(theme.palette.secondary.main, 0.4), textTransform: 'uppercase', fontSize: '0.6rem', display: 'block', mt: 0.5 }}>Equivalente en Oro</Typography>
+                    <Typography variant="h4" sx={{ fontWeight: 900, color: 'secondary.main', lineHeight: 1 }}>{formatARS(grandTotal)}</Typography>
+                    <Typography variant="caption" sx={{ color: (theme) => alpha(theme.palette.secondary.main, 0.5), fontWeight: 'bold', display: 'block', mt: 0.5 }}>
+                      {formatGP(grandTotal, 2)}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: (theme) => alpha(theme.palette.secondary.main, 0.3), textTransform: 'uppercase', fontSize: '0.6rem', display: 'block' }}>Equivalente en Oro</Typography>
                   </Box>
                 </Box>
               </Stack>

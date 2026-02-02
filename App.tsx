@@ -12,6 +12,8 @@ import Signup from './pages/Signup';
 import Wishlist from './pages/Wishlist';
 import Admin from './pages/Admin';
 import Orders from './pages/Orders';
+import Feedback from './pages/Feedback';
+import HowToBuy from './pages/HowToBuy';
 import { ViewState, Product } from './types';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import { fantasyTheme, warhammerTheme } from './src/theme';
@@ -23,6 +25,25 @@ const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewState>(ViewState.HOME);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('token')) {
+      setCurrentView(ViewState.FEEDBACK);
+    }
+  }, []);
+
+  // Catalog state persistence
+  const [catalogState, setCatalogState] = useState({
+    page: 1,
+    searchQuery: '',
+    selectedCategories: [] as string[],
+    selectedSizes: [] as string[],
+    selectedDesigners: [] as string[],
+    selectedCreatureTypes: [] as string[],
+    selectedWeapons: [] as string[],
+    sortOption: 'newest'
+  });
 
   // Products State
   const [products, setProducts] = useState<Product[]>([]);
@@ -214,6 +235,7 @@ const App: React.FC = () => {
 
   const handleSearch = (query: string) => {
     setGlobalSearchQuery(query);
+    setCatalogState(prev => ({ ...prev, searchQuery: query, page: 1 }));
     setCurrentView(ViewState.CATALOG);
   };
 
@@ -233,7 +255,10 @@ const App: React.FC = () => {
 
   const handleLogin = (newUser: User) => {
     setUser(newUser);
-    setCurrentView(ViewState.HOME);
+    // Don't redirect away from FEEDBACK view - let the user continue their review
+    if (currentView !== ViewState.FEEDBACK) {
+      setCurrentView(ViewState.HOME);
+    }
   };
 
   const handleLogout = async () => {
@@ -304,6 +329,8 @@ const App: React.FC = () => {
             weapons={weapons}
             isAdmin={isAdmin}
             onDeleteProduct={handleDeleteProduct}
+            catalogState={catalogState}
+            onCatalogStateChange={setCatalogState}
           />
         );
       case ViewState.CART:
@@ -321,6 +348,7 @@ const App: React.FC = () => {
             isAdmin={isAdmin}
             user={user ? { name: user.user_metadata?.full_name || user.email || 'Usuario', id: user.id } : null}
             onUpdateProduct={handleUpdateProduct}
+            onProductClick={handleProductClick}
           />
         );
       case ViewState.LOGIN:
@@ -339,6 +367,10 @@ const App: React.FC = () => {
         );
       case ViewState.ORDERS:
         return <Orders setView={handleSetView} />;
+      case ViewState.FEEDBACK:
+        return <Feedback setView={handleSetView} user={user} onLogin={handleLogin} />;
+      case ViewState.HOW_TO_BUY:
+        return <HowToBuy setView={handleSetView} />;
       case ViewState.ADMIN:
         return (
           <Admin
