@@ -129,10 +129,7 @@ const Layout: React.FC<LayoutProps> = ({
   onToggleTheme
 }) => {
 
-  // Debug admin status
-  useEffect(() => {
-    console.log("Layout received isAdmin:", isAdmin, "for user:", user);
-  }, [isAdmin, user]);
+
 
 
   const theme = useTheme();

@@ -42,7 +42,14 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             .eq('user_id', user.id)
             .order('created_at', { ascending: false });
 
-          if (error) throw error;
+          if (error) {
+            // If table doesn't exist (404), just treat as empty cart
+            if (error.code === '404' || error.message?.includes('404')) {
+              setItems([]);
+              return;
+            }
+            throw error;
+          }
 
           // Transform database items to CartItem format
           const transformedItems: CartItem[] = cartItems.map(item => ({
@@ -103,7 +110,11 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           .from('cart_items')
           .insert(itemsToInsert);
       }
-    } catch (error) {
+    } catch (error: any) {
+      // Silently ignore if table doesn't exist (404)
+      if (error?.code === '404' || error?.message?.includes('404')) {
+        return;
+      }
       console.error('Error saving cart to database:', error);
     }
   };
@@ -182,12 +193,19 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setItems([]);
 
     // Clear from database
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      await supabase
-        .from('cart_items')
-        .delete()
-        .eq('user_id', user.id);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase
+          .from('cart_items')
+          .delete()
+          .eq('user_id', user.id);
+      }
+    } catch (error: any) {
+      // Silently ignore if table doesn't exist
+      if (error?.code !== '404' && !error?.message?.includes('404')) {
+        console.error('Error clearing cart:', error);
+      }
     }
   };
 

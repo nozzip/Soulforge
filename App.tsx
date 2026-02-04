@@ -125,8 +125,6 @@ const App: React.FC = () => {
         return;
       }
 
-      console.log("Checking admin status for user:", user.id);
-
       const { data, error } = await supabase
         .from("admin_users")
         .select("user_id")
@@ -134,35 +132,10 @@ const App: React.FC = () => {
         .single();
 
       const adminStatus = !error && !!data;
-      console.log("Admin check result:", { data, error, adminStatus });
       setIsAdmin(adminStatus);
     };
 
     checkAdminStatus();
-  }, [user]);
-
-  // Manual admin refresh function for debugging
-  useEffect(() => {
-    (window as any).refreshAdminStatus = async () => {
-      if (user) {
-        console.log("Manual admin refresh triggered");
-        const { data, error } = await supabase
-          .from("admin_users")
-          .select("user_id")
-          .eq("user_id", user.id)
-          .single();
-
-        const adminStatus = !error && !!data;
-        console.log("Manual admin check result:", { data, error, adminStatus });
-        setIsAdmin(adminStatus);
-      } else {
-        console.log("No user logged in");
-      }
-    };
-
-    return () => {
-      delete (window as any).refreshAdminStatus;
-    };
   }, [user]);
 
   // Wishlist State - Syncs with Supabase when user is logged in

@@ -92,14 +92,19 @@ export const fantasyTheme = createTheme({
     },
     MuiCssBaseline: {
       styleOverrides: {
-        '@import': "url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap')",
         body: {
           backgroundImage: "url('https://www.transparenttextures.com/patterns/dark-leather.png')",
           backgroundBlendMode: 'overlay',
         },
         '::selection': {
           backgroundColor: '#c5a059',
-          color: '#1a0d0d',
+          color: '#ffffff',
+          textShadow: '0 1px 2px rgba(0,0,0,0.8)',
+        },
+        '::-moz-selection': {
+          backgroundColor: '#c5a059',
+          color: '#ffffff',
+          textShadow: '0 1px 2px rgba(0,0,0,0.8)',
         },
         '*::-webkit-scrollbar': {
           width: '8px',
@@ -308,14 +313,19 @@ export const warhammerTheme = createTheme({
     },
     MuiCssBaseline: {
       styleOverrides: {
-        '@import': "url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap')",
         body: {
           backgroundImage: "url('https://www.transparenttextures.com/patterns/carbon-fibre.png')",
           backgroundBlendMode: 'screen',
         },
         '::selection': {
-          backgroundColor: '#0ea5e9',
-          color: '#030712',
+          backgroundColor: '#374151',
+          color: '#ffffff',
+          textShadow: '0 1px 2px rgba(0,0,0,0.9)',
+        },
+        '::-moz-selection': {
+          backgroundColor: '#374151',
+          color: '#ffffff',
+          textShadow: '0 1px 2px rgba(0,0,0,0.8)',
         },
         '*::-webkit-scrollbar': {
           width: '8px',

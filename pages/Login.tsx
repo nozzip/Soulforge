@@ -46,22 +46,18 @@ const Login: React.FC<LoginProps> = ({ setView, onLogin }) => {
       const { data: emailData, error: rpcError } = await supabase
         .rpc('get_email_from_username', { input_username: email.trim() });
 
-      // Better error logging
       if (rpcError) {
-        console.error('RPC Error:', rpcError);
         setError(`Error al buscar usuario: ${rpcError.message}`);
         setIsLoading(false);
         return;
       }
 
       if (!emailData) {
-        console.warn('Username not found in database:', email);
         setError('Usuario no encontrado. Verifica que el nombre de usuario sea correcto.');
         setIsLoading(false);
         return;
       }
 
-      console.log('Email found for username:', emailData);
       loginEmail = emailData;
     }
 

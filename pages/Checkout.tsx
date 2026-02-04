@@ -67,6 +67,9 @@ const Checkout: React.FC = () => {
 
   const [formData, setFormData] = useState({
     name: '',
+    email: '',
+    phone: '',
+    dni: '',
     province: '',
     address: '',
     city: '',
@@ -185,7 +188,11 @@ const Checkout: React.FC = () => {
           total_ars: grandTotal * 1000,
           shipping_address: `${formData.address}, ${formData.city} (${formData.zip}), ${formData.province}, Argentina`,
           shipping_method: 'A coordinar',
-          status: 'Recibido'
+          status: 'Recibido',
+          customer_name: formData.name,
+          customer_email: formData.email,
+          customer_phone: formData.phone,
+          customer_dni: formData.dni
         })
         .select()
         .single();
@@ -356,6 +363,15 @@ const Checkout: React.FC = () => {
               <Grid container spacing={3}>
                 <Grid size={{ xs: 12, md: 6 }}>
                   <TextField fullWidth name="name" value={formData.name} onChange={handleInputChange} label="Nombre del Destinatario" placeholder="Galdor el Veloz" required />
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField fullWidth name="email" value={formData.email} onChange={handleInputChange} label="Email" placeholder="aventurero@email.com" required />
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField fullWidth name="phone" value={formData.phone} onChange={handleInputChange} label="Teléfono" placeholder="+54 9 381 123 4567" required />
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField fullWidth name="dni" value={formData.dni} onChange={handleInputChange} label="DNI / CUIL" placeholder="12345678" required />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
                   <TextField fullWidth value="Argentina" label="País" disabled />
