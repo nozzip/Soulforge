@@ -401,23 +401,8 @@ const HowToBuy: React.FC<HowToBuyProps> = ({ setView }) => {
                         <Box sx={{ mt: { xs: 10, md: 15 }, textAlign: 'center', position: 'relative' }}>
 
 
-                            <Box sx={{ position: 'relative', display: 'inline-block', mb: 3, opacity: 0.6 }}>
-                                {/* Seal Background Effect */}
-                                <Box sx={{
-                                    position: 'absolute',
-                                    top: '50%',
-                                    left: '50%',
-                                    transform: 'translate(-50%, -50%)',
-                                    width: 140,
-                                    height: 140,
-                                    borderRadius: '50%',
-                                    background: `radial-gradient(circle, ${alpha(theme.palette.secondary.main, 0.1)} 0%, transparent 70%)`,
-                                    zIndex: 0
-                                }} />
-
-                                <Box sx={{ position: 'relative', zIndex: 1 }}>
-                                    <ThemedLogo width={180} />
-                                </Box>
+                            <Box sx={{ position: 'relative', display: 'inline-block', mb: 2, mt: -4, opacity: 0.7 }}>
+                                <ThemedLogo width={240} />
                             </Box>
                             <Typography sx={{
                                 fontFamily: '"Newsreader", serif',

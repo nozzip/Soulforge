@@ -22,6 +22,7 @@ export interface Product {
   title?: string;
   grade?: string;
   image_url?: string;
+  gallery_images?: string[];
 }
 
 export interface CartItem extends Product {
@@ -29,16 +30,16 @@ export interface CartItem extends Product {
 }
 
 export enum ViewState {
-  HOME = 'HOME',
-  CATALOG = 'CATALOG',
-  CART = 'CART',
-  CHECKOUT = 'CHECKOUT',
-  PRODUCT_DETAIL = 'PRODUCT_DETAIL',
-  LOGIN = 'LOGIN',
-  SIGNUP = 'SIGNUP',
-  WISHLIST = 'WISHLIST',
-  ADMIN = 'ADMIN',
-  ORDERS = 'ORDERS',
-  FEEDBACK = 'FEEDBACK',
-  HOW_TO_BUY = 'HOW_TO_BUY'
+  HOME = "HOME",
+  CATALOG = "CATALOG",
+  CART = "CART",
+  CHECKOUT = "CHECKOUT",
+  PRODUCT_DETAIL = "PRODUCT_DETAIL",
+  LOGIN = "LOGIN",
+  SIGNUP = "SIGNUP",
+  WISHLIST = "WISHLIST",
+  ADMIN = "ADMIN",
+  ORDERS = "ORDERS",
+  FEEDBACK = "FEEDBACK",
+  HOW_TO_BUY = "HOW_TO_BUY",
 }

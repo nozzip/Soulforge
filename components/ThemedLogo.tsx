@@ -6,29 +6,37 @@ interface ThemedLogoProps {
   height?: number | string;
 }
 
-export const ThemedLogo: React.FC<ThemedLogoProps> = ({ width = 200, height }) => {
+export const ThemedLogo: React.FC<ThemedLogoProps> = ({
+  width = 200,
+  height,
+}) => {
   const theme = useTheme();
-  
+
+  // Determine which logo to use based on theme
+  const isWarhammer = theme.palette.primary.main === '#0ea5e9';
+  const logoSrc = isWarhammer
+    ? '/images/guide/logo-warhammer.svg'
+    : '/images/guide/logo-fantasy.svg';
+
+  // Theme-based glow color
+  const glowColor = isWarhammer
+    ? 'rgba(14, 165, 233, 0.35)'
+    : 'rgba(197, 160, 89, 0.35)';
+
   return (
     <Box
       component="img"
-      src="/images/guide/logo.svg"
+      src={logoSrc}
       alt="ResinForge Logo"
       sx={{
         width: width,
         height: height || 'auto',
         display: 'block',
-        filter: `
-          brightness(1.3)
-          contrast(1.2)
-          saturate(1.1)
-          drop-shadow(0 2px 6px rgba(0, 0, 0, 0.3))
-          drop-shadow(0 4px 12px rgba(0, 0, 0, 0.2))
-        `,
-        position: 'relative',
-        transition: 'transform 0.3s ease',
+        filter: `drop-shadow(0 4px 12px ${glowColor})`,
+        transition: 'all 0.3s ease',
         '&:hover': {
-          transform: 'scale(1.02)',
+          transform: 'scale(1.03)',
+          filter: `drop-shadow(0 6px 16px ${glowColor})`,
         },
       }}
     />

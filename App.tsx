@@ -1,34 +1,36 @@
 /// <reference lib="dom" />
-import React, { useState, useEffect } from 'react';
-import { CartProvider } from './context/CartContext';
-import Layout from './components/Layout';
-import Home from './pages/Home';
-import Catalog from './pages/Catalog';
-import Cart from './pages/Cart';
-import Checkout from './pages/Checkout';
-import ProductDetail from './pages/ProductDetail';
-import Login from './pages/Login';
-import Signup from './pages/Signup';
-import Wishlist from './pages/Wishlist';
-import Admin from './pages/Admin';
-import Orders from './pages/Orders';
-import Feedback from './pages/Feedback';
-import HowToBuy from './pages/HowToBuy';
-import { ViewState, Product } from './types';
-import { ThemeProvider, CssBaseline } from '@mui/material';
-import { fantasyTheme, warhammerTheme } from './src/theme';
-import { supabase } from './src/supabase';
-import { User } from '@supabase/supabase-js';
-import { updatePageMeta, getSEOForView } from './utils/seo';
+import React, { useState, useEffect } from "react";
+import { CartProvider } from "./context/CartContext";
+import Layout from "./components/Layout";
+import Home from "./pages/Home";
+import Catalog from "./pages/Catalog";
+import Cart from "./pages/Cart";
+import Checkout from "./pages/Checkout";
+import ProductDetail from "./pages/ProductDetail";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import Wishlist from "./pages/Wishlist";
+import Admin from "./pages/Admin";
+import Orders from "./pages/Orders";
+import Feedback from "./pages/Feedback";
+import HowToBuy from "./pages/HowToBuy";
+import { ViewState, Product } from "./types";
+import { ThemeProvider, CssBaseline } from "@mui/material";
+import { fantasyTheme, warhammerTheme } from "./src/theme";
+import { supabase } from "./src/supabase";
+import { User } from "@supabase/supabase-js";
+import { updatePageMeta, getSEOForView } from "./utils/seo";
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewState>(ViewState.HOME);
-  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
-  const [globalSearchQuery, setGlobalSearchQuery] = useState('');
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(
+    null,
+  );
+  const [globalSearchQuery, setGlobalSearchQuery] = useState("");
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('token')) {
+    if (params.get("token")) {
       setCurrentView(ViewState.FEEDBACK);
     }
   }, []);
@@ -36,13 +38,13 @@ const App: React.FC = () => {
   // Catalog state persistence
   const [catalogState, setCatalogState] = useState({
     page: 1,
-    searchQuery: '',
+    searchQuery: "",
     selectedCategories: [] as string[],
     selectedSizes: [] as string[],
     selectedDesigners: [] as string[],
     selectedCreatureTypes: [] as string[],
     selectedWeapons: [] as string[],
-    sortOption: 'newest'
+    sortOption: "newest",
   });
 
   // Products State
@@ -50,30 +52,32 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   // Fetch Products from Supabase
+  const fetchProducts = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("products")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching products:", error);
+    } else if (data) {
+      setProducts(data as Product[]);
+    }
+    setLoading(false);
+  };
+
   useEffect(() => {
-    const fetchProducts = async () => {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching products:', error);
-      } else if (data) {
-        setProducts(data as Product[]);
-      }
-      setLoading(false);
-    };
-
     fetchProducts();
   }, []);
 
   // Dynamic Metadata State
   const [categories, setCategories] = useState<string[]>(() => {
     try {
-      const saved = localStorage.getItem('resinforge_categories');
-      return saved ? JSON.parse(saved) : ["D&D", "Warhammer", "Sci-Fi", "Anime", "Cine"];
+      const saved = localStorage.getItem("resinforge_categories");
+      return saved
+        ? JSON.parse(saved)
+        : ["D&D", "Warhammer", "Sci-Fi", "Anime", "Cine"];
     } catch (e) {
       return ["D&D", "Warhammer", "Sci-Fi", "Anime", "Cine"];
     }
@@ -81,8 +85,10 @@ const App: React.FC = () => {
 
   const [sizes, setSizes] = useState<string[]>(() => {
     try {
-      const saved = localStorage.getItem('resinforge_sizes');
-      return saved ? JSON.parse(saved) : ["Small", "Medium", "Large", "Huge", "Gargantuan"];
+      const saved = localStorage.getItem("resinforge_sizes");
+      return saved
+        ? JSON.parse(saved)
+        : ["Small", "Medium", "Large", "Huge", "Gargantuan"];
     } catch (e) {
       return ["Small", "Medium", "Large", "Huge", "Gargantuan"];
     }
@@ -91,11 +97,11 @@ const App: React.FC = () => {
   // Persistence Effects
 
   useEffect(() => {
-    localStorage.setItem('resinforge_categories', JSON.stringify(categories));
+    localStorage.setItem("resinforge_categories", JSON.stringify(categories));
   }, [categories]);
 
   useEffect(() => {
-    localStorage.setItem('resinforge_sizes', JSON.stringify(sizes));
+    localStorage.setItem("resinforge_sizes", JSON.stringify(sizes));
   }, [sizes]);
 
   // User State
@@ -109,7 +115,9 @@ const App: React.FC = () => {
     });
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
     });
 
@@ -141,7 +149,7 @@ const App: React.FC = () => {
   // Wishlist State - Syncs with Supabase when user is logged in
   const [wishlist, setWishlist] = useState<string[]>(() => {
     try {
-      const saved = localStorage.getItem('resinforge_wishlist');
+      const saved = localStorage.getItem("resinforge_wishlist");
       return saved ? JSON.parse(saved) : [];
     } catch (e) {
       return [];
@@ -155,14 +163,17 @@ const App: React.FC = () => {
     const loadWishlist = async () => {
       if (user) {
         const { data, error } = await supabase
-          .from('wishlists')
-          .select('product_id')
-          .eq('user_id', user.id);
+          .from("wishlists")
+          .select("product_id")
+          .eq("user_id", user.id);
 
         if (!error && data) {
-          const productIds = data.map(item => item.product_id);
+          const productIds = data.map((item) => item.product_id);
           setWishlist(productIds);
-          localStorage.setItem('resinforge_wishlist', JSON.stringify(productIds));
+          localStorage.setItem(
+            "resinforge_wishlist",
+            JSON.stringify(productIds),
+          );
         }
       }
     };
@@ -171,16 +182,16 @@ const App: React.FC = () => {
 
   // Persist Wishlist to localStorage
   useEffect(() => {
-    localStorage.setItem('resinforge_wishlist', JSON.stringify(wishlist));
+    localStorage.setItem("resinforge_wishlist", JSON.stringify(wishlist));
   }, [wishlist]);
 
   const toggleWishlist = async (productId: string) => {
     const isInWishlist = wishlist.includes(productId);
 
     // Optimistic update
-    setWishlist(prev => {
+    setWishlist((prev) => {
       if (isInWishlist) {
-        return prev.filter(id => id !== productId);
+        return prev.filter((id) => id !== productId);
       }
       return [...prev, productId];
     });
@@ -189,13 +200,13 @@ const App: React.FC = () => {
     if (user) {
       if (isInWishlist) {
         await supabase
-          .from('wishlists')
+          .from("wishlists")
           .delete()
-          .eq('user_id', user.id)
-          .eq('product_id', productId);
+          .eq("user_id", user.id)
+          .eq("product_id", productId);
       } else {
         await supabase
-          .from('wishlists')
+          .from("wishlists")
           .insert({ user_id: user.id, product_id: productId });
       }
     }
@@ -208,20 +219,22 @@ const App: React.FC = () => {
 
   const handleSearch = (query: string) => {
     setGlobalSearchQuery(query);
-    setCatalogState(prev => ({ ...prev, searchQuery: query, page: 1 }));
+    setCatalogState((prev) => ({ ...prev, searchQuery: query, page: 1 }));
     setCurrentView(ViewState.CATALOG);
   };
 
   const handleSetView = (view: ViewState) => {
     if (view === ViewState.CATALOG) {
-      setGlobalSearchQuery('');
+      setGlobalSearchQuery("");
     }
     setCurrentView(view);
   };
 
   // Update SEO metadata when view or product changes
   useEffect(() => {
-    const currentProduct = selectedProductId ? products.find(p => p.id === selectedProductId) : null;
+    const currentProduct = selectedProductId
+      ? products.find((p) => p.id === selectedProductId)
+      : null;
     const seoData = getSEOForView(currentView, currentProduct);
     updatePageMeta(seoData);
   }, [currentView, selectedProductId, products]);
@@ -241,47 +254,68 @@ const App: React.FC = () => {
   };
 
   const handleAddProduct = (newProduct: Product) => {
-    setProducts(prev => [newProduct, ...prev]);
+    setProducts((prev) => [newProduct, ...prev]);
   };
 
   const handleDeleteProduct = async (id: string) => {
-    const { error } = await supabase.from('products').delete().eq('id', id);
+    const { error } = await supabase.from("products").delete().eq("id", id);
     if (error) {
       alert("Error al eliminar producto: " + error.message);
     } else {
-      setProducts(prev => prev.filter(p => p.id !== id));
+      setProducts((prev) => prev.filter((p) => p.id !== id));
     }
   };
 
   const handleUpdateProduct = (updatedProduct: Product) => {
-    setProducts(prev => prev.map(p => p.id === updatedProduct.id ? updatedProduct : p));
+    setProducts((prev) =>
+      prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p)),
+    );
+
+    // Auto-add new category to global list if it doesn't exist
+    if (
+      updatedProduct.category &&
+      !categories.includes(updatedProduct.category)
+    ) {
+      setCategories((prev) => [...prev, updatedProduct.category]);
+    }
+
+    // Auto-add new size to global list if it doesn't exist
+    if (updatedProduct.size && !sizes.includes(updatedProduct.size)) {
+      setSizes((prev) => [...prev, updatedProduct.size]);
+    }
   };
 
   const handleAddCategory = (cat: string) => {
-    if (!categories.includes(cat)) setCategories(prev => [...prev, cat]);
+    if (!categories.includes(cat)) setCategories((prev) => [...prev, cat]);
   };
 
   const handleAddSize = (size: string) => {
-    if (!sizes.includes(size)) setSizes(prev => [...prev, size]);
+    if (!sizes.includes(size)) setSizes((prev) => [...prev, size]);
   };
 
   const handleDeleteCategory = (cat: string) => {
-    setCategories(prev => prev.filter(c => c !== cat));
+    setCategories((prev) => prev.filter((c) => c !== cat));
   };
 
   const handleDeleteSize = (size: string) => {
-    setSizes(prev => prev.filter(s => s !== size));
+    setSizes((prev) => prev.filter((s) => s !== size));
   };
 
   const renderView = () => {
-    const designers = Array.from(new Set(products.map(p => p.designer).filter(Boolean))) as string[];
-    const creatureTypes = Array.from(new Set(products.map(p => p.creature_type).filter(Boolean))) as string[];
-    const weapons = Array.from(new Set(
-      products
-        .map(p => p.weapon)
-        .filter(Boolean)
-        .flatMap(w => (w as string).split('/').map(s => s.trim()))
-    )).sort() as string[];
+    const designers = Array.from(
+      new Set(products.map((p) => p.designer).filter(Boolean)),
+    ) as string[];
+    const creatureTypes = Array.from(
+      new Set(products.map((p) => p.creature_type).filter(Boolean)),
+    ) as string[];
+    const weapons = Array.from(
+      new Set(
+        products
+          .map((p) => p.weapon)
+          .filter(Boolean)
+          .flatMap((w) => (w as string).split("/").map((s) => s.trim())),
+      ),
+    ).sort() as string[];
 
     switch (currentView) {
       case ViewState.HOME:
@@ -302,6 +336,8 @@ const App: React.FC = () => {
             weapons={weapons}
             isAdmin={isAdmin}
             onDeleteProduct={handleDeleteProduct}
+            onUpdateProduct={handleUpdateProduct}
+            onRefreshProducts={fetchProducts}
             catalogState={catalogState}
             onCatalogStateChange={setCatalogState}
           />
@@ -319,7 +355,15 @@ const App: React.FC = () => {
             wishlist={wishlist}
             toggleWishlist={toggleWishlist}
             isAdmin={isAdmin}
-            user={user ? { name: user.user_metadata?.full_name || user.email || 'Usuario', id: user.id } : null}
+            user={
+              user
+                ? {
+                    name:
+                      user.user_metadata?.full_name || user.email || "Usuario",
+                    id: user.id,
+                  }
+                : null
+            }
             onUpdateProduct={handleUpdateProduct}
             onProductClick={handleProductClick}
           />
@@ -341,7 +385,9 @@ const App: React.FC = () => {
       case ViewState.ORDERS:
         return <Orders setView={handleSetView} />;
       case ViewState.FEEDBACK:
-        return <Feedback setView={handleSetView} user={user} onLogin={handleLogin} />;
+        return (
+          <Feedback setView={handleSetView} user={user} onLogin={handleLogin} />
+        );
       case ViewState.HOW_TO_BUY:
         return <HowToBuy setView={handleSetView} />;
       case ViewState.ADMIN:
@@ -365,20 +411,22 @@ const App: React.FC = () => {
   // Theme State
   const [isWarhammer, setIsWarhammer] = useState<boolean>(() => {
     try {
-      return localStorage.getItem('resinforge_theme') === 'warhammer';
+      return localStorage.getItem("resinforge_theme") === "warhammer";
     } catch (e) {
       return false;
     }
   });
 
   const toggleTheme = () => {
-    setIsWarhammer(prev => !prev);
+    setIsWarhammer((prev) => !prev);
   };
 
   useEffect(() => {
-    localStorage.setItem('resinforge_theme', isWarhammer ? 'warhammer' : 'fantasy');
+    localStorage.setItem(
+      "resinforge_theme",
+      isWarhammer ? "warhammer" : "fantasy",
+    );
   }, [isWarhammer]);
-
 
   // ... (rest of state items are unchanged if possible, or I need to preserve them)
 
@@ -398,7 +446,7 @@ const App: React.FC = () => {
           currentView={currentView}
           onSearch={handleSearch}
           onProductSelect={handleProductClick}
-          user={user ? (user.user_metadata.full_name || user.email) : null}
+          user={user ? user.user_metadata.full_name || user.email : null}
           isAdmin={isAdmin}
           onLogout={handleLogout}
           isWarhammer={isWarhammer}
