@@ -197,18 +197,25 @@ const Home: React.FC<HomeProps> = ({ setView }) => {
   return (
     <Box sx={{ pb: 8 }}>
       {/* Hero Section */}
-      <Box sx={{ px: { xs: 2, lg: 10 }, py: 6 }}>
-        <Container maxWidth="xl" disableGutters>
+      <Box sx={{ py: 0 }}>
+        <Container maxWidth={false} disableGutters>
           <Box
             sx={{
               position: "relative",
               overflow: "hidden",
-              borderRadius: 3,
-              border: "4px solid", // Strengthened border
-              borderColor: "secondary.main", // Gold border
-              minHeight: "560px",
+              height: "100vh",
+              minHeight: "100vh",
               bgcolor: "common.black",
-              animation: `${borderGlow} 4s ease-in-out infinite`,
+              maskImage:
+                "linear-gradient(to bottom, black 85%, transparent 100%), url('/images/banners/home_banner.png')",
+              maskSize: "100% 100%, 100% auto",
+              maskPosition: "center top, center bottom",
+              maskRepeat: "no-repeat, no-repeat",
+              WebkitMaskImage:
+                "linear-gradient(to bottom, black 85%, transparent 100%), url('/images/banners/home_banner.png')",
+              WebkitMaskSize: "100% 100%, 100% auto",
+              WebkitMaskPosition: "center top, center bottom",
+              WebkitMaskRepeat: "no-repeat, no-repeat",
               "&::before": {
                 content: '""',
                 position: "absolute",
@@ -226,11 +233,11 @@ const Home: React.FC<HomeProps> = ({ setView }) => {
                 key={i}
                 sx={{
                   position: "absolute",
-                  width: 4,
-                  height: 4,
+                  width: 8,
+                  height: 8,
                   bgcolor: "secondary.main",
                   borderRadius: "50%",
-                  top: `${20 + i * 12}%`,
+                  top: `${10 + i * 12}%`,
                   left: `${10 + i * 15}%`,
                   animation: `${floatParticle} ${3 + i * 0.5}s ease-in-out infinite`,
                   animationDelay: `${i * 0.3}s`,
@@ -248,13 +255,14 @@ const Home: React.FC<HomeProps> = ({ setView }) => {
                 sx={{
                   position: "absolute",
                   inset: 0,
-                  backgroundSize: "cover",
+                  backgroundSize: "contain",
                   backgroundPosition: "center",
-                  transition: "opacity 1s ease-in-out",
+                  transition: "opacity 2s ease-in-out",
                   opacity: idx === currentSlide ? 1 : 0,
                   zIndex: idx === currentSlide ? 1 : 0,
                   backgroundImage: `${HeroGradient}, url("${slide.image}")`,
                   display: "flex",
+
                   flexDirection: "column",
                   justifyContent: "flex-end",
                   p: { xs: 4, lg: 8 },
@@ -264,21 +272,28 @@ const Home: React.FC<HomeProps> = ({ setView }) => {
                 <Box
                   sx={{
                     position: "absolute",
-                    top: "50%",
-                    left: "50%",
+                    top: "30%",
+                    left: "80%",
+                    right: "80%",
                     transform: "translate(-50%, -50%)",
                     zIndex: 0,
                     pointerEvents: "none",
-                    opacity: 0.2,
+                    opacity: 0.4,
                     animation: `${logoFade} 4s ease-in-out infinite`,
                   }}
                 >
                   {/* Logo Placeholder - simplified as a large icon or text */}
-                  <Hub
+                  <Box
+                    component="img"
+                    src="/images/guide/YunqueSolo.svg"
+                    alt="SoulForge Logo"
                     sx={{
-                      fontSize: 400,
-                      color: "secondary.main",
-                      opacity: 0.2,
+                      width: 200,
+                      height: 200,
+                      opacity: 0.4,
+                      filter:
+                        "brightness(100%) saturate(100%) invert(88%) sepia(0%) saturate(1217%) hue-rotate(359deg) brightness(88%) contrast(92%)", // Filter to approximate secondary.main color
+                      animation: `${logoFade} 3s ease-in-out infinite`,
                     }}
                   />
                 </Box>
@@ -965,7 +980,7 @@ const Home: React.FC<HomeProps> = ({ setView }) => {
                     },
                     {
                       user: "Elfa Estelar",
-                      text: "Diseños únicos que no encuentras en ningún otro lado. ResinForge es mi nueva tienda favorita.",
+                      text: "Diseños únicos que no encuentras en ningún otro lado. Soulforge es mi nueva tienda favorita.",
                       rating: 5,
                       variant: "Cazadora",
                     },

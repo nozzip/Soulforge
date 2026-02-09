@@ -43,6 +43,8 @@ import {
   LinearProgress,
   Alert,
   Snackbar,
+  Fab,
+  Zoom,
 } from "@mui/material";
 import {
   Search,
@@ -59,6 +61,7 @@ import {
   AccountTree,
   DragIndicator,
   LinkOff, // Imported LinkOff
+  KeyboardArrowUp,
 } from "@mui/icons-material";
 import {
   DndContext,
@@ -175,6 +178,29 @@ const Catalog: React.FC<CatalogProps> = ({
     clearMessages,
   } = useProductGrouping(onUpdateProduct || (() => {}), onRefreshProducts);
 
+  // Scroll to top logic
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 300) {
+        setShowScrollTop(true);
+      } else {
+        setShowScrollTop(false);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
+
   // Configure drag sensors - need activation constraint to distinguish drag from click
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -238,36 +264,39 @@ const Catalog: React.FC<CatalogProps> = ({
   // Remove the automatic reset pagination effect that runs on mount
   // and replace it with manual resets in handlers.
 
+  const sortedOptions = (options: string[]) =>
+    [...options].sort((a, b) => a.localeCompare(b));
+
   const FILTER_GROUPS = [
     {
       id: "category",
       title: "Origen del Mundo",
       icon: <Public fontSize="small" />,
-      options: categories,
+      options: sortedOptions(categories),
     },
     {
       id: "size",
-      title: "Clase de Escala",
+      title: "Tamaño",
       icon: <Straighten fontSize="small" />,
-      options: sizes,
+      options: sortedOptions(sizes),
     },
     {
       id: "designer",
       title: "Gran Maestro (Diseñador)",
       icon: <Search fontSize="small" />,
-      options: designers,
+      options: sortedOptions(designers),
     },
     {
       id: "creature_type",
       title: "Naturaleza de Criatura",
       icon: <SentimentDissatisfied fontSize="small" />,
-      options: creatureTypes,
+      options: sortedOptions(creatureTypes),
     },
     {
       id: "weapon",
       title: "Arsenales (Armas)",
       icon: <Search fontSize="small" />,
-      options: weapons,
+      options: sortedOptions(weapons),
     },
   ];
 
@@ -594,13 +623,99 @@ const Catalog: React.FC<CatalogProps> = ({
           />
         </Box>
 
-        {/* Active Filters Section */}
+        <Stack spacing={4}>
+          {FILTER_GROUPS.map((group) => (
+            <Box key={group.id}>
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                  color: "grey.300",
+                  mb: 1,
+                  textTransform: "uppercase",
+                  letterSpacing: 1,
+                }}
+              >
+                <Box component="span" sx={{ color: "primary.main" }}>
+                  {group.icon}
+                </Box>{" "}
+                {group.title}
+              </Typography>
+              <List
+                dense
+                disablePadding
+                sx={{
+                  borderLeft: 1,
+                  borderColor: (theme) =>
+                    alpha(theme.palette.secondary.main, 0.1),
+                  pl: 1,
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 0.5,
+                }}
+              >
+                {group.options.map((opt) => {
+                  let isSelected = false;
+                  if (group.id === "category")
+                    isSelected = selectedCategories.includes(opt);
+                  else if (group.id === "size")
+                    isSelected = selectedSizes.includes(opt);
+                  else if (group.id === "designer")
+                    isSelected = selectedDesigners.includes(opt);
+                  else if (group.id === "creature_type")
+                    isSelected = selectedCreatureTypes.includes(opt);
+                  else if (group.id === "weapon")
+                    isSelected = selectedWeapons.includes(opt);
+
+                  return (
+                    <ListItem
+                      key={opt}
+                      component="div"
+                      disablePadding
+                      onClick={() => toggleFilter(group.id as any, opt)}
+                      sx={{
+                        cursor: "pointer",
+                        "&:hover": { bgcolor: "transparent" },
+                      }}
+                    >
+                      <ListItemIcon sx={{ minWidth: 32 }}>
+                        <Checkbox
+                          edge="start"
+                          checked={isSelected}
+                          tabIndex={-1}
+                          disableRipple
+                          sx={{
+                            p: 0.5,
+                            color: "grey.700",
+                            "&.Mui-checked": { color: "primary.main" },
+                          }}
+                        />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={opt}
+                        primaryTypographyProps={{
+                          variant: "body2",
+                          color: isSelected ? "common.white" : "grey.500",
+                          fontWeight: isSelected ? "bold" : "normal",
+                        }}
+                      />
+                    </ListItem>
+                  );
+                })}
+              </List>
+            </Box>
+          ))}
+        </Stack>
+
+        {/* Active Filters Section - Moved to bottom */}
         {(selectedCategories.length > 0 ||
           selectedSizes.length > 0 ||
           selectedDesigners.length > 0 ||
           selectedCreatureTypes.length > 0 ||
           selectedWeapons.length > 0) && (
-          <Box sx={{ mb: 4 }}>
+          <Box sx={{ mt: 4, mb: 2 }}>
             <Typography
               variant="caption"
               color="grey.500"
@@ -672,95 +787,12 @@ const Catalog: React.FC<CatalogProps> = ({
           </Box>
         )}
 
-        <Stack spacing={4}>
-          {FILTER_GROUPS.map((group) => (
-            <Box key={group.id}>
-              <Typography
-                variant="subtitle2"
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 1,
-                  color: "grey.300",
-                  mb: 1,
-                  textTransform: "uppercase",
-                  letterSpacing: 1,
-                }}
-              >
-                <Box component="span" sx={{ color: "primary.main" }}>
-                  {group.icon}
-                </Box>{" "}
-                {group.title}
-              </Typography>
-              <List
-                dense
-                disablePadding
-                sx={{
-                  borderLeft: 1,
-                  borderColor: (theme) =>
-                    alpha(theme.palette.secondary.main, 0.1),
-                  pl: 1,
-                }}
-              >
-                {group.options.map((opt) => {
-                  let isSelected = false;
-                  if (group.id === "category")
-                    isSelected = selectedCategories.includes(opt);
-                  else if (group.id === "size")
-                    isSelected = selectedSizes.includes(opt);
-                  else if (group.id === "designer")
-                    isSelected = selectedDesigners.includes(opt);
-                  else if (group.id === "creature_type")
-                    isSelected = selectedCreatureTypes.includes(opt);
-                  else if (group.id === "weapon")
-                    isSelected = selectedWeapons.includes(opt);
-
-                  return (
-                    <ListItem
-                      key={opt}
-                      component="div"
-                      disablePadding
-                      onClick={() => toggleFilter(group.id as any, opt)}
-                      sx={{
-                        cursor: "pointer",
-                        "&:hover": { bgcolor: "transparent" },
-                      }}
-                    >
-                      <ListItemIcon sx={{ minWidth: 32 }}>
-                        <Checkbox
-                          edge="start"
-                          checked={isSelected}
-                          tabIndex={-1}
-                          disableRipple
-                          sx={{
-                            p: 0.5,
-                            color: "grey.700",
-                            "&.Mui-checked": { color: "primary.main" },
-                          }}
-                        />
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={opt}
-                        primaryTypographyProps={{
-                          variant: "body2",
-                          color: isSelected ? "common.white" : "grey.500",
-                          fontWeight: isSelected ? "bold" : "normal",
-                        }}
-                      />
-                    </ListItem>
-                  );
-                })}
-              </List>
-            </Box>
-          ))}
-        </Stack>
-
         <Button
           fullWidth
           variant="outlined"
           color="secondary"
           onClick={handleReset}
-          sx={{ mt: 4, letterSpacing: 2 }}
+          sx={{ mt: 2, letterSpacing: 2 }}
         >
           Reiniciar Índice
         </Button>
@@ -780,12 +812,105 @@ const Catalog: React.FC<CatalogProps> = ({
   );
 
   return (
-    <Container maxWidth="xl" sx={{ py: 6, px: { xs: 2, lg: 8 } }}>
-      <SectionHeader
-        title="Los Archivos de Miniaturas"
-        description="Donde las leyendas se forjan en resina."
-        icon={<AutoStories />}
-        rightElement={
+    <Box
+      sx={{
+        bgcolor: "background.default",
+        minHeight: "100vh",
+        pb: 10,
+        position: "relative",
+        backgroundImage:
+          "radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px)",
+        backgroundSize: "30px 30px",
+      }}
+    >
+      {/* Banner Superior Heroico */}
+      <Box
+        sx={{
+          width: "100%",
+          height: { xs: 350, md: 900 }, // Reduced height for Catalog compared to Guide
+          position: "relative",
+          backgroundImage: "url(/images/banners/catalogo_banner.png)",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          // WATERCOLOR MASK EFFECT
+          maskImage:
+            "url(/images/masks/my-mask.png), linear-gradient(to bottom, black 50%, transparent 100%)",
+          WebkitMaskImage:
+            "url(/images/masks/my-mask.png), linear-gradient(to bottom, black 50%, transparent 100%)",
+          maskSize: "100% 100%, 100% 100%",
+          WebkitMaskSize: "100% 100%, 100% 100%",
+          maskPosition: "center bottom, center",
+          WebkitMaskPosition: "center bottom, center",
+          maskRepeat: "no-repeat, no-repeat",
+          WebkitMaskRepeat: "no-repeat, no-repeat",
+          maskComposite: "source-over",
+          WebkitMaskComposite: "source-over",
+          "&::after": {
+            content: '""',
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: "50%",
+            background: `linear-gradient(to top, ${theme.palette.background.default}, transparent)`,
+          },
+        }}
+      >
+        <Box
+          sx={{
+            textAlign: "center",
+            zIndex: 1,
+            mt: { xs: 5, md: 8 },
+            px: 2,
+            textShadow: "0 0 20px rgba(0,0,0,0.9)", // Increased shadow for readability on any bg
+          }}
+        >
+          <Typography
+            variant="h1"
+            sx={{
+              fontFamily: '"Cinzel", serif',
+              fontSize: { xs: "2.5rem", md: "4.5rem" },
+              color: "common.white",
+              fontWeight: 700,
+              letterSpacing: 4,
+              textTransform: "uppercase",
+              mb: 2,
+            }}
+          >
+            Los Archivos de Miniaturas
+          </Typography>
+          <Typography
+            variant="h6"
+            sx={{
+              fontFamily: '"Cinzel", serif',
+              color: "secondary.main",
+              letterSpacing: 3,
+              opacity: 1,
+              fontSize: { xs: "0.9rem", md: "1.2rem" },
+              fontWeight: 600,
+            }}
+          >
+            Donde las leyendas se forjan en resina
+          </Typography>
+        </Box>
+      </Box>
+
+      <Container maxWidth="xl" sx={{ py: 4, px: { xs: 2, lg: 8 } }}>
+        {/* Controls Bar (Replacing SectionHeader) */}
+        <Box
+          sx={{
+            mb: 4,
+            pb: 2,
+            borderBottom: 1,
+            borderColor: (t) => alpha(t.palette.secondary.main, 0.2),
+            display: "flex",
+            justifyContent: "flex-end",
+            alignItems: "center",
+          }}
+        >
           <Box
             sx={{
               display: "flex",
@@ -825,337 +950,373 @@ const Catalog: React.FC<CatalogProps> = ({
               </Select>
             </FormControl>
           </Box>
-        }
-      />
+        </Box>
 
-      <Grid container spacing={4}>
-        {/* Sidebar - Desktop */}
-        <Grid
-          size={{ xs: 12, lg: 3 }}
-          sx={{ display: { xs: "none", lg: "block" } }}
-        >
-          <Paper
-            sx={{
-              border: 1,
-              borderColor: (theme) => alpha(theme.palette.secondary.main, 0.3),
-              bgcolor: "background.paper",
-              position: "sticky",
-              top: 100,
-              boxShadow: (theme) =>
-                `0 0 40px ${alpha(theme.palette.common.black, 0.5)}, inset 0 0 30px ${alpha(theme.palette.common.black, 0.3)}`,
-            }}
+        <Grid container spacing={4}>
+          {/* Sidebar - Desktop */}
+          <Grid
+            size={{ xs: 12, lg: 3 }}
+            sx={{ display: { xs: "none", lg: "block" } }}
           >
-            {FilterContent}
-          </Paper>
-        </Grid>
-
-        {/* Mobile Filter Button */}
-        <Grid size={{ xs: 12 }} sx={{ display: { lg: "none" } }}>
-          <Button
-            fullWidth
-            variant="contained"
-            color="secondary"
-            startIcon={<FilterList />}
-            onClick={() => setShowFilters(true)}
-          >
-            Index Search & Filtros
-          </Button>
-          <Drawer
-            open={showFilters}
-            onClose={() => setShowFilters(false)}
-            PaperProps={{ sx: { width: 300, bgcolor: "background.default" } }}
-          >
-            {FilterContent}
-          </Drawer>
-        </Grid>
-
-        {/* Product Grid */}
-        <Grid size={{ xs: 12, lg: 9 }}>
-          {loading ? (
-            <Box
+            <Paper
               sx={{
-                py: 10,
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                bgcolor: (theme) => alpha(theme.palette.common.white, 0.02),
-                borderRadius: 2,
                 border: 1,
                 borderColor: (theme) =>
-                  alpha(theme.palette.secondary.main, 0.1),
+                  alpha(theme.palette.secondary.main, 0.3),
+                bgcolor: "background.paper",
+                position: "sticky",
+                top: 100, // Adjusted top for sticky sidebar
+                boxShadow: (theme) =>
+                  `0 0 40px ${alpha(theme.palette.common.black, 0.5)}, inset 0 0 30px ${alpha(theme.palette.common.black, 0.3)}`,
               }}
             >
-              <ForgeLoader message="Invocando artefactos..." size="large" />
-            </Box>
-          ) : filteredProducts.length === 0 ? (
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                py: 10,
-                bgcolor: (theme) => alpha(theme.palette.common.white, 0.02),
-                borderRadius: 2,
-                border: 1,
-                borderColor: (theme) =>
-                  alpha(theme.palette.secondary.main, 0.1),
-              }}
+              {FilterContent}
+            </Paper>
+          </Grid>
+
+          {/* Mobile Filter Button */}
+          <Grid size={{ xs: 12 }} sx={{ display: { lg: "none" } }}>
+            <Button
+              fullWidth
+              variant="contained"
+              color="secondary"
+              startIcon={<FilterList />}
+              onClick={() => setShowFilters(true)}
             >
-              <SentimentDissatisfied
+              Index Search & Filtros
+            </Button>
+            <Drawer
+              open={showFilters}
+              onClose={() => setShowFilters(false)}
+              PaperProps={{ sx: { width: 300, bgcolor: "background.default" } }}
+            >
+              {FilterContent}
+            </Drawer>
+          </Grid>
+
+          {/* Product Grid */}
+          <Grid size={{ xs: 12, lg: 9 }}>
+            {loading ? (
+              <Box
                 sx={{
-                  fontSize: 60,
-                  color: "secondary.main",
-                  mb: 2,
-                  opacity: 0.5,
+                  py: 10,
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  bgcolor: (theme) => alpha(theme.palette.common.white, 0.02),
+                  borderRadius: 2,
+                  border: 1,
+                  borderColor: (theme) =>
+                    alpha(theme.palette.secondary.main, 0.1),
                 }}
-              />
-              <Typography variant="h5" color="common.white" gutterBottom>
-                No se encontraron artefactos
-              </Typography>
-              <Typography color="grey.500" paragraph>
-                Los archivos no contienen registros que coincidan con tu
-                búsqueda.
-              </Typography>
-              <Button
-                onClick={handleReset}
-                sx={{ color: "secondary.main", textDecoration: "underline" }}
               >
-                Limpiar Filtros
-              </Button>
-            </Box>
-          ) : (
-            <>
-              <Box sx={{ display: "flex", justifyContent: "center", mb: 4 }}>
-                <Pagination
-                  count={totalPages}
-                  page={currentPage}
-                  onChange={(_, p) => {
-                    setCurrentPage(p);
-                    window.scrollTo({ top: 0, behavior: "smooth" });
-                  }}
-                  color="secondary"
-                  shape="rounded"
+                <ForgeLoader message="Invocando artefactos..." size="large" />
+              </Box>
+            ) : filteredProducts.length === 0 ? (
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  py: 10,
+                  bgcolor: (theme) => alpha(theme.palette.common.white, 0.02),
+                  borderRadius: 2,
+                  border: 1,
+                  borderColor: (theme) =>
+                    alpha(theme.palette.secondary.main, 0.1),
+                }}
+              >
+                <SentimentDissatisfied
                   sx={{
-                    "& .MuiPaginationItem-root": {
-                      color: "grey.500",
-                      border: "1px solid transparent",
-                    },
-                    "& .MuiPaginationItem-root.Mui-selected": {
-                      color: "background.default",
-                      bgcolor: "secondary.main",
-                      fontWeight: "bold",
-                    },
-                    "& .MuiPaginationItem-root:hover": {
-                      borderColor: "secondary.main",
-                      color: "common.white",
-                    },
+                    fontSize: 60,
+                    color: "secondary.main",
+                    mb: 2,
+                    opacity: 0.5,
                   }}
                 />
-              </Box>
-
-              {/* Admin Grouping Mode UI */}
-              {isAdmin && onUpdateProduct && (
-                <Paper
-                  sx={{
-                    mb: 3,
-                    p: 2,
-                    bgcolor: isGroupingMode
-                      ? alpha(theme.palette.primary.main, 0.1)
-                      : "transparent",
-                    border: 2,
-                    borderStyle: isGroupingMode ? "solid" : "dashed",
-                    borderColor: isGroupingMode
-                      ? "primary.main"
-                      : alpha(theme.palette.secondary.main, 0.3),
-                    transition: "all 0.3s",
-                  }}
+                <Typography variant="h5" color="common.white" gutterBottom>
+                  No se encontraron artefactos
+                </Typography>
+                <Typography color="grey.500" paragraph>
+                  Los archivos no contienen registros que coincidan con tu
+                  búsqueda.
+                </Typography>
+                <Button
+                  onClick={handleReset}
+                  sx={{ color: "secondary.main", textDecoration: "underline" }}
                 >
-                  <Stack
-                    direction="row"
-                    spacing={2}
-                    alignItems="center"
-                    justifyContent="space-between"
-                    flexWrap="wrap"
+                  Limpiar Filtros
+                </Button>
+              </Box>
+            ) : (
+              <>
+                <Box sx={{ display: "flex", justifyContent: "center", mb: 4 }}>
+                  <Pagination
+                    count={totalPages}
+                    page={currentPage}
+                    onChange={(_, p) => {
+                      setCurrentPage(p);
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                    color="secondary"
+                    shape="rounded"
+                    sx={{
+                      "& .MuiPaginationItem-root": {
+                        color: "grey.500",
+                        border: "1px solid transparent",
+                      },
+                      "& .MuiPaginationItem-root.Mui-selected": {
+                        color: "background.default",
+                        bgcolor: "secondary.main",
+                        fontWeight: "bold",
+                      },
+                      "& .MuiPaginationItem-root:hover": {
+                        borderColor: "secondary.main",
+                        color: "common.white",
+                      },
+                    }}
+                  />
+                </Box>
+
+                {/* Admin Grouping Mode UI */}
+                {isAdmin && onUpdateProduct && (
+                  <Paper
+                    sx={{
+                      mb: 3,
+                      p: 2,
+                      bgcolor: isGroupingMode
+                        ? alpha(theme.palette.primary.main, 0.1)
+                        : "transparent",
+                      border: 2,
+                      borderStyle: isGroupingMode ? "solid" : "dashed",
+                      borderColor: isGroupingMode
+                        ? "primary.main"
+                        : alpha(theme.palette.secondary.main, 0.3),
+                      transition: "all 0.3s",
+                    }}
                   >
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                      {isUngroupingMode ? (
-                        <LinkOff color="error" />
-                      ) : (
-                        <AccountTree
-                          color={isGroupingMode ? "primary" : "secondary"}
-                        />
-                      )}
-                      <Box>
-                        <Typography
-                          variant="subtitle2"
-                          fontWeight="bold"
-                          color="common.white"
-                        >
-                          {isUngroupingMode
-                            ? "Modo Desagrupación"
-                            : "Modo Agrupación"}
-                        </Typography>
-                        <Typography variant="caption" color="grey.500">
-                          {isUngroupingMode
-                            ? "Haz clic en 'Desagrupar' en las cartas para romper el set"
-                            : isGroupingMode
-                              ? "Arrastra una miniatura sobre otra para agruparlas en un set"
-                              : "Gestión de Sets de Miniaturas"}
-                        </Typography>
-                      </Box>
-                    </Box>
-                    <Stack direction="row" spacing={1}>
-                      {/* Ungroup Toggle */}
-                      <Button
-                        variant={isUngroupingMode ? "contained" : "outlined"}
-                        color={isUngroupingMode ? "error" : "secondary"}
-                        onClick={toggleUngroupingMode}
-                        startIcon={isUngroupingMode ? <Close /> : <LinkOff />}
-                        disabled={isGroupingMode}
-                      >
-                        {isUngroupingMode ? "Salir" : "Desagrupar"}
-                      </Button>
-
-                      {/* Group Toggle */}
-                      <Button
-                        variant={isGroupingMode ? "contained" : "outlined"}
-                        color={isGroupingMode ? "primary" : "secondary"}
-                        onClick={toggleGroupingMode}
-                        startIcon={
-                          isGroupingMode ? <Close /> : <DragIndicator />
-                        }
-                        disabled={isUngroupingMode}
-                      >
-                        {isGroupingMode ? "Salir" : "Agrupar"}
-                      </Button>
-                    </Stack>
-                  </Stack>
-
-                  {isProcessing && (
-                    <LinearProgress sx={{ mt: 2 }} color="primary" />
-                  )}
-
-                  {groupingError && (
-                    <Alert
-                      severity="error"
-                      sx={{ mt: 2 }}
-                      onClose={clearMessages}
+                    <Stack
+                      direction="row"
+                      spacing={2}
+                      alignItems="center"
+                      justifyContent="space-between"
+                      flexWrap="wrap"
                     >
-                      {groupingError}
-                    </Alert>
-                  )}
-                </Paper>
-              )}
-
-              {/* Products Grid with DnD */}
-              <DndContext
-                sensors={sensors}
-                onDragStart={handleDragStart}
-                onDragEnd={handleDragEndEvent}
-                collisionDetection={closestCenter}
-              >
-                <Grid container spacing={3}>
-                  {currentProducts.map((product) => {
-                    const isWishlisted = wishlist.includes(product.id);
-                    return (
-                      <Grid key={product.id} size={{ xs: 12, md: 6, lg: 4 }}>
-                        {isAdmin && isGroupingMode ? (
-                          <DraggableProductCard
-                            id={product.id}
-                            product={product}
-                            isGroupingMode={isGroupingMode}
-                            isWishlisted={isWishlisted}
-                            isAdmin={isAdmin}
-                            onProductClick={onProductClick}
-                            onToggleWishlist={toggleWishlist}
-                            onAddToCart={addToCart}
-                            onDeleteProduct={onDeleteProduct}
-                            onUngroup={(id) => handleUngroup(id, products)}
-                          />
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 2 }}
+                      >
+                        {isUngroupingMode ? (
+                          <LinkOff color="error" />
                         ) : (
-                          <ProductCard
-                            product={product}
-                            isWishlisted={isWishlisted}
-                            isAdmin={isAdmin}
-                            isUngroupingMode={isUngroupingMode}
-                            onProductClick={onProductClick}
-                            onToggleWishlist={toggleWishlist}
-                            onAddToCart={addToCart}
-                            onDeleteProduct={onDeleteProduct}
-                            onUngroup={(id) => handleUngroup(id, products)}
+                          <AccountTree
+                            color={isGroupingMode ? "primary" : "secondary"}
                           />
                         )}
-                      </Grid>
-                    );
-                  })}
-                </Grid>
+                        <Box>
+                          <Typography
+                            variant="subtitle2"
+                            fontWeight="bold"
+                            color="common.white"
+                          >
+                            {isUngroupingMode
+                              ? "Modo Desagrupación"
+                              : "Modo Agrupación"}
+                          </Typography>
+                          <Typography variant="caption" color="grey.500">
+                            {isUngroupingMode
+                              ? "Haz clic en 'Desagrupar' en las cartas para romper el set"
+                              : isGroupingMode
+                                ? "Arrastra una miniatura sobre otra para agruparlas en un set"
+                                : "Gestión de Sets de Miniaturas"}
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <Stack direction="row" spacing={1}>
+                        {/* Ungroup Toggle */}
+                        <Button
+                          variant={isUngroupingMode ? "contained" : "outlined"}
+                          color={isUngroupingMode ? "error" : "secondary"}
+                          onClick={toggleUngroupingMode}
+                          startIcon={isUngroupingMode ? <Close /> : <LinkOff />}
+                          disabled={isGroupingMode}
+                        >
+                          {isUngroupingMode ? "Salir" : "Desagrupar"}
+                        </Button>
 
-                {/* Drag Overlay for visual feedback */}
-                <DragOverlay>
-                  {activeDragProduct && (
-                    <Box sx={{ width: 300, opacity: 0.9 }}>
-                      <ProductCard
-                        product={activeDragProduct}
-                        isWishlisted={false}
-                        isAdmin={false}
-                        isDragging
-                        onProductClick={() => {}}
-                        onToggleWishlist={() => {}}
-                        onAddToCart={() => {}}
-                      />
-                    </Box>
-                  )}
-                </DragOverlay>
-              </DndContext>
+                        {/* Group Toggle */}
+                        <Button
+                          variant={isGroupingMode ? "contained" : "outlined"}
+                          color={isGroupingMode ? "primary" : "secondary"}
+                          onClick={toggleGroupingMode}
+                          startIcon={
+                            isGroupingMode ? <Close /> : <DragIndicator />
+                          }
+                          disabled={isUngroupingMode}
+                        >
+                          {isGroupingMode ? "Salir" : "Agrupar"}
+                        </Button>
+                      </Stack>
+                    </Stack>
 
-              {/* Success Snackbar */}
-              <Snackbar
-                open={!!successMessage}
-                autoHideDuration={3000}
-                onClose={clearMessages}
-                anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-              >
-                <Alert
-                  severity="success"
-                  onClose={clearMessages}
-                  sx={{ width: "100%" }}
+                    {isProcessing && (
+                      <LinearProgress sx={{ mt: 2 }} color="primary" />
+                    )}
+
+                    {groupingError && (
+                      <Alert
+                        severity="error"
+                        sx={{ mt: 2 }}
+                        onClose={clearMessages}
+                      >
+                        {groupingError}
+                      </Alert>
+                    )}
+                  </Paper>
+                )}
+
+                {/* Products Grid with DnD */}
+                <DndContext
+                  sensors={sensors}
+                  onDragStart={handleDragStart}
+                  onDragEnd={handleDragEndEvent}
+                  collisionDetection={closestCenter}
                 >
-                  {successMessage}
-                </Alert>
-              </Snackbar>
+                  <Grid container spacing={3}>
+                    {currentProducts.map((product) => {
+                      const isWishlisted = wishlist.includes(product.id);
+                      return (
+                        <Grid key={product.id} size={{ xs: 12, md: 6, lg: 4 }}>
+                          {isAdmin && isGroupingMode ? (
+                            <DraggableProductCard
+                              id={product.id}
+                              product={product}
+                              isGroupingMode={isGroupingMode}
+                              isWishlisted={isWishlisted}
+                              isAdmin={isAdmin}
+                              onProductClick={onProductClick}
+                              onToggleWishlist={toggleWishlist}
+                              onAddToCart={addToCart}
+                              onDeleteProduct={onDeleteProduct}
+                              onUngroup={(id) => handleUngroup(id, products)}
+                            />
+                          ) : (
+                            <ProductCard
+                              product={product}
+                              isWishlisted={isWishlisted}
+                              isAdmin={isAdmin}
+                              isUngroupingMode={isUngroupingMode}
+                              onProductClick={onProductClick}
+                              onToggleWishlist={toggleWishlist}
+                              onAddToCart={addToCart}
+                              onDeleteProduct={onDeleteProduct}
+                              onUngroup={(id) => handleUngroup(id, products)}
+                            />
+                          )}
+                        </Grid>
+                      );
+                    })}
+                  </Grid>
 
-              <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-                <Pagination
-                  count={totalPages}
-                  page={currentPage}
-                  onChange={(_, p) => {
-                    setCurrentPage(p);
-                    window.scrollTo({ top: 0, behavior: "smooth" });
-                  }}
-                  color="secondary"
-                  shape="rounded"
-                  sx={{
-                    "& .MuiPaginationItem-root": {
-                      color: "grey.500",
-                      border: "1px solid transparent",
-                    },
-                    "& .MuiPaginationItem-root.Mui-selected": {
-                      color: "background.default",
-                      bgcolor: "secondary.main",
-                      fontWeight: "bold",
-                    },
-                    "& .MuiPaginationItem-root:hover": {
-                      borderColor: "secondary.main",
-                      color: "common.white",
-                    },
-                  }}
-                />
-              </Box>
-            </>
-          )}
+                  {/* Drag Overlay for visual feedback */}
+                  <DragOverlay>
+                    {activeDragProduct && (
+                      <Box sx={{ width: 300, opacity: 0.9 }}>
+                        <ProductCard
+                          product={activeDragProduct}
+                          isWishlisted={false}
+                          isAdmin={false}
+                          isDragging
+                          onProductClick={() => {}}
+                          onToggleWishlist={() => {}}
+                          onAddToCart={() => {}}
+                        />
+                      </Box>
+                    )}
+                  </DragOverlay>
+                </DndContext>
+
+                {/* Success Snackbar */}
+                <Snackbar
+                  open={!!successMessage}
+                  autoHideDuration={3000}
+                  onClose={clearMessages}
+                  anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+                >
+                  <Alert
+                    severity="success"
+                    onClose={clearMessages}
+                    sx={{ width: "100%" }}
+                  >
+                    {successMessage}
+                  </Alert>
+                </Snackbar>
+
+                <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+                  <Pagination
+                    count={totalPages}
+                    page={currentPage}
+                    onChange={(_, p) => {
+                      setCurrentPage(p);
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                    color="secondary"
+                    shape="rounded"
+                    sx={{
+                      "& .MuiPaginationItem-root": {
+                        color: "grey.500",
+                        border: "1px solid transparent",
+                      },
+                      "& .MuiPaginationItem-root.Mui-selected": {
+                        color: "background.default",
+                        bgcolor: "secondary.main",
+                        fontWeight: "bold",
+                      },
+                      "& .MuiPaginationItem-root:hover": {
+                        borderColor: "secondary.main",
+                        color: "common.white",
+                      },
+                    }}
+                  />
+                </Box>
+              </>
+            )}
+          </Grid>
         </Grid>
-      </Grid>
-    </Container>
+
+        <Zoom in={showScrollTop}>
+          <Box
+            onClick={scrollToTop}
+            role="presentation"
+            sx={{
+              position: "fixed",
+              bottom: 32,
+              left: "50%",
+              transform: "translateX(-50%)",
+              zIndex: 10,
+            }}
+          >
+            <Fab
+              size="medium"
+              aria-label="scroll back to top"
+              sx={{
+                bgcolor: "rgba(0, 0, 0, 0.6)",
+                color: "secondary.main",
+                border: "1px solid",
+                borderColor: "secondary.main",
+                backdropFilter: "blur(4px)",
+                "&:hover": {
+                  bgcolor: "rgba(0, 0, 0, 0.8)",
+                  color: "common.white",
+                  borderColor: "common.white",
+                },
+              }}
+            >
+              <KeyboardArrowUp />
+            </Fab>
+          </Box>
+        </Zoom>
+      </Container>
+    </Box>
   );
 };
 

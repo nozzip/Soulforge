@@ -14,6 +14,12 @@ import Admin from "./pages/Admin";
 import Orders from "./pages/Orders";
 import Feedback from "./pages/Feedback";
 import HowToBuy from "./pages/HowToBuy";
+import NewAdventurerGuide from "./pages/NewAdventurerGuide";
+import ForumHome from "./pages/Forum/ForumHome";
+import Category from "./pages/Forum/Category";
+import Thread from "./pages/Forum/Thread";
+import CreateThread from "./pages/Forum/CreateThread";
+import Profile from "./pages/Profile";
 import { ViewState, Product } from "./types";
 import { ThemeProvider, CssBaseline } from "@mui/material";
 import { fantasyTheme, warhammerTheme } from "./src/theme";
@@ -27,6 +33,12 @@ const App: React.FC = () => {
     null,
   );
   const [globalSearchQuery, setGlobalSearchQuery] = useState("");
+  const [selectedForumCategoryId, setSelectedForumCategoryId] = useState<
+    string | null
+  >(null);
+  const [selectedForumThreadId, setSelectedForumThreadId] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -301,6 +313,28 @@ const App: React.FC = () => {
     setSizes((prev) => prev.filter((s) => s !== size));
   };
 
+  // Forum Handlers
+  const handleForumCategorySelect = (categoryId: string) => {
+    setSelectedForumCategoryId(categoryId);
+    setCurrentView(ViewState.FORUM_CATEGORY);
+  };
+
+  const handleForumThreadSelect = (threadId: string) => {
+    setSelectedForumThreadId(threadId);
+    setGlobalSearchQuery(""); // Clear search when entering thread
+    setCurrentView(ViewState.FORUM_THREAD);
+  };
+
+  const handleForumBackToHome = () => {
+    setSelectedForumCategoryId(null);
+    setCurrentView(ViewState.FORUM_HOME);
+  };
+
+  const handleForumBackToCategory = () => {
+    setSelectedForumThreadId(null);
+    setCurrentView(ViewState.FORUM_CATEGORY);
+  };
+
   const renderView = () => {
     const designers = Array.from(
       new Set(products.map((p) => p.designer).filter(Boolean)),
@@ -390,6 +424,8 @@ const App: React.FC = () => {
         );
       case ViewState.HOW_TO_BUY:
         return <HowToBuy setView={handleSetView} />;
+      case ViewState.NEW_ADVENTURER:
+        return <NewAdventurerGuide setView={handleSetView} />;
       case ViewState.ADMIN:
         return (
           <Admin
@@ -402,6 +438,60 @@ const App: React.FC = () => {
             onDeleteCategory={handleDeleteCategory}
             onDeleteSize={handleDeleteSize}
           />
+        );
+      case ViewState.FORUM_HOME:
+        return <ForumHome onCategorySelect={handleForumCategorySelect} />;
+      case ViewState.FORUM_CATEGORY:
+        return selectedForumCategoryId ? (
+          <Category
+            categoryId={selectedForumCategoryId}
+            onThreadSelect={handleForumThreadSelect}
+            onBack={handleForumBackToHome}
+            onCreateThread={() => handleSetView(ViewState.FORUM_CREATE_THREAD)}
+            user={user}
+            isAdmin={isAdmin}
+          />
+        ) : (
+          <ForumHome onCategorySelect={handleForumCategorySelect} />
+        );
+      case ViewState.FORUM_CREATE_THREAD:
+        return selectedForumCategoryId ? (
+          <CreateThread
+            categoryId={selectedForumCategoryId}
+            onCancel={() => handleSetView(ViewState.FORUM_CATEGORY)}
+            onThreadCreated={(threadId) => {
+              handleForumThreadSelect(threadId);
+            }}
+            user={user}
+          />
+        ) : (
+          <ForumHome onCategorySelect={handleForumCategorySelect} />
+        );
+      case ViewState.FORUM_THREAD:
+        return selectedForumThreadId ? (
+          <Thread
+            threadId={selectedForumThreadId}
+            onBack={handleForumBackToCategory}
+            user={user}
+            isAdmin={isAdmin}
+          />
+        ) : selectedForumCategoryId ? (
+          <Category
+            categoryId={selectedForumCategoryId}
+            onThreadSelect={handleForumThreadSelect}
+            onBack={handleForumBackToHome}
+            onCreateThread={() => handleSetView(ViewState.FORUM_CREATE_THREAD)}
+            user={user}
+            isAdmin={isAdmin}
+          />
+        ) : (
+          <ForumHome onCategorySelect={handleForumCategorySelect} />
+        );
+      case ViewState.PROFILE:
+        return user ? (
+          <Profile user={user} />
+        ) : (
+          <Login setView={handleSetView} onLogin={handleLogin} />
         );
       default:
         return <Home setView={handleSetView} />;

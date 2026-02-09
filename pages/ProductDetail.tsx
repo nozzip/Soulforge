@@ -1485,9 +1485,12 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
                 fontStyle="italic"
                 sx={{
                   opacity: 0.9,
-                  minHeight: "100px", // Reserve space for lore
-                  display: "flex",
-                  alignItems: "flex-start",
+                  minHeight: "100px",
+                  display: "block",
+                  textIndent: "1.5rem",
+                  textAlign: "justify",
+                  lineHeight: 1.7,
+                  marginBottom: "1rem",
                 }}
               >
                 "

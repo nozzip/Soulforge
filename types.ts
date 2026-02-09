@@ -5,6 +5,50 @@ export interface SubItem {
   description?: string;
 }
 
+export interface Profile {
+  id: string;
+  username: string;
+  full_name: string;
+  avatar_url: string;
+  faction?: string;
+  title?: string;
+  frame_id?: string;
+  xp: number;
+  level: number;
+}
+
+export interface ForumCategory {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  sort_order: number;
+}
+
+export interface ForumThread {
+  id: string;
+  category_id: string;
+  author_id: string;
+  title: string;
+  content: string;
+  view_count: number;
+  is_pinned: boolean;
+  is_locked: boolean;
+  created_at: string;
+  updated_at: string;
+  author?: Profile; // Joined data
+}
+
+export interface ForumPost {
+  id: string;
+  thread_id: string;
+  author_id: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+  author?: Profile; // Joined data
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -42,4 +86,10 @@ export enum ViewState {
   ORDERS = "ORDERS",
   FEEDBACK = "FEEDBACK",
   HOW_TO_BUY = "HOW_TO_BUY",
+  NEW_ADVENTURER = "NEW_ADVENTURER",
+  FORUM_HOME = "FORUM_HOME",
+  FORUM_CATEGORY = "FORUM_CATEGORY",
+  FORUM_CREATE_THREAD = "FORUM_CREATE_THREAD",
+  FORUM_THREAD = "FORUM_THREAD",
+  PROFILE = "PROFILE",
 }
