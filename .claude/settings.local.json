@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir:*)",
+      "Bash(ls -la \"e:\\\\Minis Shop\\\\resinforge\\\\src\"\" 2>/dev/null || echo \"src dir not found\" && ls -la \"e:Minis Shopresinforge \")",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)"
+    ]
+  }
+}
