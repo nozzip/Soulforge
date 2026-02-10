@@ -520,7 +520,7 @@ const Navbar: React.FC<NavbarProps> = ({
                   ) : (
                     <Box
                       component="img"
-                      src="/images/guide/logoTextoSolo.svg"
+                      src={`${import.meta.env.BASE_URL}images/guide/logoTextoSolo.svg`}
                       alt="Soulforge"
                       sx={{
                         height: 64,

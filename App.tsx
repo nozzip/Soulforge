@@ -19,6 +19,7 @@ import ForumHome from "./pages/Forum/ForumHome";
 import Category from "./pages/Forum/Category";
 import Thread from "./pages/Forum/Thread";
 import CreateThread from "./pages/Forum/CreateThread";
+import LFGBoard from "./pages/Forum/LFG/LFGBoard";
 import Profile from "./pages/Profile";
 import { ViewState, Product } from "./types";
 import { ThemeProvider, CssBaseline } from "@mui/material";
@@ -335,6 +336,10 @@ const App: React.FC = () => {
     setCurrentView(ViewState.FORUM_CATEGORY);
   };
 
+  const handleLFGClick = () => {
+    setCurrentView(ViewState.FORUM_LFG);
+  };
+
   const renderView = () => {
     const designers = Array.from(
       new Set(products.map((p) => p.designer).filter(Boolean)),
@@ -440,7 +445,14 @@ const App: React.FC = () => {
           />
         );
       case ViewState.FORUM_HOME:
-        return <ForumHome onCategorySelect={handleForumCategorySelect} />;
+        return (
+          <ForumHome
+            onCategorySelect={handleForumCategorySelect}
+            onThreadSelect={handleForumThreadSelect}
+            onProductSelect={handleProductClick}
+            onLFGClick={handleLFGClick}
+          />
+        );
       case ViewState.FORUM_CATEGORY:
         return selectedForumCategoryId ? (
           <Category
@@ -467,6 +479,8 @@ const App: React.FC = () => {
         ) : (
           <ForumHome onCategorySelect={handleForumCategorySelect} />
         );
+      case ViewState.FORUM_LFG:
+        return <LFGBoard onBack={handleForumBackToHome} />;
       case ViewState.FORUM_THREAD:
         return selectedForumThreadId ? (
           <Thread

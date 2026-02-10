@@ -270,6 +270,7 @@ const Category: React.FC<CategoryProps> = ({
 
                     {/* Content */}
                     <ListItemText
+                      secondaryTypographyProps={{ component: "div" }}
                       primary={
                         <Typography
                           variant="h6"

@@ -11,35 +11,67 @@ import {
   useTheme,
   CardActionArea,
   Avatar,
+  Divider,
 } from "@mui/material";
 import { supabase } from "../../src/supabase";
 import { ForumCategory } from "../../types";
 import {
   LocalBar as LocalBarIcon,
-  Brush as BrushIcon,
   AutoStories as AutoStoriesIcon,
-  Storefront as StorefrontIcon,
   Forum as ForumIcon,
   Groups as GroupsIcon,
   Handyman as HandymanIcon,
   ReportProblem as HorrorIcon,
+  MenuBook as BookIcon,
+  School as SchoolIcon,
+  Security as DmIcon,
+  Pets as BeastIcon,
 } from "@mui/icons-material";
+import ForumSidebar from "./components/ForumSidebar";
 
-// Map icons based on category name or other logic
+// Map icons based on category name
 const getIcon = (name: string) => {
-  if (name.includes("Taberna")) return LocalBarIcon;
-  if (name.includes("Buscador")) return GroupsIcon;
-  if (name.includes("Forja")) return HandymanIcon;
-  if (name.includes("Historias")) return HorrorIcon;
-  if (name.includes("Reglas") || name.includes("Lore")) return AutoStoriesIcon;
+  const n = name.toLowerCase();
+  if (n.includes("taberna")) return LocalBarIcon;
+  if (n.includes("buscador")) return GroupsIcon;
+  if (n.includes("forja")) return HandymanIcon;
+  if (n.includes("historias")) return HorrorIcon;
+  if (n.includes("reglas")) return SchoolIcon;
+  if (n.includes("lore") || n.includes("mundo")) return AutoStoriesIcon;
+  if (n.includes("master") || n.includes("dm")) return DmIcon;
+  if (n.includes("bestiario") || n.includes("monstruo")) return BeastIcon;
   return ForumIcon;
+};
+
+// Helper to group categories (mock logic until DB schema supports groups)
+const getCategoryGroup = (name: string) => {
+  const n = name.toLowerCase();
+  if (n.includes("reglas") || n.includes("builds") || n.includes("taberna"))
+    return "THE PLAYER'S HANDBOOK";
+  if (n.includes("master") || n.includes("lore") || n.includes("mundo"))
+    return "THE DUNGEON MASTER'S GUIDE";
+  if (
+    n.includes("bestiario") ||
+    n.includes("monstruo") ||
+    n.includes("historias")
+  )
+    return "THE MONSTER MANUAL";
+  return "GENERAL DISCUSSION";
 };
 
 interface ForumHomeProps {
   onCategorySelect: (categoryId: string) => void;
+  onThreadSelect?: (threadId: string) => void;
+  onProductSelect?: (productId: string) => void;
+  onLFGClick?: () => void;
 }
 
-const ForumHome: React.FC<ForumHomeProps> = ({ onCategorySelect }) => {
+const ForumHome: React.FC<ForumHomeProps> = ({
+  onCategorySelect,
+  onThreadSelect,
+  onProductSelect,
+  onLFGClick,
+}) => {
   const theme = useTheme();
   const [categories, setCategories] = useState<ForumCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,6 +100,24 @@ const ForumHome: React.FC<ForumHomeProps> = ({ onCategorySelect }) => {
     }
   };
 
+  const groupedCategories = categories.reduce(
+    (acc, cat) => {
+      const group = getCategoryGroup(cat.name);
+      if (!acc[group]) acc[group] = [];
+      acc[group].push(cat);
+      return acc;
+    },
+    {} as Record<string, ForumCategory[]>,
+  );
+
+  // Define group order
+  const groupOrder = [
+    "THE PLAYER'S HANDBOOK",
+    "THE DUNGEON MASTER'S GUIDE",
+    "THE MONSTER MANUAL",
+    "GENERAL DISCUSSION",
+  ];
+
   if (loading) {
     return (
       <Box
@@ -84,143 +134,229 @@ const ForumHome: React.FC<ForumHomeProps> = ({ onCategorySelect }) => {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 16, mb: 10 }}>
-      {/* Header Banner */}
+    <Container maxWidth="xl" sx={{ mt: 16, mb: 10 }}>
+      {/* Hero Banner */}
       <Box
         sx={{
           textAlign: "center",
-          mb: 8,
-          py: 8,
+          mb: 6,
+          py: 6,
           px: 4,
-          borderRadius: 4,
-          background: `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.9)}, ${alpha(theme.palette.secondary.main, 0.15)})`,
-          border: `1px solid ${alpha(theme.palette.secondary.main, 0.3)}`,
-          boxShadow: `0 8px 32px ${alpha(theme.palette.common.black, 0.4)}`,
-          backdropFilter: "blur(12px)",
+          borderRadius: 0,
+          borderTop: `2px solid ${theme.palette.secondary.main}`,
+          borderBottom: `2px solid ${theme.palette.secondary.main}`,
+          background: `linear-gradient(to right, ${alpha(theme.palette.background.default, 0)}, ${alpha(theme.palette.secondary.main, 0.1)}, ${alpha(theme.palette.background.default, 0)})`,
           position: "relative",
-          overflow: "hidden",
         }}
       >
-        <Box
-          sx={{
-            position: "absolute",
-            top: -20,
-            left: -20,
-            width: 150,
-            height: 150,
-            backgroundImage: "url(/images/guide/logoTextoSolo.svg)",
-            backgroundSize: "contain",
-            backgroundRepeat: "no-repeat",
-            opacity: 0.1,
-            transform: "rotate(-15deg)",
-          }}
-        />
         <Typography
           variant="h2"
           sx={{
             fontFamily: "Cinzel, serif",
-            fontWeight: "bold",
-            color: "secondary.main",
-            mb: 2,
-            textShadow: "0 2px 4px rgba(0,0,0,0.6)",
-            fontSize: { xs: "2.5rem", md: "3.5rem" },
+            fontWeight: 800,
+            color: "secondary.main", // Gold
+            textShadow: "0 2px 4px rgba(0,0,0,0.8)",
+            letterSpacing: 2,
+            mb: 1,
           }}
         >
-          La Taberna del Aventurero
+          LA TABERNA DEL DRAGÓN
         </Typography>
         <Typography
-          variant="h5"
+          variant="h6"
           sx={{
             fontFamily: '"Newsreader", serif',
-            color: "text.secondary",
-            maxWidth: "800px",
-            mx: "auto",
+            color: "text.primary",
             fontStyle: "italic",
-            lineHeight: 1.6,
+            maxWidth: 800,
+            mx: "auto",
+            opacity: 0.9,
           }}
         >
-          Toma asiento junto al fuego, viajero. Aquí se cuentan historias de
-          batalla, se presumen tesoros pintados y se mercadean reliquias
-          olvidadas.
+          "El fuego es cálido, la cerveza está fría y las historias son
+          legendarias. Bienvenido a casa, aventurero."
         </Typography>
       </Box>
 
-      {/* Categories Grid */}
       <Grid container spacing={4}>
-        {categories.map((category) => {
-          const Icon = getIcon(category.name);
-          return (
-            <Grid size={{ xs: 12, md: 6 }} key={category.id}>
-              <Card
-                sx={{
-                  height: "100%",
-                  bgcolor: alpha(theme.palette.background.paper, 0.4),
-                  backdropFilter: "blur(8px)",
-                  border: `1px solid ${alpha(theme.palette.common.white, 0.08)}`,
-                  borderRadius: 3,
-                  transition: "all 0.3s ease-in-out",
-                  "&:hover": {
-                    transform: "translateY(-6px)",
-                    boxShadow: `0 12px 30px ${alpha(theme.palette.secondary.main, 0.25)}`,
-                    border: `1px solid ${alpha(theme.palette.secondary.main, 0.6)}`,
-                    bgcolor: alpha(theme.palette.background.paper, 0.6),
-                  },
-                }}
-              >
-                <CardActionArea
-                  onClick={() => onCategorySelect(category.id)}
-                  sx={{ height: "100%", p: 3 }}
+        {/* Main Content - Categories */}
+        <Grid size={{ xs: 12, lg: 8 }}>
+          {groupOrder.map((groupName) => {
+            const groupCats = groupedCategories[groupName];
+            if (!groupCats || groupCats.length === 0) return null;
+
+            let HeaderIcon = BookIcon;
+            if (groupName.includes("MASTER")) HeaderIcon = DmIcon;
+            if (groupName.includes("MONSTER")) HeaderIcon = BeastIcon;
+
+            return (
+              <Box key={groupName} sx={{ mb: 5 }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 2,
+                    mb: 2,
+                    borderBottom: `1px solid ${alpha(theme.palette.secondary.main, 0.3)}`,
+                    pb: 1,
+                  }}
                 >
-                  <CardContent
+                  <HeaderIcon color="secondary" sx={{ fontSize: 30 }} />
+                  <Typography
+                    variant="h5"
                     sx={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: 3,
+                      fontFamily: "Cinzel, serif",
+                      fontWeight: 700,
+                      color: "secondary.main",
+                      letterSpacing: 1,
                     }}
                   >
-                    <Avatar
-                      sx={{
-                        width: 72,
-                        height: 72,
-                        bgcolor: alpha(theme.palette.secondary.main, 0.15),
-                        color: "secondary.main",
-                        boxShadow: `0 4px 12px ${alpha(theme.palette.common.black, 0.2)}`,
-                      }}
-                    >
-                      <Icon fontSize="large" sx={{ fontSize: 40 }} />
-                    </Avatar>
-                    <Box>
-                      <Typography
-                        variant="h4"
-                        component="div"
-                        sx={{
-                          fontFamily: "Cinzel, serif",
-                          fontWeight: 700,
-                          mb: 1.5,
-                          color: "text.primary",
-                          fontSize: "1.5rem",
-                        }}
-                      >
-                        {category.name}
-                      </Typography>
-                      <Typography
-                        variant="body1"
-                        color="text.secondary"
-                        sx={{
-                          fontFamily: '"Newsreader", serif',
-                          fontSize: "1.05rem",
-                          lineHeight: 1.5,
-                        }}
-                      >
-                        {category.description}
-                      </Typography>
-                    </Box>
-                  </CardContent>
-                </CardActionArea>
-              </Card>
-            </Grid>
-          );
-        })}
+                    {groupName}
+                  </Typography>
+                </Box>
+
+                <Grid container spacing={2}>
+                  {groupCats.map((category) => {
+                    const Icon = getIcon(category.name);
+                    return (
+                      <Grid size={{ xs: 12 }} key={category.id}>
+                        <Card
+                          sx={{
+                            bgcolor: alpha(theme.palette.background.paper, 0.2),
+                            border: `1px solid ${alpha(theme.palette.common.white, 0.05)}`,
+                            transition: "all 0.3s",
+                            "&:hover": {
+                              bgcolor: alpha(
+                                theme.palette.background.paper,
+                                0.4,
+                              ),
+                              transform: "translateX(4px)",
+                              border: `1px solid ${alpha(theme.palette.secondary.main, 0.4)}`,
+                            },
+                          }}
+                        >
+                          <CardActionArea
+                            onClick={() => {
+                              // If Buscador de Aventureros is clicked, route to LFG Board if prop provided
+                              if (
+                                category.name
+                                  .toLowerCase()
+                                  .includes("buscador") &&
+                                onLFGClick
+                              ) {
+                                onLFGClick();
+                              } else {
+                                onCategorySelect(category.id);
+                              }
+                            }}
+                            sx={{ p: 2.5 }}
+                          >
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 3,
+                              }}
+                            >
+                              <Box
+                                sx={{
+                                  p: 1.5,
+                                  bgcolor: alpha(
+                                    theme.palette.secondary.main,
+                                    0.1,
+                                  ),
+                                  borderRadius: 2,
+                                  display: "flex",
+                                  color: "secondary.main",
+                                }}
+                              >
+                                <Icon fontSize="large" />
+                              </Box>
+                              <Box sx={{ flex: 1 }}>
+                                <Typography
+                                  variant="h6"
+                                  sx={{
+                                    fontFamily: "Cinzel, serif",
+                                    fontWeight: 700,
+                                    color: "text.primary",
+                                    mb: 0.5,
+                                  }}
+                                >
+                                  {category.name}
+                                </Typography>
+                                <Typography
+                                  variant="body2"
+                                  color="text.secondary"
+                                  sx={{
+                                    fontFamily: '"Newsreader", serif',
+                                  }}
+                                >
+                                  {category.description}
+                                </Typography>
+                              </Box>
+                              {/* Mock Stats */}
+                              <Box
+                                sx={{
+                                  display: { xs: "none", sm: "flex" },
+                                  gap: 3,
+                                  mr: 2,
+                                }}
+                              >
+                                <Box sx={{ textAlign: "center" }}>
+                                  <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    display="block"
+                                  >
+                                    SCROLLS
+                                  </Typography>
+                                  <Typography
+                                    variant="body2"
+                                    color="secondary.main"
+                                    fontWeight="bold"
+                                  >
+                                    1.2K
+                                  </Typography>
+                                </Box>
+                                <Box sx={{ textAlign: "center" }}>
+                                  <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    display="block"
+                                  >
+                                    RUNES
+                                  </Typography>
+                                  <Typography
+                                    variant="body2"
+                                    color="secondary.main"
+                                    fontWeight="bold"
+                                  >
+                                    800
+                                  </Typography>
+                                </Box>
+                              </Box>
+                            </Box>
+                          </CardActionArea>
+                        </Card>
+                      </Grid>
+                    );
+                  })}
+                </Grid>
+              </Box>
+            );
+          })}
+        </Grid>
+
+        {/* Sidebar */}
+        <Grid size={{ xs: 12, lg: 4 }}>
+          {onThreadSelect && (
+            <ForumSidebar
+              onThreadSelect={onThreadSelect}
+              onProductSelect={onProductSelect}
+              onLFGClick={onLFGClick}
+            />
+          )}
+        </Grid>
       </Grid>
     </Container>
   );

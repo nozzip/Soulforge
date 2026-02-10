@@ -206,13 +206,11 @@ const Home: React.FC<HomeProps> = ({ setView }) => {
               height: "100vh",
               minHeight: "100vh",
               bgcolor: "common.black",
-              maskImage:
-                "linear-gradient(to bottom, black 85%, transparent 100%), url('/images/banners/home_banner.png')",
+              maskImage: `linear-gradient(to bottom, black 85%, transparent 100%), url('${import.meta.env.BASE_URL}images/banners/home_banner.png')`,
               maskSize: "100% 100%, 100% auto",
               maskPosition: "center top, center bottom",
               maskRepeat: "no-repeat, no-repeat",
-              WebkitMaskImage:
-                "linear-gradient(to bottom, black 85%, transparent 100%), url('/images/banners/home_banner.png')",
+              WebkitMaskImage: `linear-gradient(to bottom, black 85%, transparent 100%), url('${import.meta.env.BASE_URL}images/banners/home_banner.png')`,
               WebkitMaskSize: "100% 100%, 100% auto",
               WebkitMaskPosition: "center top, center bottom",
               WebkitMaskRepeat: "no-repeat, no-repeat",
@@ -285,7 +283,7 @@ const Home: React.FC<HomeProps> = ({ setView }) => {
                   {/* Logo Placeholder - simplified as a large icon or text */}
                   <Box
                     component="img"
-                    src="/images/guide/YunqueSolo.svg"
+                    src={`${import.meta.env.BASE_URL}images/guide/YunqueSolo.svg`}
                     alt="SoulForge Logo"
                     sx={{
                       width: 200,

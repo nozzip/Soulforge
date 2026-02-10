@@ -5,26 +5,18 @@ import {
   Typography,
   Button,
   Paper,
-  Avatar,
   CircularProgress,
   useTheme,
   alpha,
-  Divider,
   TextField,
-  Chip,
-  IconButton,
-  Tooltip,
 } from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
   Send as SendIcon,
-  FormatQuote as QuoteIcon,
-  Flag as FlagIcon,
-  FavoriteBorder as LikeIcon,
-  Delete as DeleteIcon,
 } from "@mui/icons-material";
 import { supabase } from "../../src/supabase";
-import { ForumThread, ForumPost } from "../../types";
+import { ForumThread, ForumPost as ForumPostType } from "../../types";
+import ForumPost from "./components/ForumPost";
 
 interface ThreadProps {
   threadId: string;
@@ -41,7 +33,7 @@ const Thread: React.FC<ThreadProps> = ({
 }) => {
   const theme = useTheme();
   const [thread, setThread] = useState<ForumThread | null>(null);
-  const [posts, setPosts] = useState<ForumPost[]>([]);
+  const [posts, setPosts] = useState<ForumPostType[]>([]);
   const [newReply, setNewReply] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -85,29 +77,6 @@ const Thread: React.FC<ThreadProps> = ({
     await supabase.rpc("increment_thread_view", { thread_id: threadId });
   };
 
-  const handleDeleteThread = async () => {
-    if (
-      !window.confirm(
-        "¿Estás seguro de que deseas borrar este hilo? Esta acción no se puede deshacer.",
-      )
-    ) {
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from("forum_threads")
-        .delete()
-        .eq("id", threadId);
-
-      if (error) throw error;
-      onBack(); // Return to previous screen
-    } catch (error) {
-      console.error("Error deleting thread:", error);
-      alert("Error al borrar el hilo.");
-    }
-  };
-
   const handleDeletePost = async (postId: string) => {
     if (
       !window.confirm(
@@ -140,16 +109,14 @@ const Thread: React.FC<ThreadProps> = ({
         .insert({
           thread_id: threadId,
           content: newReply,
-          author_id: user.id, // Assuming profiles.id matches auth.users.id
+          author_id: user.id,
         })
         .select()
         .single();
 
       if (error) throw error;
 
-      // Optimistic update or refetch
-      // For simplicity, refetch or append manually if we had full profile data
-      // I'll just refetch posts to be safe and get the joined profile data
+      // Refetch for full data incl profile
       const { data: newPostData } = await supabase
         .from("forum_posts")
         .select("*, author:profiles(username, avatar_url, title, faction)")
@@ -159,7 +126,6 @@ const Thread: React.FC<ThreadProps> = ({
       if (newPostData) {
         setPosts([...posts, newPostData]);
         setNewReply("");
-        // Scroll to bottom
         setTimeout(() => {
           postsEndRef.current?.scrollIntoView({ behavior: "smooth" });
         }, 100);
@@ -172,156 +138,12 @@ const Thread: React.FC<ThreadProps> = ({
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("es-ES", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+  const handleQuote = (content: string, author: string) => {
+    setNewReply(
+      (prev) => `${prev}[quote author="${author}"]\n${content}\n[/quote]\n\n`,
+    );
+    // Focus would be nice here
   };
-
-  const PostView = ({
-    content,
-    author,
-    date,
-    isOp = false,
-    postId,
-  }: {
-    content: string;
-    author: any;
-    date: string;
-    isOp?: boolean;
-    postId?: string;
-  }) => (
-    <Paper
-      sx={{
-        p: 3,
-        mb: 3,
-        bgcolor: isOp
-          ? alpha(theme.palette.secondary.main, 0.05)
-          : alpha(theme.palette.background.paper, 0.6),
-        border: isOp
-          ? `1px solid ${alpha(theme.palette.secondary.main, 0.3)}`
-          : `1px solid ${alpha(theme.palette.common.white, 0.1)}`,
-        backdropFilter: "blur(5px)",
-      }}
-    >
-      <Box
-        sx={{
-          display: "flex",
-          gap: 3,
-          flexDirection: { xs: "column", sm: "row" },
-        }}
-      >
-        {/* Author Sidebar */}
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: { xs: "row", sm: "column" },
-            alignItems: "center",
-            gap: 1,
-            minWidth: { sm: 120 },
-            borderRight: {
-              sm: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
-            },
-            pr: { sm: 2 },
-            pb: { xs: 2, sm: 0 },
-            borderBottom: {
-              xs: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
-              sm: "none",
-            },
-          }}
-        >
-          <Avatar
-            src={author?.avatar_url}
-            alt={author?.username}
-            sx={{ width: 64, height: 64, border: "2px solid #aaa" }}
-          />
-          <Box sx={{ textAlign: { xs: "left", sm: "center" } }}>
-            <Typography
-              variant="subtitle1"
-              sx={{ fontWeight: "bold", color: "secondary.main" }}
-            >
-              {author?.username || "Desconocido"}
-            </Typography>
-            {author?.title && (
-              <Chip
-                label={author.title}
-                size="small"
-                sx={{
-                  mt: 0.5,
-                  height: 20,
-                  fontSize: "0.7rem",
-                }}
-              />
-            )}
-            {author?.faction && (
-              <Typography
-                variant="caption"
-                display="block"
-                sx={{ mt: 0.5, fontStyle: "italic", opacity: 0.7 }}
-              >
-                {author.faction}
-              </Typography>
-            )}
-          </Box>
-        </Box>
-
-        {/* Content */}
-        <Box sx={{ flexGrow: 1 }}>
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              mb: 2,
-            }}
-          >
-            <Typography variant="caption" color="text.secondary">
-              Publicado el {formatDate(date)}
-            </Typography>
-            <Box>
-              <IconButton size="small">
-                <QuoteIcon fontSize="small" />
-              </IconButton>
-              {!isOp && (
-                <IconButton size="small">
-                  <LikeIcon fontSize="small" />
-                </IconButton>
-              )}
-              <IconButton size="small" color="error">
-                <FlagIcon fontSize="small" />
-              </IconButton>
-              {isAdmin && !isOp && postId && (
-                <Tooltip title="Borrar Comentario (Admin)">
-                  <IconButton
-                    size="small"
-                    color="error"
-                    onClick={() => handleDeletePost(postId)}
-                  >
-                    <DeleteIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              )}
-            </Box>
-          </Box>
-          <Typography
-            variant="body1"
-            sx={{
-              fontFamily: '"Newsreader", serif',
-              fontSize: "1.05rem",
-              lineHeight: 1.6,
-              whiteSpace: "pre-wrap",
-            }}
-          >
-            {content}
-          </Typography>
-        </Box>
-      </Box>
-    </Paper>
-  );
 
   if (loading) {
     return (
@@ -341,104 +163,186 @@ const Thread: React.FC<ThreadProps> = ({
   if (!thread) return null;
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 14, mb: 10 }}>
-      {/* Header */}
-      <Button
-        startIcon={<ArrowBackIcon />}
-        onClick={onBack}
-        sx={{ mb: 3, color: "text.secondary" }}
+    <Container maxWidth="xl" sx={{ mt: 14, mb: 10 }}>
+      {/* Navigation & Header */}
+      <Box
+        sx={{
+          mb: 4,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
       >
-        Volver a la Lista
-      </Button>
+        <Button
+          startIcon={<ArrowBackIcon />}
+          onClick={onBack}
+          sx={{ color: "text.secondary" }}
+        >
+          Back to Tavern
+        </Button>
+        <Typography variant="overline" color="text.secondary">
+          Dungeon Master's Guide / Encounters
+        </Typography>
+      </Box>
 
       <Typography
-        variant="h4"
+        variant="h3"
         sx={{
           fontFamily: "Cinzel, serif",
-          fontWeight: "bold",
-          color: "secondary.main",
-          mb: 4,
-          borderBottom: "1px solid",
-          borderColor: "secondary.main",
-          pb: 2,
+          fontWeight: 800,
+          color: "text.primary",
+          mb: 1,
+          textShadow: `0 0 10px ${alpha(theme.palette.secondary.main, 0.3)}`,
         }}
       >
         {thread.title}
       </Typography>
 
+      <Box sx={{ display: "flex", gap: 2, mb: 6, alignItems: "center" }}>
+        <Box
+          sx={{
+            width: 12,
+            height: 12,
+            borderRadius: "50%",
+            bgcolor: "secondary.main",
+          }}
+        />
+        <Typography variant="body2" color="text.secondary">
+          Started by{" "}
+          <span style={{ color: theme.palette.secondary.main }}>
+            {thread.author?.username || "Unknown"}
+          </span>{" "}
+          • {new Date(thread.created_at).toLocaleDateString()}
+        </Typography>
+      </Box>
+
       {/* OP */}
-      <PostView
+      <ForumPost
         content={thread.content}
         author={thread.author}
         date={thread.created_at}
         isOp={true}
+        onQuote={handleQuote}
       />
 
       {/* Replies */}
       {posts.map((post) => (
-        <PostView
+        <ForumPost
           key={post.id}
+          postId={post.id}
           content={post.content}
           author={post.author}
           date={post.created_at}
+          isAdmin={isAdmin}
+          onDelete={handleDeletePost}
+          onQuote={handleQuote}
         />
       ))}
 
       <div ref={postsEndRef} />
 
-      {/* Reply Box */}
+      {/* Reply Box - Cast Sending */}
       {user ? (
         <Paper
           sx={{
-            p: 3,
-            mt: 4,
-            bgcolor: alpha(theme.palette.background.paper, 0.8),
+            p: 0,
+            mt: 6,
+            bgcolor: alpha(theme.palette.background.paper, 0.3),
             backdropFilter: "blur(10px)",
+            border: `1px solid ${alpha(theme.palette.secondary.main, 0.2)}`,
+            borderRadius: 2,
+            overflow: "hidden",
           }}
         >
-          <Typography variant="h6" sx={{ mb: 2, fontFamily: "Cinzel, serif" }}>
-            Escribe tu respuesta
-          </Typography>
-          <TextField
-            fullWidth
-            multiline
-            rows={4}
-            variant="outlined"
-            placeholder="Comparte tu sabiduría..."
-            value={newReply}
-            onChange={(e) => setNewReply(e.target.value)}
-            disabled={submitting}
-            sx={{ mb: 2 }}
-          />
-          <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-            <Button
-              variant="contained"
-              color="secondary"
-              endIcon={
-                submitting ? (
-                  <CircularProgress size={20} color="inherit" />
-                ) : (
-                  <SendIcon />
-                )
-              }
-              onClick={handlePostReply}
-              disabled={submitting || !newReply.trim()}
+          <Box
+            sx={{
+              bgcolor: alpha(theme.palette.background.paper, 0.8),
+              p: 1.5,
+              px: 3,
+              borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+            }}
+          >
+            <Typography
+              variant="subtitle2"
+              sx={{
+                fontFamily: "Cinzel, serif",
+                fontWeight: 700,
+                color: "text.secondary",
+              }}
             >
-              Publicar Respuesta
-            </Button>
+              CAST SENDING
+            </Typography>
+          </Box>
+          <Box sx={{ p: 3 }}>
+            <TextField
+              fullWidth
+              multiline
+              rows={4}
+              variant="outlined"
+              placeholder="Roll for Charisma... or just type here..."
+              value={newReply}
+              onChange={(e) => setNewReply(e.target.value)}
+              disabled={submitting}
+              sx={{
+                mb: 2,
+                "& .MuiOutlinedInput-root": {
+                  bgcolor: alpha(theme.palette.background.default, 0.5),
+                },
+              }}
+            />
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <Typography variant="caption" color="text.secondary">
+                Draconic Runes supported (Markdown)
+              </Typography>
+              <Button
+                variant="contained"
+                color="secondary"
+                endIcon={
+                  submitting ? (
+                    <CircularProgress size={20} color="inherit" />
+                  ) : (
+                    <SendIcon />
+                  )
+                }
+                onClick={handlePostReply}
+                disabled={submitting || !newReply.trim()}
+                sx={{
+                  fontFamily: "Cinzel, serif",
+                  fontWeight: 700,
+                  px: 4,
+                }}
+              >
+                Cast Sending
+              </Button>
+            </Box>
           </Box>
         </Paper>
       ) : (
         <Paper
           sx={{
-            p: 3,
-            mt: 4,
+            p: 4,
+            mt: 6,
             textAlign: "center",
-            bgcolor: alpha(theme.palette.action.disabledBackground, 0.1),
+            bgcolor: alpha(theme.palette.background.paper, 0.2),
+            border: `1px dashed ${alpha(theme.palette.text.secondary, 0.3)}`,
           }}
         >
+          <Typography
+            variant="h6"
+            fontFamily="Cinzel, serif"
+            gutterBottom
+            color="secondary"
+          >
+            The Spirits of the Ancestors are Quiet
+          </Typography>
           <Typography variant="body1" color="text.secondary">
-            Debes iniciar sesión para unirte a la conversación.
+            You must be logged in to commune with the spirits (post a reply).
           </Typography>
         </Paper>
       )}
