@@ -244,10 +244,11 @@ const Navbar: React.FC<NavbarProps> = ({
       sx={{
         textAlign: "center",
         height: "100%",
-        bgcolor: isWarhammer ? "#1a1a1a" : "#172659",
+        overflowY: "auto",
+        bgcolor: isWarhammer ? "#0b1120" : "#2c0b0e",
         backgroundImage: isWarhammer
-          ? "linear-gradient(180deg, #1a1a1a 0%, #2c0b0e 100%)"
-          : "linear-gradient(180deg, #172659 0%, #164a87 100%)",
+          ? "linear-gradient(180deg, #0b1120 0%, #0c4a6e 100%)" // Blue/Black for Warhammer
+          : "linear-gradient(180deg, #2c0b0e 0%, #5c1c1c 100%)", // Red/Black for Fantasy
         color: "white",
       }}
     >
@@ -488,14 +489,18 @@ const Navbar: React.FC<NavbarProps> = ({
           }}
           elevation={0}
         >
-          <Container maxWidth="xl">
+          <Container maxWidth="xl" sx={{ px: { xs: 1, sm: 2, md: 3 } }}>
             <Toolbar
               disableGutters
               sx={{ height: 90, justifyContent: "space-between" }}
             >
               {/* LEFT: Logo / Home */}
               <Box
-                sx={{ display: "flex", alignItems: "center", width: "250px" }}
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  width: { xs: "auto", sm: "250px" },
+                }}
               >
                 <Button
                   onClick={() => setView(ViewState.HOME)}
@@ -520,13 +525,18 @@ const Navbar: React.FC<NavbarProps> = ({
                   ) : (
                     <Box
                       component="img"
-                      src={`${import.meta.env.BASE_URL}images/guide/logoTextoSolo.svg`}
+                      src={
+                        isWarhammer
+                          ? `${import.meta.env.BASE_URL}images/guide/logoTextoSolo.svg`
+                          : `${import.meta.env.BASE_URL}images/guide/logoTextoSolo_fantasy.svg`
+                      }
                       alt="Soulforge"
                       sx={{
-                        height: 64,
+                        height: { xs: 32, sm: 64 },
                         width: "auto",
-                        filter:
-                          "drop-shadow(0 0 1px white) drop-shadow(0 0 2px rgba(255,255,255,0.5))",
+                        filter: isWarhammer
+                          ? "drop-shadow(0 0 1px white) drop-shadow(0 0 2px rgba(255,255,255,0.5))"
+                          : "drop-shadow(0 2px 4px rgba(0,0,0,0.5))",
                       }}
                     />
                   )}
@@ -935,6 +945,7 @@ const Navbar: React.FC<NavbarProps> = ({
       </HideOnScroll>
       <Box component="nav">
         <Drawer
+          anchor="right"
           variant="temporary"
           open={mobileOpen}
           onClose={handleDrawerToggle}

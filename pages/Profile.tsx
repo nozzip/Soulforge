@@ -195,7 +195,10 @@ const Profile: React.FC<ProfileProps> = ({ user }) => {
         >
           <Box sx={{ position: "relative" }}>
             <Avatar
-              src={formData.avatar_url || "/images/avatars/default.png"}
+              src={
+                formData.avatar_url ||
+                "https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/avatars/default.png"
+              }
               sx={{
                 width: 140,
                 height: 140,

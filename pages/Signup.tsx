@@ -90,6 +90,9 @@ const Signup: React.FC<SignupProps> = ({ setView, onLogin }) => {
       options: {
         data: {
           full_name: name,
+          username: name,
+          avatar_url:
+            "https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/avatars/default.png",
         },
       },
     });
@@ -98,17 +101,27 @@ const Signup: React.FC<SignupProps> = ({ setView, onLogin }) => {
       setError(signupError.message);
       setIsLoading(false);
     } else if (data.user) {
-      // Create user profile with username
-      const { error: profileError } = await supabase
-        .from("user_profiles")
-        .insert({
-          user_id: data.user.id,
-          username: name,
-        });
+      // If session is null, email confirmation is likely required
+      if (!data.session) {
+        setError(
+          "Cuenta creada. Por favor verifica tu correo electrónico para confirmar.",
+        );
+        setIsLoading(false);
+        return;
+      }
+
+      // Metadata should be handled by trigger, but we ensure consistency here if logged in
+      const { error: profileError } = await supabase.from("profiles").upsert({
+        id: data.user.id,
+        username: name,
+        full_name: name,
+        avatar_url:
+          "https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/avatars/default.png",
+      });
 
       if (profileError) {
-        console.error("Error creating profile:", profileError);
-        // Continue anyway, profile can be created later
+        console.error("Error updating profile:", profileError);
+        // Non-critical if trigger worked
       }
 
       onLogin(data.user);

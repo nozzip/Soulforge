@@ -60,21 +60,14 @@ const ForumSidebar: React.FC<ForumSidebarProps> = ({
   onLFGClick,
 }) => {
   const theme = useTheme();
-  // const [recentThreads, setRecentThreads] = useState<ForumThread[]>([]); // Removing recent threads for LFG section
+  const [lfgPosts, setLfgPosts] = useState<any[]>([]);
   const [latestProduct, setLatestProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
-  const [onlineCount, setOnlineCount] = useState(1204);
+  const [onlineCount, setOnlineCount] = useState(0);
+  const [recentLocals, setRecentLocals] = useState<any[]>([]);
 
   useEffect(() => {
     fetchData();
-    // Simulate fluctuating online users
-    const interval = setInterval(() => {
-      setOnlineCount((prev) => {
-        const change = Math.floor(Math.random() * 7) - 3; // -3 to +3
-        return Math.max(100, prev + change); // Ensure doesn't go too low
-      });
-    }, 5000);
-    return () => clearInterval(interval);
   }, []);
 
   const fetchData = async () => {
@@ -93,6 +86,40 @@ const ForumSidebar: React.FC<ForumSidebarProps> = ({
       }
       if (productData) {
         setLatestProduct(productData);
+      }
+
+      // 2. Fetch Latest LFG Posts
+      const { data: lfgData, error: lfgError } = await supabase
+        .from("lfg_posts")
+        .select("*, gm_profile:profiles(*)")
+        .order("created_at", { ascending: false })
+        .limit(3);
+
+      if (lfgError) {
+        console.error("Error fetching LFG posts:", lfgError);
+      } else {
+        setLfgPosts(lfgData || []);
+      }
+
+      // 3. Fetch "Online" Users (Total Profiles for now)
+      const { count: userCount, error: userError } = await supabase
+        .from("profiles")
+        .select("*", { count: "exact", head: true });
+
+      if (userError) {
+        console.error("Error fetching user count:", userError);
+      } else {
+        setOnlineCount(userCount || 0);
+      }
+
+      // 4. Fetch a few recent profiles for avatars
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("*")
+        .limit(5);
+
+      if (profileData) {
+        setRecentLocals(profileData);
       }
     } catch (error) {
       console.error("Error fetching sidebar data:", error);
@@ -141,79 +168,95 @@ const ForumSidebar: React.FC<ForumSidebarProps> = ({
           </Typography>
         </Box>
         <List disablePadding>
-          {MOCK_SIDEBAR_LFG.map((post, index) => (
-            <React.Fragment key={post.id}>
-              <ListItem disablePadding>
-                <ListItemButton
-                  // CLICKING ITEM NOW GOES TO LFG BOARD
-                  onClick={onLFGClick}
-                  alignItems="flex-start"
-                  sx={{
-                    py: 1.5,
-                    transition: "all 0.2s",
-                    "&:hover": {
-                      bgcolor: alpha(theme.palette.secondary.main, 0.1),
-                      pl: 3,
-                    },
-                  }}
-                >
-                  <ListItemIcon sx={{ minWidth: 36, mt: 0.5 }}>
-                    <GroupsIcon color="secondary" fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontWeight: 600,
-                          fontFamily: "Cinzel, serif",
-                          color: "text.primary",
-                          lineHeight: 1.2,
-                          mb: 0.5,
-                          fontSize: "0.85rem",
-                        }}
-                      >
-                        {post.title.toUpperCase()}
-                      </Typography>
-                    }
-                    secondary={
-                      <Box component="span">
+          {lfgPosts.length === 0 ? (
+            <ListItem>
+              <ListItemText
+                primary="No active quests"
+                secondary="Be the first to post one!"
+                primaryTypographyProps={{
+                  color: "text.secondary",
+                  fontFamily: "Cinzel, serif",
+                }}
+              />
+            </ListItem>
+          ) : (
+            lfgPosts.map((post, index) => (
+              <React.Fragment key={post.id}>
+                <ListItem disablePadding>
+                  <ListItemButton
+                    // CLICKING ITEM NOW GOES TO LFG BOARD
+                    onClick={onLFGClick}
+                    alignItems="flex-start"
+                    sx={{
+                      py: 1.5,
+                      transition: "all 0.2s",
+                      "&:hover": {
+                        bgcolor: alpha(theme.palette.secondary.main, 0.1),
+                        pl: 3,
+                      },
+                    }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 36, mt: 0.5 }}>
+                      <GroupsIcon color="secondary" fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={
                         <Typography
-                          component="span"
-                          variant="caption"
+                          variant="body2"
                           sx={{
-                            color: "secondary.main",
-                            fontWeight: "bold",
-                            display: "block",
+                            fontWeight: 600,
+                            fontFamily: "Cinzel, serif",
+                            color: "text.primary",
+                            lineHeight: 1.2,
                             mb: 0.5,
+                            fontSize: "0.85rem",
                           }}
                         >
-                          {post.system}
+                          {post.game_name.toUpperCase()}
                         </Typography>
-                        <Typography
-                          component="span"
-                          variant="caption"
-                          sx={{
-                            color: "text.secondary",
-                            fontFamily: "Newsreader, serif",
-                            fontStyle: "italic",
-                          }}
-                        >
-                          by {post.author} • {post.time}
-                        </Typography>
-                      </Box>
-                    }
+                      }
+                      secondary={
+                        <Box component="span">
+                          <Typography
+                            component="span"
+                            variant="caption"
+                            sx={{
+                              color: "secondary.main",
+                              fontWeight: "bold",
+                              display: "block",
+                              mb: 0.5,
+                            }}
+                          >
+                            {post.system}
+                          </Typography>
+                          <Typography
+                            component="span"
+                            variant="caption"
+                            sx={{
+                              color: "text.secondary",
+                              fontFamily: "Newsreader, serif",
+                              fontStyle: "italic",
+                            }}
+                          >
+                            by {post.gm_profile?.username || "Unknown"} •{" "}
+                            {post.date}
+                          </Typography>
+                        </Box>
+                      }
+                    />
+                  </ListItemButton>
+                </ListItem>
+                {index < lfgPosts.length - 1 && (
+                  <Divider
+                    component="li"
+                    sx={{
+                      borderColor: alpha(theme.palette.common.white, 0.05),
+                    }}
                   />
-                </ListItemButton>
-              </ListItem>
-              {index < MOCK_SIDEBAR_LFG.length - 1 && (
-                <Divider
-                  component="li"
-                  sx={{ borderColor: alpha(theme.palette.common.white, 0.05) }}
-                />
-              )}
-            </React.Fragment>
-          ))}
+                )}
+              </React.Fragment>
+            ))
+          )}
         </List>
         <Box
           sx={{
@@ -380,7 +423,7 @@ const ForumSidebar: React.FC<ForumSidebarProps> = ({
               letterSpacing: 1,
             }}
           >
-            ADVENTURERS ONLINE
+            ADVENTURERS GUILD
           </Typography>
         </Box>
         <CardContent>
@@ -396,31 +439,33 @@ const ForumSidebar: React.FC<ForumSidebarProps> = ({
                 },
               }}
             >
-              {/* Mock Avatars */}
-              <Avatar alt="Gandalf" src="https://i.pravatar.cc/150?u=gandalf" />
-              <Avatar alt="Aragorn" src="https://i.pravatar.cc/150?u=aragorn" />
-              <Avatar alt="Legolas" src="https://i.pravatar.cc/150?u=legolas" />
-              <Avatar alt="Gimli" src="https://i.pravatar.cc/150?u=gimli" />
-              <Avatar alt="Frodo" src="https://i.pravatar.cc/150?u=frodo" />
-              <Avatar alt="Sam" src="https://i.pravatar.cc/150?u=sam" />
+              {recentLocals.map((profile) => (
+                <Avatar
+                  key={profile.id}
+                  alt={profile.username || "Hero"}
+                  src={profile.avatar_url}
+                />
+              ))}
             </AvatarGroup>
-            <Box
-              sx={{
-                bgcolor: alpha(theme.palette.secondary.main, 0.2),
-                borderRadius: "50%",
-                width: 32,
-                height: 32,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "secondary.main",
-                fontWeight: "bold",
-                fontSize: "0.7rem",
-                border: `1px solid ${alpha(theme.palette.secondary.main, 0.3)}`,
-              }}
-            >
-              +{onlineCount - 5}
-            </Box>
+            {onlineCount > 5 && (
+              <Box
+                sx={{
+                  bgcolor: alpha(theme.palette.secondary.main, 0.2),
+                  borderRadius: "50%",
+                  width: 32,
+                  height: 32,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "secondary.main",
+                  fontWeight: "bold",
+                  fontSize: "0.7rem",
+                  border: `1px solid ${alpha(theme.palette.secondary.main, 0.3)}`,
+                }}
+              >
+                +{onlineCount - 5}
+              </Box>
+            )}
           </Box>
           <Typography variant="caption" color="text.secondary">
             <Box
@@ -436,7 +481,7 @@ const ForumSidebar: React.FC<ForumSidebarProps> = ({
               <OnlineIcon sx={{ fontSize: 10 }} />{" "}
               {onlineCount.toLocaleString()}
             </Box>{" "}
-            heroes currently exploring the realm.
+            heroes registered in the realm.
           </Typography>
         </CardContent>
       </Card>

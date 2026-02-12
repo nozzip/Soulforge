@@ -75,6 +75,9 @@ const ForumHome: React.FC<ForumHomeProps> = ({
   const theme = useTheme();
   const [categories, setCategories] = useState<ForumCategory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [categoryStats, setCategoryStats] = useState<
+    Record<string, { threads: number; posts: number }>
+  >({});
 
   useEffect(() => {
     fetchCategories();
@@ -92,12 +95,57 @@ const ForumHome: React.FC<ForumHomeProps> = ({
       }
       if (data) {
         setCategories(data);
+        fetchStats(data);
       }
     } catch (error) {
       console.error("Error fetching categories:", error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchStats = async (cats: ForumCategory[]) => {
+    const stats: Record<string, { threads: number; posts: number }> = {};
+
+    for (const cat of cats) {
+      // Get thread count
+      const { count: threadCount } = await supabase
+        .from("forum_threads")
+        .select("*", { count: "exact", head: true })
+        .eq("category_id", cat.id);
+
+      // Get post count (joined via threads) - this is a bit expensive, maybe just distinct threads?
+      // Simpler approach for now: Get threads for this category, then count posts for those threads
+      // optimization: we can just count threads for SCROLLS and maybe skip posts (RUNES) if too heavy,
+      // or just do a second query.
+      // Let's try to get post count by joining.
+      // Actually Supabase doesn't support deep join count easily in one go without a view/rpc.
+      // We will just report Thread Count (Scrolls) and Post Count (Runes).
+      // For Runes, we'll query forum_posts where thread_id is in (threads of this cat).
+      // That might be too much. Let's just do threads for now as "Scrolls" and maybe 0 or a random number for Runes if strictly needed,
+      // OR better: Just show Threads and maybe "Replies" if we can.
+      // Let's try to get all threads ids first.
+      const { data: threads } = await supabase
+        .from("forum_threads")
+        .select("id")
+        .eq("category_id", cat.id);
+
+      let postCount = 0;
+      if (threads && threads.length > 0) {
+        const threadIds = threads.map((t) => t.id);
+        const { count } = await supabase
+          .from("forum_posts")
+          .select("*", { count: "exact", head: true })
+          .in("thread_id", threadIds);
+        postCount = count || 0;
+      }
+
+      stats[cat.id] = {
+        threads: threadCount || 0,
+        posts: postCount,
+      };
+    }
+    setCategoryStats(stats);
   };
 
   const groupedCategories = categories.reduce(
@@ -315,7 +363,7 @@ const ForumHome: React.FC<ForumHomeProps> = ({
                                     color="secondary.main"
                                     fontWeight="bold"
                                   >
-                                    1.2K
+                                    {categoryStats[category.id]?.threads || 0}
                                   </Typography>
                                 </Box>
                                 <Box sx={{ textAlign: "center" }}>
@@ -331,7 +379,7 @@ const ForumHome: React.FC<ForumHomeProps> = ({
                                     color="secondary.main"
                                     fontWeight="bold"
                                   >
-                                    800
+                                    {categoryStats[category.id]?.posts || 0}
                                   </Typography>
                                 </Box>
                               </Box>

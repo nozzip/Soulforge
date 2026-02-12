@@ -107,7 +107,8 @@ const NewAdventurerGuide: React.FC<NewAdventurerGuideProps> = ({ setView }) => {
           width: "100%",
           height: { xs: 350, md: 1000 },
           position: "relative",
-          backgroundImage: "url(/images/banners/adventurer_guide_banner.jpg)", // PLACEHOLDER: Replace with user provided image
+          backgroundImage:
+            "url(https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/banners/adventurer_guide_banner.jpg)", // PLACEHOLDER: Replace with user provided image
           backgroundSize: "cover",
           backgroundPosition: "center",
           display: "flex",
@@ -119,9 +120,9 @@ const NewAdventurerGuide: React.FC<NewAdventurerGuideProps> = ({ setView }) => {
           // 2. Update the url() below to point to your file.
           // Examples of mask images can be found by searching "watercolor brush mask png"
           maskImage:
-            "url(/images/masks/my-mask.png), linear-gradient(to bottom, black 50%, transparent 100%)",
+            "url(https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/masks/my-mask.png), linear-gradient(to bottom, black 50%, transparent 100%)",
           WebkitMaskImage:
-            "url(/images/masks/my-mask.png), linear-gradient(to bottom, black 50%, transparent 100%)",
+            "url(https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/masks/my-mask.png), linear-gradient(to bottom, black 50%, transparent 100%)",
           maskSize: "100% 100%, 100% 100%",
           WebkitMaskSize: "100% 100%, 100% 100%",
           maskPosition: "center bottom, center",

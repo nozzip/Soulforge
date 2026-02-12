@@ -13,6 +13,7 @@ import {
 import {
   ArrowBack as ArrowBackIcon,
   Send as SendIcon,
+  Delete as DeleteIcon,
 } from "@mui/icons-material";
 import { supabase } from "../../src/supabase";
 import { ForumThread, ForumPost as ForumPostType } from "../../types";
@@ -145,6 +146,29 @@ const Thread: React.FC<ThreadProps> = ({
     // Focus would be nice here
   };
 
+  const handleDeleteThread = async () => {
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this entire thread? This action cannot be undone.",
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("forum_threads")
+        .delete()
+        .eq("id", threadId);
+
+      if (error) throw error;
+      onBack();
+    } catch (error) {
+      console.error("Error deleting thread:", error);
+      alert("Error deleting thread.");
+    }
+  };
+
   if (loading) {
     return (
       <Box
@@ -183,6 +207,16 @@ const Thread: React.FC<ThreadProps> = ({
         <Typography variant="overline" color="text.secondary">
           Dungeon Master's Guide / Encounters
         </Typography>
+        {isAdmin && (
+          <Button
+            startIcon={<DeleteIcon />}
+            color="error"
+            onClick={handleDeleteThread}
+            sx={{ ml: 2 }}
+          >
+            Delete Thread
+          </Button>
+        )}
       </Box>
 
       <Typography

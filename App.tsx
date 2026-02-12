@@ -150,7 +150,7 @@ const App: React.FC = () => {
         .from("admin_users")
         .select("user_id")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
 
       const adminStatus = !error && !!data;
       setIsAdmin(adminStatus);

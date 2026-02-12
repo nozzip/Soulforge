@@ -28,39 +28,54 @@ interface HomeProps {
   setView: (view: ViewState) => void;
 }
 
+const SUPABASE_BANNER_BASE =
+  "https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/banners/";
+
 const HERO_SLIDES = [
   {
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuCOt5aQZidteyosgKEH6adeFrjY70HvrEfGe899g00U3xAIYG56c8fgeqBKxO8l7H88pIM9fvKCjOFj31ZRGXSNJMm0amjBByouYk2tQS9cJlO5tRXVypnfYTl4GOedXMMTeHteiT4YEek0yhThUIU-I3adq46F_jGdWXWA81N4fXwHAGu-qCKql3q3IOj_6RX7xJ3VDGhUy-IG7TOmabJh_2bG_B3XyQLiG6dKr1cd6iFYDBbZoCfADZlGEJy_eQT0j1kbKsuRM9c",
-    subtitle: "Serie de Legado 2024",
-    title: "Haz que tu ",
+    image: `${SUPABASE_BANNER_BASE}home_banner_anime.png`,
+    subtitle: "Colección Anime",
+    title: "Héroes de ",
     titleHighlight: "Leyenda",
-    titleSuffix: " Cobre Vida",
-    description:
-      "Impresiones de resina de alta calidad inspiradas en los últimos manuales. La ingeniería de precisión se une al arte mítico.",
-    cta: "Entrar en la Forja",
-  },
-  {
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuAk61FuYDjWAsNtu247-7UQnKD10MRF9FJclnImLSqjn4IV_svngmRGCH5VwHKU4F08LykO4cLSTZjd7PuG9JIqbAISQ8nYCiKO-jK3rG3FEzPVpdOES5vtmUXNCm8gvJ8Rgu_FRc_G4TCYlUMy4NcNsDAj_WUMdNcZZMwWi216xu4wMg54xqhfj3aiFvnT6MQGPfVSpQIT2qPrSJc-rcpRtaEmdk7-ZP_6pl9muFYAhogMHTm1eN1z3FgfVSDNejNMKnVe_KwTVGw",
-    subtitle: "Desde el Vacío Profundo",
-    title: "Desata el ",
-    titleHighlight: "Horror",
-    titleSuffix: " Interior",
-    description:
-      "Aberraciones gargantuescas esculpidas con un detalle enloquecedor. Perfectas para tu próximo TPK.",
-    cta: "Ver Monstruos",
-  },
-  {
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuCOoJ1jIOn4jPLgzNAvKwwkCQE2_iPHMNTRmJnKwTVe1s16Y3IsWqDCLNtw58ig-nCjvDy9n0viSYpTjKSLiE0rVLs2R08qTyRGA9JmI5Jnt1qJYFJFLndBNbemc8FMbL7eNtue4wI5brNfS4WCKcSI55sF40XAguH8xExwk6LL0xnzivEaNUiUCKQgnyl5zuT-bylNbyOoz--wt1re7DbF7JMqODxHf2_ymsFXG8tWfQW1mFrD7L17j3w_G4V3nuEinQqugO-5iSo",
-    subtitle: "Futuro Sombrío",
-    title: "Despliega las ",
-    titleHighlight: "Legiones de Hierro",
     titleSuffix: "",
-    description:
-      "Paquetes basados en escuadrones y unidades de apoyo pesado listos para la guerra eterna.",
-    cta: "Equipa a tu Ejército",
+    description: "Figuras icónicas del anime esculpidas con detalle.",
+    cta: "Ver Colección",
+  },
+  {
+    image: `${SUPABASE_BANNER_BASE}home_banner_pathfinder.jpg`,
+    subtitle: "Dungeons & Dragons",
+    title: "Aventuras ",
+    titleHighlight: "Épicas",
+    titleSuffix: "",
+    description: "Todo lo que necesitas para tu próxima campaña.",
+    cta: "Explorar D&D",
+  },
+  {
+    image: `${SUPABASE_BANNER_BASE}home_banner_dnd.png`,
+    subtitle: "Pathfinder",
+    title: "Senda del ",
+    titleHighlight: "Explorador",
+    titleSuffix: "",
+    description: "Criaturas y héroes para el mundo de Golarion.",
+    cta: "Ver Pathfinder",
+  },
+  {
+    image: `${SUPABASE_BANNER_BASE}home_banner_starwars.png`,
+    subtitle: "Star Wars",
+    title: "Una Galaxia ",
+    titleHighlight: "Lejana",
+    titleSuffix: "",
+    description: "Únete a la Rebelión o al Imperio con estas miniaturas.",
+    cta: "Que la fuerza te acompañe",
+  },
+  {
+    image: `${SUPABASE_BANNER_BASE}home_banner_warhammer.png`,
+    subtitle: "Warhammer 40k",
+    title: "En el ",
+    titleHighlight: "Futuro Sombrío",
+    titleSuffix: "",
+    description: "Solo hay guerra. Prepara tu ejército.",
+    cta: "Por el Emperador",
   },
 ];
 
@@ -180,7 +195,7 @@ const Home: React.FC<HomeProps> = ({ setView }) => {
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length);
-    }, 6000);
+    }, 10000);
     return () => clearInterval(timer);
   }, []);
 
@@ -203,23 +218,25 @@ const Home: React.FC<HomeProps> = ({ setView }) => {
             sx={{
               position: "relative",
               overflow: "hidden",
-              height: "100vh",
-              minHeight: "100vh",
+              marginTop: "50px",
+              height: "100dvh",
+              minHeight: "100dvh",
               bgcolor: "common.black",
-              maskImage: `linear-gradient(to bottom, black 85%, transparent 100%), url('${import.meta.env.BASE_URL}images/banners/home_banner.png')`,
-              maskSize: "100% 100%, 100% auto",
-              maskPosition: "center top, center bottom",
+              // Original Bottom Mask (Restored)
+              maskImage: `linear-gradient(to bottom, black 85%, transparent 100%), url('https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/banners/home_banner.png')`,
+              maskSize: "10% 10%, 100% 100%",
+              maskPosition: "top, bottom",
               maskRepeat: "no-repeat, no-repeat",
-              WebkitMaskImage: `linear-gradient(to bottom, black 85%, transparent 100%), url('${import.meta.env.BASE_URL}images/banners/home_banner.png')`,
-              WebkitMaskSize: "100% 100%, 100% auto",
-              WebkitMaskPosition: "center top, center bottom",
+              WebkitMaskImage: `linear-gradient(to bottom, black 85%, transparent 100%), url('https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/banners/home_banner.png')`,
+              WebkitMaskSize: "10% 10%, 100% 100%",
+              WebkitMaskPosition: "top, bottom",
               WebkitMaskRepeat: "no-repeat, no-repeat",
               "&::before": {
                 content: '""',
                 position: "absolute",
-                inset: 0,
+                inset: 2,
                 background:
-                  "radial-gradient(ellipse at 30% 70%, rgba(197, 160, 89, 0.1) 0%, transparent 50%)",
+                  "radial-gradient(ellipse at 100% 50%, rgba(197, 160, 89, 0.1) 10%, transparent 50%)",
                 pointerEvents: "none",
                 zIndex: 2,
               },
@@ -253,19 +270,41 @@ const Home: React.FC<HomeProps> = ({ setView }) => {
                 sx={{
                   position: "absolute",
                   inset: 0,
-                  backgroundSize: "contain",
-                  backgroundPosition: "center",
-                  transition: "opacity 2s ease-in-out",
+                  transition: "opacity 4s ease-in-out",
                   opacity: idx === currentSlide ? 1 : 0,
                   zIndex: idx === currentSlide ? 1 : 0,
-                  backgroundImage: `${HeroGradient}, url("${slide.image}")`,
                   display: "flex",
-
                   flexDirection: "column",
                   justifyContent: "flex-end",
-                  p: { xs: 4, lg: 8 },
+                  p: { xs: 2, sm: 3, md: 10, lg: 20 },
+                  pb: { xs: 14, sm: 18, md: 10, lg: 20 }, // Adjusted for 320px
                 }}
               >
+                {/* Background Image */}
+                <Box
+                  component="img"
+                  src={slide.image}
+                  alt={slide.title}
+                  sx={{
+                    position: "absolute",
+                    inset: 0,
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    zIndex: -1,
+                  }}
+                />
+
+                {/* Gradient Overlay */}
+                <Box
+                  sx={{
+                    position: "absolute",
+                    inset: 0,
+                    background:
+                      "linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.3) 60%, rgba(0,0,0,0.1) 100%)",
+                    zIndex: -1,
+                  }}
+                />
                 {/* Animated Logo Overlay */}
                 <Box
                   sx={{
@@ -278,12 +317,13 @@ const Home: React.FC<HomeProps> = ({ setView }) => {
                     pointerEvents: "none",
                     opacity: 0.4,
                     animation: `${logoFade} 4s ease-in-out infinite`,
+                    display: { xs: "none", md: "block" },
                   }}
                 >
                   {/* Logo Placeholder - simplified as a large icon or text */}
                   <Box
                     component="img"
-                    src={`${import.meta.env.BASE_URL}images/guide/YunqueSolo.svg`}
+                    src={`https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/guide/YunqueSolo.svg`}
                     alt="SoulForge Logo"
                     sx={{
                       width: 200,
@@ -342,6 +382,8 @@ const Home: React.FC<HomeProps> = ({ setView }) => {
                           : "none",
                       animationDelay: "0.4s",
                       opacity: 0,
+                      fontSize: { xs: "2rem", sm: "2.5rem", md: "3.75rem" },
+                      lineHeight: { xs: 1.1, md: 1.2 },
                     }}
                   >
                     {slide.title}
@@ -360,7 +402,12 @@ const Home: React.FC<HomeProps> = ({ setView }) => {
                   </Typography>
                   <Typography
                     variant="h5"
-                    sx={{ color: "grey.300", mb: 5, maxWidth: 600 }}
+                    sx={{
+                      color: "grey.300",
+                      mb: 5,
+                      maxWidth: 600,
+                      fontSize: { xs: "1rem", md: "1.5rem" },
+                    }}
                   >
                     {slide.description}
                   </Typography>
@@ -370,7 +417,7 @@ const Home: React.FC<HomeProps> = ({ setView }) => {
                     color="primary"
                     size="large"
                     sx={{
-                      px: 4,
+                      px: { xs: 3, sm: 4 },
                       py: 2,
                       fontWeight: "bold",
                       letterSpacing: 2,
@@ -389,42 +436,49 @@ const Home: React.FC<HomeProps> = ({ setView }) => {
             <Box
               sx={{
                 position: "absolute",
-                bottom: 32,
-                right: 32,
+                bottom: 56, // Just above the pagination
+                left: "50%",
+                transform: "translateX(-50%)",
                 zIndex: 30,
                 display: "flex",
-                gap: 2,
+                gap: 1,
               }}
             >
               <IconButton
                 onClick={prevSlide}
+                size="small"
                 sx={{
                   border: 1,
                   borderColor: "rgba(197, 160, 89, 0.3)",
                   bgcolor: "rgba(0,0,0,0.4)",
                   color: "secondary.main",
+                  width: 32, // Fixed small size
+                  height: 32,
                   "&:hover": {
                     bgcolor: "secondary.main",
                     color: "common.black",
                   },
                 }}
               >
-                <ChevronLeft />
+                <ChevronLeft fontSize="small" />
               </IconButton>
               <IconButton
                 onClick={nextSlide}
+                size="small"
                 sx={{
                   border: 1,
                   borderColor: "rgba(197, 160, 89, 0.3)",
                   bgcolor: "rgba(0,0,0,0.4)",
                   color: "secondary.main",
+                  width: 32, // Fixed small size
+                  height: 32,
                   "&:hover": {
                     bgcolor: "secondary.main",
                     color: "common.black",
                   },
                 }}
               >
-                <ChevronRight />
+                <ChevronRight fontSize="small" />
               </IconButton>
             </Box>
 
@@ -509,14 +563,16 @@ const Home: React.FC<HomeProps> = ({ setView }) => {
       </ScrollReveal>
 
       {/* Featured Collections */}
-      <Box sx={{ px: { xs: 2, lg: 10 }, py: 6 }}>
+      <Box sx={{ py: 6 }}>
         <Container maxWidth="xl">
           <ScrollReveal>
             <Box
               sx={{
                 display: "flex",
-                alignItems: "flex-end",
+                flexDirection: { xs: "column", md: "row" },
+                alignItems: { xs: "flex-start", md: "flex-end" },
                 justifyContent: "space-between",
+                gap: { xs: 2, md: 0 },
                 mb: 5,
                 pb: 2,
                 borderBottom: 1,
@@ -537,9 +593,23 @@ const Home: React.FC<HomeProps> = ({ setView }) => {
                 </Typography>
                 <Typography
                   variant="h3"
-                  sx={{ fontWeight: "bold", color: "common.white" }}
+                  sx={{
+                    fontWeight: "bold",
+                    color: "common.white",
+                    display: { xs: "none", sm: "block" },
+                  }}
                 >
                   Colecciones Destacadas
+                </Typography>
+                <Typography
+                  variant="h3"
+                  sx={{
+                    fontWeight: "bold",
+                    color: "common.white",
+                    display: { xs: "block", sm: "none" },
+                  }}
+                >
+                  Destacado
                 </Typography>
               </Box>
               <Button
@@ -555,7 +625,7 @@ const Home: React.FC<HomeProps> = ({ setView }) => {
             </Box>
           </ScrollReveal>
 
-          <Grid container spacing={4}>
+          <Grid container spacing={{ xs: 2, md: 4 }}>
             {[
               {
                 title: "Héroes de Fantasía",
@@ -733,6 +803,7 @@ const Home: React.FC<HomeProps> = ({ setView }) => {
                     "linear-gradient(to right, #c5a059, #ffffff, #c5a059)",
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
+                  fontSize: { xs: "2rem", md: "3.75rem" },
                 }}
               >
                 Las Crónicas de la Brecha
@@ -753,7 +824,7 @@ const Home: React.FC<HomeProps> = ({ setView }) => {
             </Box>
           </ScrollReveal>
 
-          <Grid container spacing={4}>
+          <Grid container spacing={{ xs: 2, md: 4 }}>
             {[
               {
                 title: "Espíritu y Acero",
@@ -987,8 +1058,8 @@ const Home: React.FC<HomeProps> = ({ setView }) => {
                       key={idx}
                       sx={{
                         p: 4,
-                        minWidth: 350,
-                        maxWidth: 350,
+                        minWidth: { xs: 280, md: 350 },
+                        maxWidth: { xs: 280, md: 350 },
                         bgcolor: "rgba(255,255,255,0.02)",
                         border: 1,
                         borderColor: "rgba(197, 160, 89, 0.2)",
@@ -1193,6 +1264,7 @@ const Home: React.FC<HomeProps> = ({ setView }) => {
                       fontWeight: 900,
                       mb: 3,
                       textShadow: "0 0 20px rgba(197,160,89,0.5)",
+                      fontSize: { xs: "2.5rem", md: "3.75rem" },
                     }}
                   >
                     <Typography

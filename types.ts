@@ -94,3 +94,42 @@ export enum ViewState {
   FORUM_LFG = "FORUM_LFG",
   PROFILE = "PROFILE",
 }
+
+export interface LFGPost {
+  id: string;
+  created_at: string;
+  gm_id: string;
+  game_name: string;
+  system: string;
+  modality: string;
+  date: string;
+  time: string;
+  synopsis?: string;
+  tags?: string[];
+  slots_total: number;
+  slots_taken: number;
+  platform?: string;
+  image_url?: string;
+  gm_profile?: Profile; // Joined from profiles
+}
+
+export interface LFGApplication {
+  id: string;
+  created_at: string;
+  post_id: string;
+  applicant_id: string;
+  status: "pending" | "approved" | "rejected" | "withdrawn";
+  message?: string;
+  applicant_profile?: Profile; // Joined from profiles
+  post?: LFGPost;
+}
+
+export interface LFGChatMessage {
+  id: string;
+  created_at: string;
+  application_id: string;
+  sender_id: string;
+  content: string;
+  is_read: boolean;
+  sender_profile?: Profile; // Joined from profiles
+}

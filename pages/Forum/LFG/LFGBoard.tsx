@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Container,
@@ -17,6 +17,9 @@ import {
   Avatar,
   IconButton,
   Divider,
+  Alert,
+  Snackbar,
+  Dialog,
 } from "@mui/material";
 import {
   CalendarMonth,
@@ -29,26 +32,17 @@ import {
   FilterList as FilterIcon,
   Search as SearchIcon,
   Map as MapIcon,
-  Videocam as VideoIcon,
+  VideoCameraBack as VideoIcon,
+  Close as CloseIcon,
+  Delete as DeleteIcon,
 } from "@mui/icons-material";
+import { supabase } from "../../../src/supabase";
+import { LFGPost, Profile } from "../../../types";
+import LFGPostDetails from "./LFGPostDetails";
+import LFGApplicationManagement from "./LFGApplicationManagement";
+import { useAdmin } from "../../../src/hooks/useAdmin";
 
-// Mock Data for LFG Posts
-interface LFGPost {
-  id: string;
-  gameName: string;
-  system: string;
-  modality: "Campaign" | "One-Shot" | "West Marches";
-  date: string;
-  time: string;
-  synopsis: string;
-  tags: string[];
-  slotsTotal: number;
-  slotsTaken: number;
-  gmName: string;
-  gmAvatar?: string;
-  platform: string;
-}
-
+// Systems and Tags Constants
 const SYSTEMS = [
   "D&D 5e",
   "Pathfinder 2e",
@@ -71,45 +65,12 @@ const MOOD_TAGS = [
   "Homebrew",
 ];
 
-const MOCK_Posts: LFGPost[] = [
-  {
-    id: "1",
-    gameName: "Curse of Strahd: Into the Mists",
-    system: "D&D 5e",
-    modality: "Campaign",
-    date: "9-02-2026",
-    time: "20:00",
-    synopsis:
-      "Deep in the valley of Barovia, the dread lord Strahd von Zarovich rules from Castle Ravenloft. We are looking for brave souls to venture into the mists and free the land from his tyranny. Gothic horror themes, heavy roleplay.",
-    tags: ["Roleplay Heavy", "Horror", "18+ (Mature)"],
-    slotsTotal: 5,
-    slotsTaken: 3,
-    gmName: "DungeonMasterX",
-    gmAvatar: "https://i.pravatar.cc/150?u=dmx",
-    platform: "Foundry VTT + Discord",
-  },
-  {
-    id: "2",
-    gameName: "The Heist of the Century",
-    system: "Blades in the Dark",
-    modality: "One-Shot",
-    date: "2023-11-18",
-    time: "14:00 GMT",
-    synopsis:
-      "One last job before retirement. The Bluecoats are closing in, but the score is too good to pass up. We need a slide and a cutter for a daring infiltration of the Lord Governor's manor.",
-    tags: ["Newbie Friendly", "Sandbox"],
-    slotsTotal: 4,
-    slotsTaken: 2,
-    gmName: "RogueLeader",
-    gmAvatar: "https://i.pravatar.cc/150?u=rogue",
-    platform: "Roll20 + Discord",
-  },
-];
-
-// Textures & Styles (Warcraft 3 / Quest Board aesthetics)
+// Textures & Styles
+const SUPABASE_STORAGE_URL =
+  "https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets";
 const TEXTURES = {
-  woodDark: `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url("https://www.transparenttextures.com/patterns/wood-pattern.png"), #3e2723`,
-  parchment: `url("https://www.transparenttextures.com/patterns/aged-paper.png"), linear-gradient(to bottom right, #f4e4bc 0%, #e6d2a0 100%)`,
+  woodDark: `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url("${SUPABASE_STORAGE_URL}/textures/wood-pattern.png"), #3e2723`,
+  parchment: `url("${SUPABASE_STORAGE_URL}/textures/textures.png?v2"), linear-gradient(to bottom right, #f4e4bc 0%, #e6d2a0 100%)`,
   waxSealRed: `radial-gradient(circle at 30% 30%, #ff5252, #b71c1c)`,
 };
 
@@ -131,7 +92,81 @@ const LFGBoard: React.FC<LFGBoardProps> = ({ onBack }) => {
     platform: "",
   });
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [posts, setPosts] = useState<LFGPost[]>(MOCK_Posts);
+  const [posts, setPosts] = useState<LFGPost[]>([]);
+  const [user, setUser] = useState<any>(null);
+  const [selectedPost, setSelectedPost] = useState<LFGPost | null>(null);
+  const [viewMode, setViewMode] = useState<"board" | "details" | "management">(
+    "board",
+  );
+
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "info" as "success" | "info" | "warning" | "error",
+  });
+
+  const { isAdmin } = useAdmin();
+
+  const handleDeletePost = async (postId: string) => {
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this contract? This action cannot be undone.",
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("lfg_posts")
+        .delete()
+        .eq("id", postId);
+
+      if (error) throw error;
+
+      setPosts((prev) => prev.filter((p) => p.id !== postId));
+      setSnackbar({
+        open: true,
+        message: "Contract deleted successfully.",
+        severity: "success",
+      });
+      if (selectedPost?.id === postId) {
+        handleClose();
+      }
+    } catch (error) {
+      console.error("Error deleting post:", error);
+      setSnackbar({
+        open: true,
+        message: "Error deleting contract.",
+        severity: "error",
+      });
+    }
+  };
+
+  useEffect(() => {
+    fetchPosts();
+    getUser();
+  }, []);
+
+  const getUser = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    setUser(user);
+  };
+
+  const fetchPosts = async () => {
+    const { data, error } = await supabase
+      .from("lfg_posts")
+      .select("*, gm_profile:profiles(*)")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching posts:", error);
+    } else {
+      setPosts(data as unknown as LFGPost[]);
+    }
+  };
 
   // Filter State
   const [filterText, setFilterText] = useState("");
@@ -140,9 +175,13 @@ const LFGBoard: React.FC<LFGBoardProps> = ({ onBack }) => {
 
   const filteredPosts = posts.filter((post) => {
     const matchesText =
-      post.gameName.toLowerCase().includes(filterText.toLowerCase()) ||
-      post.synopsis.toLowerCase().includes(filterText.toLowerCase()) ||
-      post.gmName.toLowerCase().includes(filterText.toLowerCase());
+      post.game_name.toLowerCase().includes(filterText.toLowerCase()) ||
+      (post.synopsis &&
+        post.synopsis.toLowerCase().includes(filterText.toLowerCase())) ||
+      (post.gm_profile?.username &&
+        post.gm_profile.username
+          .toLowerCase()
+          .includes(filterText.toLowerCase()));
     const matchesSystem =
       filterSystem === "All" || post.system === filterSystem;
     const matchesModality =
@@ -157,34 +196,176 @@ const LFGBoard: React.FC<LFGBoardProps> = ({ onBack }) => {
     );
   };
 
-  const handleSubmit = () => {
-    const newPost: LFGPost = {
-      id: Math.random().toString(36).substr(2, 9),
-      ...formData,
-      modality: formData.modality as any,
-      tags: selectedTags,
-      slotsTotal: formData.slots,
-      slotsTaken: 0,
-      gmName: "CurrentUser", // Replace with actual user
-      platform: formData.platform || "TBD",
-    };
-    setPosts([newPost, ...posts]);
-    // Reset Form
-    setFormData({
-      gameName: "",
-      system: "",
-      modality: "",
-      date: "",
-      time: "",
-      synopsis: "",
-      slots: 4,
-      platform: "",
-    });
-    setSelectedTags([]);
+  const handleSubmit = async () => {
+    if (!user) {
+      setSnackbar({
+        open: true,
+        message: "You must be logged in to post a contract.",
+        severity: "error",
+      });
+      return;
+    }
+
+    if (
+      !formData.gameName ||
+      !formData.system ||
+      !formData.modality ||
+      !formData.date ||
+      !formData.time
+    ) {
+      setSnackbar({
+        open: true,
+        message: "Please fill in all required fields.",
+        severity: "error",
+      });
+      return;
+    }
+
+    const { error } = await supabase.from("lfg_posts").insert([
+      {
+        gm_id: user.id,
+        game_name: formData.gameName,
+        system: formData.system,
+        modality: formData.modality,
+        date: formData.date,
+        time: formData.time,
+        synopsis: formData.synopsis,
+        tags: selectedTags,
+        slots_total: formData.slots,
+        slots_taken: 0,
+        platform: formData.platform || "TBD",
+      },
+    ]);
+
+    if (error) {
+      console.error("Error creating post:", error);
+      setSnackbar({
+        open: true,
+        message: "Error creating post: " + error.message,
+        severity: "error",
+      });
+    } else {
+      setSnackbar({
+        open: true,
+        message: "Contract posted successfully!",
+        severity: "success",
+      });
+      fetchPosts();
+      // Reset Form
+      setFormData({
+        gameName: "",
+        system: "",
+        modality: "",
+        date: "",
+        time: "",
+        synopsis: "",
+        slots: 4,
+        platform: "",
+      });
+      setSelectedTags([]);
+    }
+  };
+
+  const handleClose = () => {
+    setSelectedPost(null);
+    setViewMode("board");
   };
 
   return (
     <Container maxWidth="xl" sx={{ mt: 14, mb: 10 }}>
+      {/* Detail/Management Modal */}
+      <Dialog
+        open={Boolean(selectedPost)}
+        onClose={handleClose}
+        maxWidth="lg"
+        fullWidth
+        PaperProps={{
+          sx: {
+            background: `
+              linear-gradient(rgba(20, 20, 20, 0.9), rgba(20, 20, 20, 0.9)),
+              radial-gradient(circle at 50% 50%, #4a3b32 0%, #1a1a1a 100%)
+            `, // Deep warm dark metal
+            border: `1px solid #c5a059`,
+            borderRadius: "4px", // Slight rounding, mostly sharp
+            boxShadow: `
+              0 0 0 4px #0f0f0f,  /* Inner dark band */
+              0 0 0 6px #5d4037,  /* Outer leather/wood rim */
+              0 0 15px 6px rgba(0, 0, 0, 0.8), /* Deep drop shadow */
+              0 0 30px rgba(197, 160, 89, 0.1) /* Faint magical glow */
+            `,
+            p: 0,
+            overflow: "hidden",
+            color: "#e0e0e0",
+            position: "relative",
+            "&::before": {
+              content: '""',
+              position: "absolute",
+              inset: 0,
+              border: "1px solid rgba(197, 160, 89, 0.3)",
+              margin: "4px",
+              pointerEvents: "none",
+            },
+          },
+        }}
+        // Remove default Dialog padding so components can control it
+        sx={{
+          "& .MuiDialog-paper": {
+            margin: { xs: 2, md: 4 },
+            overflow: "visible", // Allow box-shadows to bleed out
+          },
+          "& .MuiBackdrop-root": {
+            backdropFilter: "blur(5px)",
+            backgroundColor: "rgba(0, 0, 0, 0.7)",
+          },
+        }}
+      >
+        <Box sx={{ position: "relative", height: "80vh", overflowY: "auto" }}>
+          {selectedPost && viewMode === "details" && (
+            <LFGPostDetails
+              post={selectedPost}
+              onBack={handleClose}
+              currentUser={user}
+              onManage={() => setViewMode("management")}
+              isAdmin={isAdmin}
+              onDelete={() => handleDeletePost(selectedPost.id)}
+            />
+          )}
+          {selectedPost && viewMode === "management" && (
+            <LFGApplicationManagement
+              post={selectedPost}
+              onBack={() => setViewMode("details")}
+              currentUser={user}
+              isAdmin={isAdmin}
+              onUpdate={() => {
+                // Same update logic as before
+                supabase
+                  .from("lfg_posts")
+                  .select("*, gm_profile:profiles(*)")
+                  .eq("id", selectedPost.id)
+                  .single()
+                  .then(({ data }) => {
+                    if (data) setSelectedPost(data as any);
+                    fetchPosts();
+                  });
+              }}
+            />
+          )}
+          <IconButton
+            onClick={handleClose}
+            sx={{
+              position: "absolute",
+              top: 16,
+              right: 16,
+              bgcolor: "rgba(93, 64, 55, 0.8)",
+              color: "#ffecb3",
+              "&:hover": { bgcolor: "#3e2723" },
+              zIndex: 10,
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </Box>
+      </Dialog>
       {/* Main Board Container */}
       <Box
         sx={{
@@ -563,59 +744,56 @@ const LFGBoard: React.FC<LFGBoardProps> = ({ onBack }) => {
                 flexWrap: "wrap",
                 gap: 2,
                 alignItems: "center",
-                background: TEXTURES.parchment,
-                border: "1px solid #8d6e63",
-                boxShadow: "0 4px 6px rgba(0,0,0,0.3)",
+                background: `linear-gradient(to bottom, #2d2d2d, #1a1a1a)`,
+                border: `2px solid #c5a059`,
+                borderRadius: 1,
+                boxShadow: "0 4px 6px rgba(0,0,0,0.6)",
                 position: "relative",
               }}
             >
-              {/* Wax Seal Decoration on Filter Bar */}
-              <Box
-                sx={{
-                  position: "absolute",
-                  top: -10,
-                  right: 20,
-                  width: 40,
-                  height: 40,
-                  borderRadius: "50%",
-                  background: TEXTURES.waxSealRed,
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.5)",
-                  border: "2px solid #b71c1c",
-                  zIndex: 1,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "rgba(50,0,0,0.5)",
-                  fontWeight: "bold",
-                  fontFamily: "Cinzel, serif",
-                  fontSize: "0.6rem",
-                }}
-              >
-                LFG
-              </Box>
-
               <TextField
                 size="small"
                 placeholder="Search quests..."
                 value={filterText}
                 onChange={(e) => setFilterText(e.target.value)}
                 InputProps={{
-                  startAdornment: <SearchIcon color="action" sx={{ mr: 1 }} />,
+                  startAdornment: (
+                    <SearchIcon sx={{ mr: 1, color: "#c5a059" }} />
+                  ),
                 }}
                 sx={{
                   flexGrow: 1,
                   minWidth: 200,
-                  bgcolor: "rgba(255,255,255,0.4)",
+                  bgcolor: "rgba(0,0,0,0.3)",
+                  input: { color: "#e0e0e0" },
+                  "& .MuiOutlinedInput-root": {
+                    "& fieldset": { borderColor: "rgba(197, 160, 89, 0.3)" },
+                    "&:hover fieldset": { borderColor: "#c5a059" },
+                    "&.Mui-focused fieldset": { borderColor: "#c5a059" },
+                  },
                 }}
               />
 
               <FormControl size="small" sx={{ minWidth: 150 }}>
-                <InputLabel>System</InputLabel>
+                <InputLabel sx={{ color: "#9e9e9e" }}>System</InputLabel>
                 <Select
                   value={filterSystem}
                   label="System"
                   onChange={(e) => setFilterSystem(e.target.value)}
-                  sx={{ bgcolor: "rgba(255,255,255,0.4)" }}
+                  sx={{
+                    bgcolor: "rgba(0,0,0,0.3)",
+                    color: "#e0e0e0",
+                    ".MuiOutlinedInput-notchedOutline": {
+                      borderColor: "rgba(197, 160, 89, 0.3)",
+                    },
+                    "&:hover .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#c5a059",
+                    },
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#c5a059",
+                    },
+                    ".MuiSvgIcon-root": { color: "#c5a059" },
+                  }}
                 >
                   <MenuItem value="All">All Systems</MenuItem>
                   {SYSTEMS.map((sys) => (
@@ -627,12 +805,25 @@ const LFGBoard: React.FC<LFGBoardProps> = ({ onBack }) => {
               </FormControl>
 
               <FormControl size="small" sx={{ minWidth: 150 }}>
-                <InputLabel>Modality</InputLabel>
+                <InputLabel sx={{ color: "#9e9e9e" }}>Modality</InputLabel>
                 <Select
                   value={filterModality}
                   label="Modality"
                   onChange={(e) => setFilterModality(e.target.value)}
-                  sx={{ bgcolor: "rgba(255,255,255,0.4)" }}
+                  sx={{
+                    bgcolor: "rgba(0,0,0,0.3)",
+                    color: "#e0e0e0",
+                    ".MuiOutlinedInput-notchedOutline": {
+                      borderColor: "rgba(197, 160, 89, 0.3)",
+                    },
+                    "&:hover .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#c5a059",
+                    },
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#c5a059",
+                    },
+                    ".MuiSvgIcon-root": { color: "#c5a059" },
+                  }}
                 >
                   <MenuItem value="All">All Modalities</MenuItem>
                   {MODALITIES.map((mod) => (
@@ -665,7 +856,7 @@ const LFGBoard: React.FC<LFGBoardProps> = ({ onBack }) => {
                       overflow: "hidden",
                       borderRadius: "8px",
                       background: "transparent",
-                      backgroundImage: `url("${import.meta.env.BASE_URL}images/quest-card.jpg")`,
+                      backgroundImage: `url("${SUPABASE_STORAGE_URL}/quest-card.jpg")`,
                       backgroundSize: "100% 100%",
                       backgroundRepeat: "no-repeat",
                       // content usually has padding to avoid the border
@@ -683,16 +874,78 @@ const LFGBoard: React.FC<LFGBoardProps> = ({ onBack }) => {
                       },
                     }}
                   >
-                    {/* Pin/Nail Decoration Removed for Custom Image */}
+                    {/* Wax Seal - Join Button */}
+                    <Box
+                      onClick={() => {
+                        setSelectedPost(post);
+                        setViewMode("details");
+                      }}
+                      sx={{
+                        position: "absolute",
+                        right: { xs: 16, md: 80 },
+                        bottom: { xs: 16, md: "auto" },
+                        top: { md: "50%" },
+                        transform: { md: "translateY(-50%)" },
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        cursor: "pointer",
+                        zIndex: 5,
+                        transition: "transform 0.2s",
+                        "&:hover": {
+                          transform: {
+                            md: "translateY(-50%) scale(1.1)",
+                            xs: "scale(1.1)",
+                          },
+                        },
+                      }}
+                    >
+                      <Typography
+                        variant="subtitle2"
+                        sx={{
+                          fontFamily: "Cinzel, serif",
+                          fontWeight: "bold",
+                          color: "#5d4037",
+                          mb: 0.5,
+                          textShadow: "0 0 4px rgba(255,255,255,0.8)",
+                        }}
+                      >
+                        Unirse
+                      </Typography>
+                      <Box
+                        sx={{
+                          width: 250,
+                          height: 80,
+                          backgroundImage: `url("${SUPABASE_STORAGE_URL}/wax-seal.png")`,
+                          backgroundSize: "contain",
+                          backgroundRepeat: "no-repeat",
+                          backgroundPosition: "center",
+                          filter: "drop-shadow(0 4px 4px rgba(0,0,0,0.5))",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          transition: "transform 0.2s",
+                        }}
+                      />
+                      <Typography
+                        variant="subtitle2"
+                        sx={{
+                          fontFamily: "Cinzel, serif",
+                          fontWeight: "bold",
+                          color: "#5d4037",
+                          mb: 0.5,
+                          textShadow: "0 0 4px rgba(255,255,255,0.8)",
+                        }}
+                      >
+                        A la quest
+                      </Typography>
+                    </Box>
 
                     {/* Content Section */}
                     <Box
                       sx={{
                         flex: 1,
-                        p: { xs: 6, md: 0 },
-                        pl: { md: 36 }, // Shifted further towards center/right as requested
-                        pr: { md: 0 },
-                        py: { xs: 8, md: 10 },
+                        p: { xs: 6, md: 8 },
                         display: "flex",
                         flexDirection: "column",
                         gap: 3,
@@ -722,7 +975,7 @@ const LFGBoard: React.FC<LFGBoardProps> = ({ onBack }) => {
                             fontSize: { xs: "1.8rem", md: "2.2rem" },
                           }}
                         >
-                          {post.gameName}
+                          {post.game_name}
                         </Typography>
 
                         {/* System & Modality as Subtitle */}
@@ -760,7 +1013,7 @@ const LFGBoard: React.FC<LFGBoardProps> = ({ onBack }) => {
                               fontSize: "0.9rem",
                             }}
                           >
-                            {post.slotsTaken} / {post.slotsTotal} Heroes
+                            {post.slots_taken} / {post.slots_total} Heroes
                           </Typography>
                         </Box>
                       </Box>
@@ -896,7 +1149,7 @@ const LFGBoard: React.FC<LFGBoardProps> = ({ onBack }) => {
                         }}
                       >
                         <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-                          {post.tags.map((tag) => (
+                          {post.tags?.map((tag) => (
                             <Chip
                               key={tag}
                               label={tag}
@@ -922,7 +1175,7 @@ const LFGBoard: React.FC<LFGBoardProps> = ({ onBack }) => {
                           }}
                         >
                           <Avatar
-                            src={post.gmAvatar}
+                            src={post.gm_profile?.avatar_url}
                             sx={{
                               width: 40,
                               height: 40,
@@ -952,72 +1205,34 @@ const LFGBoard: React.FC<LFGBoardProps> = ({ onBack }) => {
                                 fontFamily: '"Newsreader", serif',
                               }}
                             >
-                              {post.gmName}
+                              {post.gm_profile?.username || "Unknown"}
                             </Typography>
                           </Box>
                         </Box>
                       </Box>
                     </Box>
 
-                    {/* Action Button Area (Right side on desktop) */}
-                    <Box
-                      sx={{
-                        width: { xs: "100%", md: 260 }, // Increased width container
-                        bgcolor: "transparent",
-                        borderLeft: "none",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        p: 3,
-                        pr: { md: 14 }, // Large right padding to clear border
-                        py: { md: 10 },
-                      }}
-                    >
-                      <Box
-                        component="button" // Render as button for semantics
-                        onClick={() => {}} // Placeholder click handler
+                    {isAdmin && (
+                      <IconButton
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeletePost(post.id);
+                        }}
                         sx={{
-                          border: "none",
-                          background: "none",
-                          cursor: "pointer",
-                          transition: "transform 0.2s",
+                          position: "absolute",
+                          top: 8,
+                          right: 8,
+                          color: "#c62828",
+                          bgcolor: "rgba(255,255,255,0.8)",
                           "&:hover": {
-                            transform: "scale(1.1)",
+                            bgcolor: "#ffebee",
                           },
-                          "&:active": {
-                            transform: "scale(0.95)",
-                          },
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          gap: 1, // Space between text and seal
+                          zIndex: 10,
                         }}
                       >
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            fontFamily: "Cinzel, serif",
-                            fontWeight: 900,
-                            color: "#5d4037",
-                            letterSpacing: 2,
-                            textShadow: "0 1px 1px rgba(255,255,255,0.5)",
-                          }}
-                        >
-                          JOIN QUEST
-                        </Typography>
-                        <Box
-                          component="img"
-                          src={`${import.meta.env.BASE_URL}images/wax-seal.png`}
-                          alt="Join Quest"
-                          sx={{
-                            width: 130, // Slightly adjusted
-                            height: 130,
-                            filter: "drop-shadow(0 4px 6px rgba(0,0,0,0.4))",
-                          }}
-                        />
-                      </Box>
-                    </Box>
+                        <DeleteIcon />
+                      </IconButton>
+                    )}
                   </Paper>
                 ))
               )}
@@ -1026,6 +1241,19 @@ const LFGBoard: React.FC<LFGBoardProps> = ({ onBack }) => {
         </Grid>
       </Box>{" "}
       {/* End Main Board Container */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: "100%" }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };

@@ -829,7 +829,8 @@ const Catalog: React.FC<CatalogProps> = ({
           width: "100%",
           height: { xs: 350, md: 900 }, // Reduced height for Catalog compared to Guide
           position: "relative",
-          backgroundImage: "url(/images/banners/catalogo_banner.png)",
+          backgroundImage:
+            "url(https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/banners/catalogo_banner.png)",
           backgroundSize: "cover",
           backgroundPosition: "center",
           display: "flex",
@@ -837,9 +838,9 @@ const Catalog: React.FC<CatalogProps> = ({
           justifyContent: "center",
           // WATERCOLOR MASK EFFECT
           maskImage:
-            "url(/images/masks/my-mask.png), linear-gradient(to bottom, black 50%, transparent 100%)",
+            "url(https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/masks/my-mask.png), linear-gradient(to bottom, black 50%, transparent 100%)",
           WebkitMaskImage:
-            "url(/images/masks/my-mask.png), linear-gradient(to bottom, black 50%, transparent 100%)",
+            "url(https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/masks/my-mask.png), linear-gradient(to bottom, black 50%, transparent 100%)",
           maskSize: "100% 100%, 100% 100%",
           WebkitMaskSize: "100% 100%, 100% 100%",
           maskPosition: "center bottom, center",

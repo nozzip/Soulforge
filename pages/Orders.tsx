@@ -287,7 +287,7 @@ const Orders: React.FC<OrdersProps> = ({ setView }) => {
                   borderColor: (t) => alpha(t.palette.secondary.main, 0.1),
                 }}
               >
-                <Grid container spacing={2} alignItems="center">
+                <Grid container spacing={{ xs: 1, md: 2 }} alignItems="center">
                   <Grid size={{ xs: 12, md: 8 }}>
                     <Stack
                       direction={{ xs: "column", sm: "row" }}
@@ -499,7 +499,6 @@ const Orders: React.FC<OrdersProps> = ({ setView }) => {
                         variant="body2"
                         sx={{
                           color: "grey.400",
-                          display: { xs: "none", md: "block" },
                         }}
                       >
                         {formatCurrency(item.price_gp)} c/u
