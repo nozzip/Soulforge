@@ -140,22 +140,31 @@ const Catalog: React.FC<CatalogProps> = ({
   const [searchQuery, setSearchQuery] = useState(
     catalogState.searchQuery || initialSearchQuery || "",
   );
+
+  useEffect(() => {
+    console.log('[Catalog] Mounted. State:', {
+      page: catalogState.page,
+      searchQuery: catalogState.searchQuery,
+      initialSearchQuery
+    });
+    return () => console.log('[Catalog] Unmounted');
+  }, []);
   const [selectedCategories, setSelectedCategories] = useState<string[]>(
-    catalogState.selectedCategories,
+    catalogState.selectedCategories || [],
   );
   const [selectedSizes, setSelectedSizes] = useState<string[]>(
-    catalogState.selectedSizes,
+    catalogState.selectedSizes || [],
   );
   const [selectedDesigners, setSelectedDesigners] = useState<string[]>(
-    catalogState.selectedDesigners,
+    catalogState.selectedDesigners || [],
   );
   const [selectedCreatureTypes, setSelectedCreatureTypes] = useState<string[]>(
-    catalogState.selectedCreatureTypes,
+    catalogState.selectedCreatureTypes || [],
   );
   const [selectedWeapons, setSelectedWeapons] = useState<string[]>(
-    catalogState.selectedWeapons,
+    catalogState.selectedWeapons || [],
   );
-  const [sortOption, setSortOption] = useState(catalogState.sortOption);
+  const [sortOption, setSortOption] = useState(catalogState.sortOption || "newest");
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(catalogState.page);
@@ -176,7 +185,7 @@ const Catalog: React.FC<CatalogProps> = ({
     error: groupingError,
     successMessage,
     clearMessages,
-  } = useProductGrouping(onUpdateProduct || (() => {}), onRefreshProducts);
+  } = useProductGrouping(onUpdateProduct || (() => { }), onRefreshProducts);
 
   // Scroll to top logic
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -715,77 +724,77 @@ const Catalog: React.FC<CatalogProps> = ({
           selectedDesigners.length > 0 ||
           selectedCreatureTypes.length > 0 ||
           selectedWeapons.length > 0) && (
-          <Box sx={{ mt: 4, mb: 2 }}>
-            <Typography
-              variant="caption"
-              color="grey.500"
-              sx={{
-                mb: 1,
-                display: "block",
-                textTransform: "uppercase",
-                letterSpacing: 1,
-              }}
-            >
-              Filtros Activos
-            </Typography>
-            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-              {selectedCategories.map((cat) => (
-                <Chip
-                  key={`cat-${cat}`}
-                  label={cat}
-                  onDelete={() => toggleFilter("category", cat)}
-                  size="small"
-                  color="primary"
-                />
-              ))}
-              {selectedSizes.map((size) => (
-                <Chip
-                  key={`size-${size}`}
-                  label={size}
-                  onDelete={() => toggleFilter("size", size)}
-                  size="small"
-                  color="primary"
-                />
-              ))}
-              {selectedDesigners.map((designer) => (
-                <Chip
-                  key={`des-${designer}`}
-                  label={designer}
-                  onDelete={() => toggleFilter("designer", designer)}
-                  size="small"
-                  color="primary"
-                />
-              ))}
-              {selectedCreatureTypes.map((type) => (
-                <Chip
-                  key={`type-${type}`}
-                  label={type}
-                  onDelete={() => toggleFilter("creature_type", type)}
-                  size="small"
-                  color="primary"
-                />
-              ))}
-              {selectedWeapons.map((weapon) => (
-                <Chip
-                  key={`weap-${weapon}`}
-                  label={weapon}
-                  onDelete={() => toggleFilter("weapon", weapon)}
-                  size="small"
-                  color="primary"
-                />
-              ))}
+            <Box sx={{ mt: 4, mb: 2 }}>
+              <Typography
+                variant="caption"
+                color="grey.500"
+                sx={{
+                  mb: 1,
+                  display: "block",
+                  textTransform: "uppercase",
+                  letterSpacing: 1,
+                }}
+              >
+                Filtros Activos
+              </Typography>
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                {selectedCategories.map((cat) => (
+                  <Chip
+                    key={`cat-${cat}`}
+                    label={cat}
+                    onDelete={() => toggleFilter("category", cat)}
+                    size="small"
+                    color="primary"
+                  />
+                ))}
+                {selectedSizes.map((size) => (
+                  <Chip
+                    key={`size-${size}`}
+                    label={size}
+                    onDelete={() => toggleFilter("size", size)}
+                    size="small"
+                    color="primary"
+                  />
+                ))}
+                {selectedDesigners.map((designer) => (
+                  <Chip
+                    key={`des-${designer}`}
+                    label={designer}
+                    onDelete={() => toggleFilter("designer", designer)}
+                    size="small"
+                    color="primary"
+                  />
+                ))}
+                {selectedCreatureTypes.map((type) => (
+                  <Chip
+                    key={`type-${type}`}
+                    label={type}
+                    onDelete={() => toggleFilter("creature_type", type)}
+                    size="small"
+                    color="primary"
+                  />
+                ))}
+                {selectedWeapons.map((weapon) => (
+                  <Chip
+                    key={`weap-${weapon}`}
+                    label={weapon}
+                    onDelete={() => toggleFilter("weapon", weapon)}
+                    size="small"
+                    color="primary"
+                  />
+                ))}
 
-              <Chip
-                label="Limpiar todo"
-                onClick={handleReset}
-                size="small"
-                variant="outlined"
-                color="secondary"
-                sx={{ borderColor: "secondary.main", color: "secondary.main" }}
-              />
+                <Chip
+                  label="Limpiar todo"
+                  onClick={handleReset}
+                  size="small"
+                  variant="outlined"
+                  color="secondary"
+                  sx={{ borderColor: "secondary.main", color: "secondary.main" }}
+                />
+              </Box>
             </Box>
-          </Box>
-        )}
+          )}
 
         <Button
           fullWidth
@@ -1056,6 +1065,7 @@ const Catalog: React.FC<CatalogProps> = ({
                     count={totalPages}
                     page={currentPage}
                     onChange={(_, p) => {
+                      console.log('[Catalog] Page changed to', p, '- scrolling top');
                       setCurrentPage(p);
                       window.scrollTo({ top: 0, behavior: "smooth" });
                     }}
@@ -1227,9 +1237,9 @@ const Catalog: React.FC<CatalogProps> = ({
                           isWishlisted={false}
                           isAdmin={false}
                           isDragging
-                          onProductClick={() => {}}
-                          onToggleWishlist={() => {}}
-                          onAddToCart={() => {}}
+                          onProductClick={() => { }}
+                          onToggleWishlist={() => { }}
+                          onAddToCart={() => { }}
                         />
                       </Box>
                     )}

@@ -1,6 +1,5 @@
 /// <reference lib="dom" />
-import React, { useEffect, useRef, useState } from "react";
-import { ViewState } from "../types";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import {
   Box,
   Typography,
@@ -23,24 +22,23 @@ import {
   Api,
 } from "@mui/icons-material";
 import { RuneDivider, CornerFlourish } from "../components/StyledComponents";
+import { ViewState, Product } from "../types";
 
 interface HomeProps {
   setView: (view: ViewState) => void;
+  onFilterNavigate: (filters: {
+    categories?: string[];
+    creatureTypes?: string[];
+  }) => void;
+  products: Product[];
 }
 
 const SUPABASE_BANNER_BASE =
   "https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/banners/";
 
 const HERO_SLIDES = [
-  {
-    image: `${SUPABASE_BANNER_BASE}home_banner_anime.png`,
-    subtitle: "Colección Anime",
-    title: "Héroes de ",
-    titleHighlight: "Leyenda",
-    titleSuffix: "",
-    description: "Figuras icónicas del anime esculpidas con detalle.",
-    cta: "Ver Colección",
-  },
+
+
   {
     image: `${SUPABASE_BANNER_BASE}home_banner_pathfinder.jpg`,
     subtitle: "Dungeons & Dragons",
@@ -60,15 +58,6 @@ const HERO_SLIDES = [
     cta: "Ver Pathfinder",
   },
   {
-    image: `${SUPABASE_BANNER_BASE}home_banner_starwars.png`,
-    subtitle: "Star Wars",
-    title: "Una Galaxia ",
-    titleHighlight: "Lejana",
-    titleSuffix: "",
-    description: "Únete a la Rebelión o al Imperio con estas miniaturas.",
-    cta: "Que la fuerza te acompañe",
-  },
-  {
     image: `${SUPABASE_BANNER_BASE}home_banner_warhammer.png`,
     subtitle: "Warhammer 40k",
     title: "En el ",
@@ -77,11 +66,31 @@ const HERO_SLIDES = [
     description: "Solo hay guerra. Prepara tu ejército.",
     cta: "Por el Emperador",
   },
+  {
+    image: `${SUPABASE_BANNER_BASE}home_banner_anime.png`,
+    subtitle: "Colección Anime",
+    title: "Héroes de ",
+    titleHighlight: "Leyenda",
+    titleSuffix: "",
+    description: "Figuras icónicas del anime esculpidas con detalle.",
+    cta: "Ver Colección",
+  },
+
+  {
+    image: `${SUPABASE_BANNER_BASE}home_banner_starwars.png`,
+    subtitle: "Star Wars",
+    title: "Una Galaxia ",
+    titleHighlight: "Lejana",
+    titleSuffix: "",
+    description: "Únete a la Rebelión o al Imperio con estas miniaturas.",
+    cta: "Que la fuerza te acompañe",
+  },
+
 ];
 
 // Helper styles
 const HeroGradient =
-  "linear-gradient(to top, rgba(34, 16, 16, 0.9) 0%, rgba(34, 16, 16, 0.2) 60%, rgba(34, 16, 16, 0.1) 100%)";
+  "linear-gradient(to top, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0.1) 40%, rgba(0, 0, 0, 0) 100%)";
 const CollectionGradient =
   "linear-gradient(0deg, rgba(34, 16, 16, 0.95) 0%, rgba(34, 16, 16, 0.1) 50%)";
 
@@ -183,9 +192,99 @@ const ScrollReveal: React.FC<{
   );
 };
 
-const Home: React.FC<HomeProps> = ({ setView }) => {
+const Home: React.FC<HomeProps> = ({ setView, onFilterNavigate, products }) => {
   const [heroLoaded, setHeroLoaded] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
+
+  // Dynamic Featured Collections Logic
+  const featuredCollections = useMemo(() => {
+    // 1. Heroes de Fantasía: category D&D + humanoid (case insensitive)
+    const fantasyHero = [...products]
+      .filter(p =>
+        p.category === "D&D" &&
+        p.creature_type?.toLowerCase().includes("humanoid")
+      )
+      .sort((a, b) => b.id.localeCompare(a.id))[0];
+
+    // 2. Guerreros Sci-Fi: category Warhammer
+    const scifiHero = [...products]
+      .filter(p => p.category === "Warhammer")
+      .sort((a, b) => b.id.localeCompare(a.id))[0];
+
+    // 3. Manual de Monstruos: category D&D + monstrosity
+    const monsterHero = [...products]
+      .filter(p =>
+        p.category === "D&D" &&
+        p.creature_type?.toLowerCase().includes("monstrosity")
+      )
+      .sort((a, b) => b.id.localeCompare(a.id))[0];
+
+    return [
+      {
+        title: "Héroes de Fantasía",
+        sub: "Enanos, Elfos y los Defensores de la Luz.",
+        img: fantasyHero?.image || "https://lh3.googleusercontent.com/aida-public/AB6AXuB3o4U20eQujlqlLivp6dfCAP5GGzSX_QIVGCsZjAW44J4Cn5dH3fh--dQTkyhXBkrF8FhFqEkEYr9RQT-DUD067sGwueG54R6I2D9AWpl0SZeHcNNNBlpw-hJcGf44E_evb6KJAvH1iUIbN3XlyqFqu1eAkxpckNTqSho97MfodGIWlijVtftnohk4UDHDDFQLMabvPPyGlPuNecTztgQfAeFoes10LMhaiBmRzvnS1bSmrAv4HZDh04MXIr9oLJX0zf3HFw_Us5E",
+        filters: { categories: ["D&D"] }
+      },
+      {
+        title: "Guerreros Sci-Fi",
+        sub: "Terrores mecánicos y viajeros estelares.",
+        img: scifiHero?.image || "https://lh3.googleusercontent.com/aida-public/AB6AXuCOoJ1jIOn4jPLgzNAvKwwkCQE2_iPHMNTRmJnKwTVe1s16Y3IsWqDCLNtw58ig-nCjvDy9n0viSYpTjKSLiE0rVLs2R08qTyRGA9JmI5Jnt1qJYFJFLndBNbemc8FMbL7eNtue4wI5brNfS4WCKcSI55sF40XAguH8xExwk6LL0xnzivEaNUiUCKQgnyl5zuT-bylNbyOoz--wt1re7DbF7JMqODxHf2_ymsFXG8tWfQW1mFrD7L17j3w_G4V3nuEinQqugO-5iSo",
+        filters: { categories: ["Warhammer"] }
+      },
+      {
+        title: "Manual de Monstruos",
+        sub: "Abominaciones, Bestias y los Grandes Dragones.",
+        img: monsterHero?.image || "https://lh3.googleusercontent.com/aida-public/AB6AXuAk61FuYDjWAsNtu247-7UQnKD10MRF9FJclnImLSqjn4IV_svngmRGCH5VwHKU4F08LykO4cLSTZjd7PuG9JIqbAISQ8nYCiKO-jK3rG3FEzPVpdOES5vtmUXNCm8gvJ8Rgu_FRc_G4TCYlUMy4NcNsDAj_WUMdNcZZMwWi216xu4wMg54xqhfj3aiFvnT6MQGPfVSpQIT2qPrSJc-rcpRtaEmdk7-ZP_6pl9muFYAhogMHTm1eN1z3FgfVSDNejNMKnVe_KwTVGw",
+        filters: { categories: ["D&D"], creatureTypes: ["Monstrosity"] }
+      },
+    ];
+  }, [products]);
+
+  // Dynamic Chronicles Logic
+  const chronicleCollections = useMemo(() => {
+    // 1. Anime: category Anime
+    const animeHero = [...products]
+      .filter(p => p.category === "Anime")
+      .sort((a, b) => b.id.localeCompare(a.id))[0];
+
+    // 2. Juegos: category Juegos
+    const juegosHero = [...products]
+      .filter(p => p.category === "Juegos")
+      .sort((a, b) => b.id.localeCompare(a.id))[0];
+
+    // 3. Series y Cine: category Cine
+    const cineHero = [...products]
+      .filter(p => p.category === "Cine")
+      .sort((a, b) => b.id.localeCompare(a.id))[0];
+
+    return [
+      {
+        title: "Artesanos del Ki",
+        sub: "Guerreros del sol naciente, portadores de almas forjadas en tinta y celuloide.",
+        tag: "Reinos Orientales",
+        original: "Anime",
+        img: animeHero?.image || "https://lh3.googleusercontent.com/aida-public/AB6AXuAk61FuYDjWAsNtu247-7UQnKD10MRF9FJclnImLSqjn4IV_svngmRGCH5VwHKU4F08LykO4cLSTZjd7PuG9JIqbAISQ8nYCiKO-jK3rG3FEzPVpdOES5vtmUXNCm8gvJ8Rgu_FRc_G4TCYlUMy4NcNsDAj_WUMdNcZZMwWi216xu4wMg54xqhfj3aiFvnT6MQGPfVSpQIT2qPrSJc-rcpRtaEmdk7-ZP_6pl9muFYAhogMHTm1eN1z3FgfVSDNejNMKnVe_KwTVGw",
+        filters: { categories: ["Anime"] }
+      },
+      {
+        title: "El Cónclave de los Mandos",
+        sub: "De las mazmorras digitales a la palma de tu mano. Héroes que han superado el Game Over.",
+        tag: "Senda de Bits",
+        original: "Juegos",
+        img: juegosHero?.image || "https://lh3.googleusercontent.com/aida-public/AB6AXuCOoJ1jIOn4jPLgzNAvKwwkCQE2_iPHMNTRmJnKwTVe1s16Y3IsWqDCLNtw58ig-nCjvDy9n0viSYpTjKSLiE0rVLs2R08qTyRGA9JmI5Jnt1qJYFJFLndBNbemc8FMbL7eNtue4wI5brNfS4WCKcSI55sF40XAguH8xExwk6LL0xnzivEaNUiUCKQgnyl5zuT-bylNbyOoz--wt1re7DbF7JMqODxHf2_ymsFXG8tWfQW1mFrD7L17j3w_G4V3nuEinQqugO-5iSo",
+        filters: { categories: ["Juegos"] }
+      },
+      {
+        title: "Titanes del Séptimo Reino",
+        sub: "Grandes leyendas que han cruzado el umbral de la pantalla para reclamar su lugar en tu mesa.",
+        tag: "Proyección Épica",
+        original: "Series y Cine",
+        img: cineHero?.image || "https://lh3.googleusercontent.com/aida-public/AB6AXuAk61FuYDjWAsNtu247-7UQnKD10MRF9FJclnImLSqjn4IV_svngmRGCH5VwHKU4F08LykO4cLSTZjd7PuG9JIqbAISQ8nYCiKO-jK3rG3FEzPVpdOES5vtmUXNCm8gvJ8Rgu_FRc_G4TCYlUMy4NcNsDAj_WUMdNcZZMwWi216xu4wMg54xqhfj3aiFvnT6MQGPfVSpQIT2qPrSJc-rcpRtaEmdk7-ZP_6pl9muFYAhogMHTm1eN1z3FgfVSDNejNMKnVe_KwTVGw",
+        filters: { categories: ["Cine"] }
+      },
+    ];
+  }, [products]);
 
   useEffect(() => {
     setHeroLoaded(true);
@@ -300,8 +399,7 @@ const Home: React.FC<HomeProps> = ({ setView }) => {
                   sx={{
                     position: "absolute",
                     inset: 0,
-                    background:
-                      "linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.3) 60%, rgba(0,0,0,0.1) 100%)",
+                    background: HeroGradient,
                     zIndex: -1,
                   }}
                 />
@@ -393,7 +491,14 @@ const Home: React.FC<HomeProps> = ({ setView }) => {
                       color="primary"
                       sx={{
                         fontStyle: "italic",
-                        textShadow: "0 0 30px rgba(212, 17, 17, 0.5)",
+                        textShadow: (t) => `
+                          0 0 30px rgba(212, 17, 17, 0.5),
+                          -1px -1px 0 #fff,  
+                           1px -1px 0 #fff,
+                          -1px  1px 0 #fff,
+                           1px  1px 0 #fff,
+                           0 0 8px rgba(255, 255, 255, 0.8)
+                        `,
                       }}
                     >
                       {slide.titleHighlight}
@@ -626,27 +731,11 @@ const Home: React.FC<HomeProps> = ({ setView }) => {
           </ScrollReveal>
 
           <Grid container spacing={{ xs: 2, md: 4 }}>
-            {[
-              {
-                title: "Héroes de Fantasía",
-                sub: "Enanos, Elfos y los Defensores de la Luz.",
-                img: "https://lh3.googleusercontent.com/aida-public/AB6AXuB3o4U20eQujlqlLivp6dfCAP5GGzSX_QIVGCsZjAW44J4Cn5dH3fh--dQTkyhXBkrF8FhFqEkEYr9RQT-DUD067sGwueG54R6I2D9AWpl0SZeHcNNNBlpw-hJcGf44E_evb6KJAvH1iUIbN3XlyqFqu1eAkxpckNTqSho97MfodGIWlijVtftnohk4UDHDDFQLMabvPPyGlPuNecTztgQfAeFoes10LMhaiBmRzvnS1bSmrAv4HZDh04MXIr9oLJX0zf3HFw_Us5E",
-              },
-              {
-                title: "Guerreros Sci-Fi",
-                sub: "Terrores mecánicos y viajeros estelares.",
-                img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCOoJ1jIOn4jPLgzNAvKwwkCQE2_iPHMNTRmJnKwTVe1s16Y3IsWqDCLNtw58ig-nCjvDy9n0viSYpTjKSLiE0rVLs2R08qTyRGA9JmI5Jnt1qJYFJFLndBNbemc8FMbL7eNtue4wI5brNfS4WCKcSI55sF40XAguH8xExwk6LL0xnzivEaNUiUCKQgnyl5zuT-bylNbyOoz--wt1re7DbF7JMqODxHf2_ymsFXG8tWfQW1mFrD7L17j3w_G4V3nuEinQqugO-5iSo",
-              },
-              {
-                title: "Manual de Monstruos",
-                sub: "Abominaciones, Bestias y los Grandes Dragones.",
-                img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAk61FuYDjWAsNtu247-7UQnKD10MRF9FJclnImLSqjn4IV_svngmRGCH5VwHKU4F08LykO4cLSTZjd7PuG9JIqbAISQ8nYCiKO-jK3rG3FEzPVpdOES5vtmUXNCm8gvJ8Rgu_FRc_G4TCYlUMy4NcNsDAj_WUMdNcZZMwWi216xu4wMg54xqhfj3aiFvnT6MQGPfVSpQIT2qPrSJc-rcpRtaEmdk7-ZP_6pl9muFYAhogMHTm1eN1z3FgfVSDNejNMKnVe_KwTVGw",
-              },
-            ].map((col, idx) => (
+            {featuredCollections.map((col, idx) => (
               <Grid key={idx} size={{ xs: 12, md: 4 }}>
                 <ScrollReveal delay={idx * 200}>
                   <Box
-                    onClick={() => setView(ViewState.CATALOG)}
+                    onClick={() => onFilterNavigate(col.filters)}
                     sx={{
                       position: "relative",
                       aspectRatio: "4/5",
@@ -825,30 +914,11 @@ const Home: React.FC<HomeProps> = ({ setView }) => {
           </ScrollReveal>
 
           <Grid container spacing={{ xs: 2, md: 4 }}>
-            {[
-              {
-                title: "Espíritu y Acero",
-                sub: "Desde chicas mágicas hasta guerreros shonen.",
-                tag: "Reinos del Este",
-                img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAk61FuYDjWAsNtu247-7UQnKD10MRF9FJclnImLSqjn4IV_svngmRGCH5VwHKU4F08LykO4cLSTZjd7PuG9JIqbAISQ8nYCiKO-jK3rG3FEzPVpdOES5vtmUXNCm8gvJ8Rgu_FRc_G4TCYlUMy4NcNsDAj_WUMdNcZZMwWi216xu4wMg54xqhfj3aiFvnT6MQGPfVSpQIT2qPrSJc-rcpRtaEmdk7-ZP_6pl9muFYAhogMHTm1eN1z3FgfVSDNejNMKnVe_KwTVGw",
-              },
-              {
-                title: "Capas y Capuchas",
-                sub: "Los dioses de la tinta y el papel.",
-                tag: "Mitos Modernos",
-                img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCOoJ1jIOn4jPLgzNAvKwwkCQE2_iPHMNTRmJnKwTVe1s16Y3IsWqDCLNtw58ig-nCjvDy9n0viSYpTjKSLiE0rVLs2R08qTyRGA9JmI5Jnt1qJYFJFLndBNbemc8FMbL7eNtue4wI5brNfS4WCKcSI55sF40XAguH8xExwk6LL0xnzivEaNUiUCKQgnyl5zuT-bylNbyOoz--wt1re7DbF7JMqODxHf2_ymsFXG8tWfQW1mFrD7L17j3w_G4V3nuEinQqugO-5iSo",
-              },
-              {
-                title: "Titanes del Cine",
-                sub: "Kaijus, Aliens y leyendas.",
-                tag: "Pantalla Grande",
-                img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAk61FuYDjWAsNtu247-7UQnKD10MRF9FJclnImLSqjn4IV_svngmRGCH5VwHKU4F08LykO4cLSTZjd7PuG9JIqbAISQ8nYCiKO-jK3rG3FEzPVpdOES5vtmUXNCm8gvJ8Rgu_FRc_G4TCYlUMy4NcNsDAj_WUMdNcZZMwWi216xu4wMg54xqhfj3aiFvnT6MQGPfVSpQIT2qPrSJc-rcpRtaEmdk7-ZP_6pl9muFYAhogMHTm1eN1z3FgfVSDNejNMKnVe_KwTVGw",
-              },
-            ].map((item, idx) => (
+            {chronicleCollections.map((item, idx) => (
               <Grid key={idx} size={{ xs: 12, md: 4 }}>
                 <ScrollReveal delay={idx * 150}>
                   <Box
-                    onClick={() => setView(ViewState.CATALOG)}
+                    onClick={() => onFilterNavigate(item.filters)}
                     sx={{
                       position: "relative",
                       height: 500,
@@ -909,11 +979,30 @@ const Home: React.FC<HomeProps> = ({ setView }) => {
                         sx={{
                           color: "secondary.main",
                           fontWeight: "bold",
-                          letterSpacing: 3,
+                          letterSpacing: 2,
                           mb: 1,
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          lineHeight: 1.2,
+                          minHeight: "3rem", // Added to align titles
+                          justifyContent: "center"
                         }}
                       >
                         {item.tag}
+                        <Box
+                          component="span"
+                          sx={{
+                            fontSize: "0.65rem",
+                            opacity: 0.7,
+                            letterSpacing: 1,
+                            fontWeight: "medium",
+                            textTransform: "none",
+                            fontStyle: "italic",
+                          }}
+                        >
+                          ({(item as any).original})
+                        </Box>
                       </Typography>
                       <Typography
                         variant="h4"
@@ -922,6 +1011,14 @@ const Home: React.FC<HomeProps> = ({ setView }) => {
                           fontStyle: "italic",
                           fontWeight: "bold",
                           mb: 2,
+                          fontSize: {
+                            xs: item.title.length > 20 ? "1.5rem" : "1.75rem",
+                            md: item.title.length > 20 ? "1.85rem" : "2.125rem"
+                          },
+                          minHeight: { xs: "3.5rem", md: "5.5rem" },
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center"
                         }}
                       >
                         {item.title}
@@ -934,6 +1031,7 @@ const Home: React.FC<HomeProps> = ({ setView }) => {
                           opacity: 0,
                           transform: "translateY(10px)",
                           transition: "all 0.5s",
+                          minHeight: "3rem", // Added to align bottoms
                         }}
                       >
                         {item.sub}

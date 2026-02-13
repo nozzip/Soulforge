@@ -157,7 +157,7 @@ function HideOnScroll({ children }: HideOnScrollProps) {
 }
 
 interface NavbarProps {
-  setView: (view: ViewState) => void;
+  setView: (view: ViewState, options?: { resetScroll?: boolean }) => void;
   currentView: ViewState;
   onSearch: (query: string) => void;
   onProductSelect: (id: string) => void;
@@ -524,7 +524,7 @@ const Navbar: React.FC<NavbarProps> = ({
                 }}
               >
                 <Button
-                  onClick={() => setView(ViewState.HOME)}
+                  onClick={() => setView(ViewState.HOME, { resetScroll: true })}
                   sx={{
                     color: "secondary.main",
                     display: "flex",
@@ -765,25 +765,27 @@ const Navbar: React.FC<NavbarProps> = ({
                       },
                       ...(isAdmin
                         ? [
-                            {
-                              label: "Admin",
-                              view: ViewState.ADMIN,
-                              icon: (
-                                <ConstructionIcon
-                                  sx={{
-                                    fontSize: 16,
-                                    mb: 0.5,
-                                    color: isWarhammer ? "inherit" : "#e65100",
-                                  }}
-                                />
-                              ),
-                            },
-                          ]
+                          {
+                            label: "Admin",
+                            view: ViewState.ADMIN,
+                            icon: (
+                              <ConstructionIcon
+                                sx={{
+                                  fontSize: 16,
+                                  mb: 0.5,
+                                  color: isWarhammer ? "inherit" : "#e65100",
+                                }}
+                              />
+                            ),
+                          },
+                        ]
                         : []),
                     ].map((item) => (
                       <Button
                         key={item.label}
-                        onClick={() => setView(item.view)}
+                        onClick={() =>
+                          setView(item.view, { resetScroll: true })
+                        }
                         startIcon={item.icon}
                         sx={{
                           color:

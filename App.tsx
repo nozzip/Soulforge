@@ -22,6 +22,7 @@ import CreateThread from "./pages/Forum/CreateThread";
 import LFGBoard from "./pages/Forum/LFG/LFGBoard";
 import Profile from "./pages/Profile";
 import EditorTest from "./pages/EditorTest";
+import ErrorBoundary from "./components/ErrorBoundary";
 import { ViewState, Product } from "./types";
 import { ThemeProvider, CssBaseline } from "@mui/material";
 import { fantasyTheme, warhammerTheme } from "./src/theme";
@@ -48,6 +49,9 @@ const App: React.FC = () => {
       setCurrentView(ViewState.FEEDBACK);
     }
   }, []);
+
+  // Scroll persistence for main views
+  const [viewScrollPositions, setViewScrollPositions] = useState<Record<string, number>>({});
 
   // Catalog state persistence
   const [catalogState, setCatalogState] = useState({
@@ -228,20 +232,100 @@ const App: React.FC = () => {
 
   const handleProductClick = (id: string) => {
     setSelectedProductId(id);
-    setCurrentView(ViewState.PRODUCT_DETAIL);
+    navigateTo(ViewState.PRODUCT_DETAIL);
+  };
+
+  const navigateTo = (view: ViewState, options?: { resetScroll?: boolean }) => {
+    const prevView = currentView;
+
+    // Vistas que preservan su scroll al salir
+    const mainViews = [
+      ViewState.CATALOG,
+      ViewState.FORUM_HOME,
+      ViewState.FORUM_CATEGORY,
+      ViewState.HOW_TO_BUY,
+      ViewState.NEW_ADVENTURER
+    ];
+
+    if (mainViews.includes(prevView)) {
+      setViewScrollPositions(prev => ({
+        ...prev,
+        [prevView]: window.scrollY
+      }));
+    }
+
+    // Identificar si es una navegación de "regreso" a un padre
+    const isBackNav =
+      (prevView === ViewState.PRODUCT_DETAIL && view === ViewState.CATALOG) ||
+      (prevView === ViewState.FORUM_THREAD && view === ViewState.FORUM_CATEGORY) ||
+      (prevView === ViewState.FORUM_CATEGORY && view === ViewState.FORUM_HOME);
+
+    const shouldRestore = isBackNav && options?.resetScroll !== true;
+
+    console.log('[Navigation] Navigating:', { from: prevView, to: view, isBackNav, resetScroll: options?.resetScroll, shouldRestore, savedScroll: viewScrollPositions[view] });
+
+    if (shouldRestore) {
+      const savedPos = viewScrollPositions[view] || 0;
+      console.log('[Navigation] Restoring scroll to:', savedPos);
+      setCurrentView(view);
+      // Restauramos con un pequeño delay para permitir el renderizado
+      // Intentamos dos veces para asegurar que el contenido se haya renderizado
+      setTimeout(() => {
+        console.log('[Navigation] Attempt 1 restore to', savedPos);
+        window.scrollTo({ top: savedPos, behavior: 'instant' });
+      }, 100);
+      setTimeout(() => {
+        // Solo si no estamos ya cerca (permitir que el usuario haya movido el scroll)
+        if (Math.abs(window.scrollY - savedPos) > 100) {
+          console.log('[Navigation] Attempt 2 restore to', savedPos);
+          window.scrollTo({ top: savedPos, behavior: 'instant' });
+        }
+      }, 300);
+    } else {
+      console.log('[Navigation] Resetting scroll to 0');
+      // Navegación nueva o forzada al top
+      setViewScrollPositions(prev => ({ ...prev, [view]: 0 }));
+      setCurrentView(view);
+      window.scrollTo(0, 0);
+    }
+
+    if (view === ViewState.CATALOG && !shouldRestore) {
+      setGlobalSearchQuery("");
+      setCatalogState(prev => ({ ...prev, page: 1 }));
+    }
+  };
+
+  const handleSetView = (view: ViewState, options?: { resetScroll?: boolean }) => {
+    navigateTo(view, options);
+  };
+
+  const handleNavigateWithFilters = (filters: {
+    categories?: string[];
+    creatureTypes?: string[];
+  }) => {
+    setGlobalSearchQuery("");
+    setCatalogState((prev) => ({
+      ...prev,
+      page: 1,
+      searchQuery: "",
+      selectedCategories: filters.categories || [],
+      selectedCreatureTypes: filters.creatureTypes || [],
+      selectedSizes: [],
+      selectedDesigners: [],
+      selectedWeapons: [],
+    }));
+    // Al navegar desde Home, siempre vamos al top
+    setViewScrollPositions(prev => ({ ...prev, [ViewState.CATALOG]: 0 }));
+    window.scrollTo(0, 0);
+    setCurrentView(ViewState.CATALOG);
   };
 
   const handleSearch = (query: string) => {
     setGlobalSearchQuery(query);
     setCatalogState((prev) => ({ ...prev, searchQuery: query, page: 1 }));
+    setViewScrollPositions(prev => ({ ...prev, [ViewState.CATALOG]: 0 }));
+    window.scrollTo(0, 0);
     setCurrentView(ViewState.CATALOG);
-  };
-
-  const handleSetView = (view: ViewState) => {
-    if (view === ViewState.CATALOG) {
-      setGlobalSearchQuery("");
-    }
-    setCurrentView(view);
   };
 
   // Update SEO metadata when view or product changes
@@ -318,23 +402,23 @@ const App: React.FC = () => {
   // Forum Handlers
   const handleForumCategorySelect = (categoryId: string) => {
     setSelectedForumCategoryId(categoryId);
-    setCurrentView(ViewState.FORUM_CATEGORY);
+    navigateTo(ViewState.FORUM_CATEGORY);
   };
 
   const handleForumThreadSelect = (threadId: string) => {
     setSelectedForumThreadId(threadId);
-    setGlobalSearchQuery(""); // Clear search when entering thread
-    setCurrentView(ViewState.FORUM_THREAD);
+    setGlobalSearchQuery("");
+    navigateTo(ViewState.FORUM_THREAD);
   };
 
   const handleForumBackToHome = () => {
     setSelectedForumCategoryId(null);
-    setCurrentView(ViewState.FORUM_HOME);
+    navigateTo(ViewState.FORUM_HOME);
   };
 
   const handleForumBackToCategory = () => {
     setSelectedForumThreadId(null);
-    setCurrentView(ViewState.FORUM_CATEGORY);
+    navigateTo(ViewState.FORUM_CATEGORY);
   };
 
   const handleLFGClick = () => {
@@ -357,176 +441,194 @@ const App: React.FC = () => {
       ),
     ).sort() as string[];
 
-    switch (currentView) {
-      case ViewState.HOME:
-        return <Home setView={handleSetView} />;
-      case ViewState.CATALOG:
-        return (
-          <Catalog
-            products={products}
-            categories={categories}
-            sizes={sizes}
-            onProductClick={handleProductClick}
-            initialSearchQuery={globalSearchQuery}
-            wishlist={wishlist}
-            toggleWishlist={toggleWishlist}
-            loading={loading}
-            designers={designers}
-            creatureTypes={creatureTypes}
-            weapons={weapons}
-            isAdmin={isAdmin}
-            onDeleteProduct={handleDeleteProduct}
-            onUpdateProduct={handleUpdateProduct}
-            onRefreshProducts={fetchProducts}
-            catalogState={catalogState}
-            onCatalogStateChange={setCatalogState}
-          />
-        );
-      case ViewState.CART:
-        return <Cart setView={handleSetView} />;
-      case ViewState.CHECKOUT:
-        return <Checkout />;
-      case ViewState.PRODUCT_DETAIL:
-        return (
-          <ProductDetail
-            products={products}
-            productId={selectedProductId}
-            setView={handleSetView}
-            wishlist={wishlist}
-            toggleWishlist={toggleWishlist}
-            isAdmin={isAdmin}
-            user={
-              user
-                ? {
-                    name:
-                      user.user_metadata?.full_name || user.email || "Usuario",
-                    id: user.id,
+    return (
+      <ErrorBoundary>
+        {(() => {
+          switch (currentView) {
+            case ViewState.HOME:
+              return (
+                <Home
+                  setView={handleSetView}
+                  onFilterNavigate={handleNavigateWithFilters}
+                  products={products}
+                />
+              );
+            case ViewState.CATALOG:
+              return (
+                <Catalog
+                  products={products}
+                  categories={categories}
+                  sizes={sizes}
+                  onProductClick={handleProductClick}
+                  initialSearchQuery={globalSearchQuery}
+                  wishlist={wishlist}
+                  toggleWishlist={toggleWishlist}
+                  loading={loading}
+                  designers={designers}
+                  creatureTypes={creatureTypes}
+                  weapons={weapons}
+                  isAdmin={isAdmin}
+                  onDeleteProduct={handleDeleteProduct}
+                  onUpdateProduct={handleUpdateProduct}
+                  onRefreshProducts={fetchProducts}
+                  catalogState={catalogState}
+                  onCatalogStateChange={setCatalogState}
+                />
+              );
+            case ViewState.CART:
+              return <Cart setView={handleSetView} />;
+            case ViewState.CHECKOUT:
+              return <Checkout />;
+            case ViewState.PRODUCT_DETAIL:
+              return (
+                <ProductDetail
+                  products={products}
+                  productId={selectedProductId}
+                  setView={handleSetView}
+                  wishlist={wishlist}
+                  toggleWishlist={toggleWishlist}
+                  isAdmin={isAdmin}
+                  user={
+                    user
+                      ? {
+                        name:
+                          user.user_metadata?.full_name || user.email || "Usuario",
+                        id: user.id,
+                      }
+                      : null
                   }
-                : null
-            }
-            onUpdateProduct={handleUpdateProduct}
-            onProductClick={handleProductClick}
-          />
-        );
-      case ViewState.LOGIN:
-        return <Login setView={handleSetView} onLogin={handleLogin} />;
-      case ViewState.SIGNUP:
-        return <Signup setView={handleSetView} onLogin={handleLogin} />;
-      case ViewState.WISHLIST:
-        return (
-          <Wishlist
-            products={products}
-            setView={handleSetView}
-            onProductClick={handleProductClick}
-            wishlist={wishlist}
-            toggleWishlist={toggleWishlist}
-          />
-        );
-      case ViewState.ORDERS:
-        return <Orders setView={handleSetView} />;
-      case ViewState.FEEDBACK:
-        return (
-          <Feedback setView={handleSetView} user={user} onLogin={handleLogin} />
-        );
-      case ViewState.HOW_TO_BUY:
-        return <HowToBuy setView={handleSetView} />;
-      case ViewState.NEW_ADVENTURER:
-        return <NewAdventurerGuide setView={handleSetView} />;
-      case ViewState.ADMIN:
-        return (
-          <Admin
-            setView={handleSetView}
-            onAddProduct={handleAddProduct}
-            categories={categories}
-            sizes={sizes}
-            onAddCategory={handleAddCategory}
-            onAddSize={handleAddSize}
-            onDeleteCategory={handleDeleteCategory}
-            onDeleteSize={handleDeleteSize}
-          />
-        );
-      case ViewState.FORUM_HOME:
-        return (
-          <ForumHome
-            onCategorySelect={handleForumCategorySelect}
-            onThreadSelect={handleForumThreadSelect}
-            onProductSelect={handleProductClick}
-            onLFGClick={handleLFGClick}
-            user={user}
-            isAdmin={isAdmin}
-          />
-        );
-      case ViewState.FORUM_CATEGORY:
-        return selectedForumCategoryId ? (
-          <Category
-            categoryId={selectedForumCategoryId}
-            onThreadSelect={handleForumThreadSelect}
-            onBack={handleForumBackToHome}
-            onCreateThread={() => handleSetView(ViewState.FORUM_CREATE_THREAD)}
-            user={user}
-            isAdmin={isAdmin}
-          />
-        ) : (
-          <ForumHome
-            onCategorySelect={handleForumCategorySelect}
-            user={user}
-            isAdmin={isAdmin}
-          />
-        );
-      case ViewState.FORUM_CREATE_THREAD:
-        return selectedForumCategoryId ? (
-          <CreateThread
-            categoryId={selectedForumCategoryId}
-            onCancel={() => handleSetView(ViewState.FORUM_CATEGORY)}
-            onThreadCreated={(threadId) => {
-              handleForumThreadSelect(threadId);
-            }}
-            user={user}
-          />
-        ) : (
-          <ForumHome
-            onCategorySelect={handleForumCategorySelect}
-            user={user}
-            isAdmin={isAdmin}
-          />
-        );
-      case ViewState.FORUM_LFG:
-        return <LFGBoard onBack={handleForumBackToHome} />;
-      case ViewState.FORUM_THREAD:
-        return selectedForumThreadId ? (
-          <Thread
-            threadId={selectedForumThreadId}
-            onBack={handleForumBackToCategory}
-            user={user}
-            isAdmin={isAdmin}
-          />
-        ) : selectedForumCategoryId ? (
-          <Category
-            categoryId={selectedForumCategoryId}
-            onThreadSelect={handleForumThreadSelect}
-            onBack={handleForumBackToHome}
-            onCreateThread={() => handleSetView(ViewState.FORUM_CREATE_THREAD)}
-            user={user}
-            isAdmin={isAdmin}
-          />
-        ) : (
-          <ForumHome
-            onCategorySelect={handleForumCategorySelect}
-            user={user}
-            isAdmin={isAdmin}
-          />
-        );
-      case ViewState.PROFILE:
-        return user ? (
-          <Profile user={user} />
-        ) : (
-          <Login setView={handleSetView} onLogin={handleLogin} />
-        );
-      case ViewState.EDITOR_TEST:
-        return <EditorTest />;
-      default:
-        return <Home setView={handleSetView} />;
-    }
+                  onUpdateProduct={handleUpdateProduct}
+                  onProductClick={handleProductClick}
+                />
+              );
+            case ViewState.LOGIN:
+              return <Login setView={handleSetView} onLogin={handleLogin} />;
+            case ViewState.SIGNUP:
+              return <Signup setView={handleSetView} onLogin={handleLogin} />;
+            case ViewState.WISHLIST:
+              return (
+                <Wishlist
+                  products={products}
+                  setView={handleSetView}
+                  onProductClick={handleProductClick}
+                  wishlist={wishlist}
+                  toggleWishlist={toggleWishlist}
+                />
+              );
+            case ViewState.ORDERS:
+              return <Orders setView={handleSetView} />;
+            case ViewState.FEEDBACK:
+              return (
+                <Feedback setView={handleSetView} user={user} onLogin={handleLogin} />
+              );
+            case ViewState.HOW_TO_BUY:
+              return <HowToBuy setView={handleSetView} />;
+            case ViewState.NEW_ADVENTURER:
+              return <NewAdventurerGuide setView={handleSetView} />;
+            case ViewState.ADMIN:
+              return (
+                <Admin
+                  setView={handleSetView}
+                  onAddProduct={handleAddProduct}
+                  categories={categories}
+                  sizes={sizes}
+                  onAddCategory={handleAddCategory}
+                  onAddSize={handleAddSize}
+                  onDeleteCategory={handleDeleteCategory}
+                  onDeleteSize={handleDeleteSize}
+                />
+              );
+            case ViewState.FORUM_HOME:
+              return (
+                <ForumHome
+                  onCategorySelect={handleForumCategorySelect}
+                  onThreadSelect={handleForumThreadSelect}
+                  onProductSelect={handleProductClick}
+                  onLFGClick={handleLFGClick}
+                  user={user}
+                  isAdmin={isAdmin}
+                />
+              );
+            case ViewState.FORUM_CATEGORY:
+              return selectedForumCategoryId ? (
+                <Category
+                  categoryId={selectedForumCategoryId}
+                  onThreadSelect={handleForumThreadSelect}
+                  onBack={handleForumBackToHome}
+                  onCreateThread={() => handleSetView(ViewState.FORUM_CREATE_THREAD)}
+                  user={user}
+                  isAdmin={isAdmin}
+                />
+              ) : (
+                <ForumHome
+                  onCategorySelect={handleForumCategorySelect}
+                  user={user}
+                  isAdmin={isAdmin}
+                />
+              );
+            case ViewState.FORUM_CREATE_THREAD:
+              return selectedForumCategoryId ? (
+                <CreateThread
+                  categoryId={selectedForumCategoryId}
+                  onCancel={() => handleSetView(ViewState.FORUM_CATEGORY)}
+                  onThreadCreated={(threadId) => {
+                    handleForumThreadSelect(threadId);
+                  }}
+                  user={user}
+                />
+              ) : (
+                <ForumHome
+                  onCategorySelect={handleForumCategorySelect}
+                  user={user}
+                  isAdmin={isAdmin}
+                />
+              );
+            case ViewState.FORUM_LFG:
+              return <LFGBoard onBack={handleForumBackToHome} />;
+            case ViewState.FORUM_THREAD:
+              return selectedForumThreadId ? (
+                <Thread
+                  threadId={selectedForumThreadId}
+                  onBack={handleForumBackToCategory}
+                  user={user}
+                  isAdmin={isAdmin}
+                />
+              ) : selectedForumCategoryId ? (
+                <Category
+                  categoryId={selectedForumCategoryId}
+                  onThreadSelect={handleForumThreadSelect}
+                  onBack={handleForumBackToHome}
+                  onCreateThread={() => handleSetView(ViewState.FORUM_CREATE_THREAD)}
+                  user={user}
+                  isAdmin={isAdmin}
+                />
+              ) : (
+                <ForumHome
+                  onCategorySelect={handleForumCategorySelect}
+                  user={user}
+                  isAdmin={isAdmin}
+                />
+              );
+            case ViewState.PROFILE:
+              return (
+                <Profile
+                  user={user}
+                />
+              );
+            case ViewState.EDITOR_TEST:
+              return <EditorTest />;
+            default:
+              return (
+                <Home
+                  setView={handleSetView}
+                  onFilterNavigate={handleNavigateWithFilters}
+                  products={products}
+                />
+              );
+          }
+        })()}
+      </ErrorBoundary>
+    );
   };
 
   // Theme State
