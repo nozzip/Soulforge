@@ -26,7 +26,24 @@ import {
   School as SchoolIcon,
   Security as DmIcon,
   Pets as BeastIcon,
+  HelpOutline as QuestionIcon,
+  Add as AddIcon,
+  Close as CloseIcon,
+  Category as CategoryIcon,
+  PostAdd as PostAddIcon,
 } from "@mui/icons-material";
+
+import {
+  Fab,
+  Zoom,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  MenuItem,
+  Button,
+} from "@mui/material";
 import ForumSidebar from "./components/ForumSidebar";
 
 // Map icons based on category name
@@ -40,23 +57,17 @@ const getIcon = (name: string) => {
   if (n.includes("lore") || n.includes("mundo")) return AutoStoriesIcon;
   if (n.includes("master") || n.includes("dm")) return DmIcon;
   if (n.includes("bestiario") || n.includes("monstruo")) return BeastIcon;
+  if (n.includes("ayuda") || n.includes("feedback")) return QuestionIcon;
   return ForumIcon;
 };
 
 // Helper to group categories (mock logic until DB schema supports groups)
 const getCategoryGroup = (name: string) => {
   const n = name.toLowerCase();
-  if (n.includes("reglas") || n.includes("builds") || n.includes("taberna"))
-    return "THE PLAYER'S HANDBOOK";
+  if (n.includes("reglas") || n.includes("builds")) return "MANUAL DEL JUGADOR";
   if (n.includes("master") || n.includes("lore") || n.includes("mundo"))
-    return "THE DUNGEON MASTER'S GUIDE";
-  if (
-    n.includes("bestiario") ||
-    n.includes("monstruo") ||
-    n.includes("historias")
-  )
-    return "THE MONSTER MANUAL";
-  return "GENERAL DISCUSSION";
+    return "GUÍA DEL DUNGEON MASTER";
+  return "DISCUSIÓN GENERAL";
 };
 
 interface ForumHomeProps {
@@ -64,6 +75,8 @@ interface ForumHomeProps {
   onThreadSelect?: (threadId: string) => void;
   onProductSelect?: (productId: string) => void;
   onLFGClick?: () => void;
+  user?: any;
+  isAdmin?: boolean;
 }
 
 const ForumHome: React.FC<ForumHomeProps> = ({
@@ -71,6 +84,8 @@ const ForumHome: React.FC<ForumHomeProps> = ({
   onThreadSelect,
   onProductSelect,
   onLFGClick,
+  user,
+  isAdmin = false,
 }) => {
   const theme = useTheme();
   const [categories, setCategories] = useState<ForumCategory[]>([]);
@@ -78,6 +93,15 @@ const ForumHome: React.FC<ForumHomeProps> = ({
   const [categoryStats, setCategoryStats] = useState<
     Record<string, { threads: number; posts: number }>
   >({});
+
+  // Admin FAB State
+  const [fabOpen, setFabOpen] = useState(false);
+  const [newCatDialogOpen, setNewCatDialogOpen] = useState(false);
+  const [newCatName, setNewCatName] = useState("");
+  const [newCatDesc, setNewCatDesc] = useState("");
+  const [newCatSort, setNewCatSort] = useState(1);
+
+  // isAdmin is now passed as prop
 
   useEffect(() => {
     fetchCategories();
@@ -148,6 +172,35 @@ const ForumHome: React.FC<ForumHomeProps> = ({
     setCategoryStats(stats);
   };
 
+  const handleCreateCategory = async () => {
+    if (!newCatName.trim()) return;
+    try {
+      const { data, error } = await supabase
+        .from("forum_categories")
+        .insert({
+          name: newCatName,
+          description: newCatDesc,
+          sort_order: newCatSort,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        setCategories(
+          [...categories, data].sort((a, b) => a.sort_order - b.sort_order),
+        );
+        setNewCatDialogOpen(false);
+        setNewCatName("");
+        setNewCatDesc("");
+      }
+    } catch (error) {
+      console.error("Error creating category:", error);
+      alert("Error creating category");
+    }
+  };
+
   const groupedCategories = categories.reduce(
     (acc, cat) => {
       const group = getCategoryGroup(cat.name);
@@ -160,10 +213,9 @@ const ForumHome: React.FC<ForumHomeProps> = ({
 
   // Define group order
   const groupOrder = [
-    "THE PLAYER'S HANDBOOK",
-    "THE DUNGEON MASTER'S GUIDE",
-    "THE MONSTER MANUAL",
-    "GENERAL DISCUSSION",
+    "MANUAL DEL JUGADOR",
+    "GUÍA DEL DUNGEON MASTER",
+    "DISCUSIÓN GENERAL",
   ];
 
   if (loading) {
@@ -356,7 +408,7 @@ const ForumHome: React.FC<ForumHomeProps> = ({
                                     color="text.secondary"
                                     display="block"
                                   >
-                                    SCROLLS
+                                    PERGAMINOS
                                   </Typography>
                                   <Typography
                                     variant="body2"
@@ -372,7 +424,7 @@ const ForumHome: React.FC<ForumHomeProps> = ({
                                     color="text.secondary"
                                     display="block"
                                   >
-                                    RUNES
+                                    RUNAS
                                   </Typography>
                                   <Typography
                                     variant="body2"
@@ -406,6 +458,120 @@ const ForumHome: React.FC<ForumHomeProps> = ({
           )}
         </Grid>
       </Grid>
+
+      {/* Admin FAB */}
+      {isAdmin && (
+        <Box sx={{ position: "fixed", bottom: 32, right: 32, zIndex: 1000 }}>
+          <Zoom in={fabOpen}>
+            <Box
+              sx={{
+                mb: 2,
+                display: "flex",
+                flexDirection: "column",
+                gap: 2,
+                alignItems: "flex-end",
+              }}
+            >
+              <Fab
+                color="secondary"
+                size="small"
+                variant="extended"
+                onClick={() => setNewCatDialogOpen(true)}
+                sx={{ fontFamily: "Cinzel, serif", fontWeight: "bold" }}
+              >
+                <CategoryIcon sx={{ mr: 1 }} />
+                Nueva Categoría
+              </Fab>
+              {/* Note: Thread creation is usually context-dependent (inside a category), 
+                  but we could add a "Quick Thread" that asks for category selection. 
+                  For now let's just do Category since that's global. 
+              */}
+            </Box>
+          </Zoom>
+          <Fab
+            color="secondary"
+            aria-label="add"
+            onClick={() => setFabOpen(!fabOpen)}
+            sx={{
+              transform: fabOpen ? "rotate(45deg)" : "rotate(0deg)",
+              transition: "transform 0.3s",
+            }}
+          >
+            <AddIcon />
+          </Fab>
+        </Box>
+      )}
+
+      {/* New Category Dialog */}
+      <Dialog
+        open={newCatDialogOpen}
+        onClose={() => setNewCatDialogOpen(false)}
+        PaperProps={{
+          sx: {
+            bgcolor: alpha(theme.palette.background.paper, 0.9),
+            backdropFilter: "blur(10px)",
+            border: `1px solid ${theme.palette.secondary.main}`,
+            minWidth: 400,
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{ fontFamily: "Cinzel, serif", color: "secondary.main" }}
+        >
+          Nueva Categoría
+        </DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Nombre"
+            fullWidth
+            variant="outlined"
+            value={newCatName}
+            onChange={(e) => setNewCatName(e.target.value)}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            margin="dense"
+            label="Descripción"
+            fullWidth
+            variant="outlined"
+            multiline
+            rows={2}
+            value={newCatDesc}
+            onChange={(e) => setNewCatDesc(e.target.value)}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            margin="dense"
+            label="Orden (Sort Order)"
+            type="number"
+            fullWidth
+            variant="outlined"
+            value={newCatSort}
+            onChange={(e) => setNewCatSort(Number(e.target.value))}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Typography
+            component="p"
+            variant="caption"
+            sx={{ mr: "auto", ml: 2, color: "text.secondary" }}
+          >
+            * Icon auto-assigned based on name keywords
+          </Typography>
+          <Button onClick={() => setNewCatDialogOpen(false)} color="inherit">
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleCreateCategory}
+            color="secondary"
+            variant="contained"
+          >
+            Crear
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };

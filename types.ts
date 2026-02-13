@@ -44,6 +44,7 @@ export interface ForumPost {
   thread_id: string;
   author_id: string;
   content: string;
+  is_pinned?: boolean;
   created_at: string;
   updated_at: string;
   author?: Profile; // Joined data
@@ -93,6 +94,7 @@ export enum ViewState {
   FORUM_THREAD = "FORUM_THREAD",
   FORUM_LFG = "FORUM_LFG",
   PROFILE = "PROFILE",
+  EDITOR_TEST = "EDITOR_TEST",
 }
 
 export interface LFGPost {

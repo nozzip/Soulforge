@@ -14,8 +14,11 @@ import {
   ArrowBack as ArrowBackIcon,
   Send as SendIcon,
   Delete as DeleteIcon,
+  PushPin as PinIcon,
 } from "@mui/icons-material";
 import { supabase } from "../../src/supabase";
+import RichTextEditor from "../../components/Editor/RichTextEditor";
+import { uploadImage } from "../../utils/imageHandler";
 import { ForumThread, ForumPost as ForumPostType } from "../../types";
 import ForumPost from "./components/ForumPost";
 
@@ -41,7 +44,6 @@ const Thread: React.FC<ThreadProps> = ({
   const postsEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetchThreadAndPosts();
     incrementViewCount();
   }, [threadId]);
 
@@ -63,6 +65,7 @@ const Thread: React.FC<ThreadProps> = ({
         .from("forum_posts")
         .select("*, author:profiles(username, avatar_url, title, faction)")
         .eq("thread_id", threadId)
+        .order("is_pinned", { ascending: false })
         .order("created_at", { ascending: true });
 
       if (postError) throw postError;
@@ -127,6 +130,13 @@ const Thread: React.FC<ThreadProps> = ({
       if (newPostData) {
         setPosts([...posts, newPostData]);
         setNewReply("");
+
+        // Update thread updated_at to bump it in Category list
+        await supabase
+          .from("forum_threads")
+          .update({ updated_at: new Date().toISOString() })
+          .eq("id", threadId);
+
         setTimeout(() => {
           postsEndRef.current?.scrollIntoView({ behavior: "smooth" });
         }, 100);
@@ -139,10 +149,38 @@ const Thread: React.FC<ThreadProps> = ({
     }
   };
 
+  useEffect(() => {
+    fetchThreadAndPosts();
+
+    const channel = supabase
+      .channel(`thread:${threadId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "forum_posts",
+          filter: `thread_id=eq.${threadId}`,
+        },
+        (payload) => {
+          // If we receive an INSERT event for a post we just created, ignore it
+          // to avoid duplicate optimistic updates/race conditions.
+          // However, simpler to just refetch to get author data.
+          // Or check user ID if payload includes it.
+          // For simplicity and correctness (joins), refetching is safest.
+          fetchThreadAndPosts();
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [threadId]);
+
   const handleQuote = (content: string, author: string) => {
-    setNewReply(
-      (prev) => `${prev}[quote author="${author}"]\n${content}\n[/quote]\n\n`,
-    );
+    const quoteHtml = `<blockquote><strong>${author} wrote:</strong><br/>${content}</blockquote><p></p>`;
+    setNewReply((prev) => prev + quoteHtml);
     // Focus would be nice here
   };
 
@@ -166,6 +204,22 @@ const Thread: React.FC<ThreadProps> = ({
     } catch (error) {
       console.error("Error deleting thread:", error);
       alert("Error deleting thread.");
+    }
+  };
+
+  const handlePinThread = async (pinned: boolean) => {
+    if (!thread) return;
+    try {
+      const { error } = await supabase
+        .from("forum_threads")
+        .update({ is_pinned: pinned })
+        .eq("id", threadId);
+
+      if (error) throw error;
+      setThread({ ...thread, is_pinned: pinned });
+    } catch (error) {
+      console.error("Error pinning thread:", error);
+      alert("Error al fijar el hilo.");
     }
   };
 
@@ -208,14 +262,23 @@ const Thread: React.FC<ThreadProps> = ({
           Dungeon Master's Guide / Encounters
         </Typography>
         {isAdmin && (
-          <Button
-            startIcon={<DeleteIcon />}
-            color="error"
-            onClick={handleDeleteThread}
-            sx={{ ml: 2 }}
-          >
-            Delete Thread
-          </Button>
+          <Box>
+            <Button
+              startIcon={<PinIcon />}
+              color={thread.is_pinned ? "secondary" : "inherit"}
+              onClick={() => handlePinThread(!thread.is_pinned)}
+              sx={{ mr: 2 }}
+            >
+              {thread.is_pinned ? "Desfijar Hilo" : "Fijar Hilo"}
+            </Button>
+            <Button
+              startIcon={<DeleteIcon />}
+              color="error"
+              onClick={handleDeleteThread}
+            >
+              Borrar Hilo
+            </Button>
+          </Box>
         )}
       </Box>
 
@@ -250,23 +313,15 @@ const Thread: React.FC<ThreadProps> = ({
         </Typography>
       </Box>
 
-      {/* OP */}
-      <ForumPost
-        content={thread.content}
-        author={thread.author}
-        date={thread.created_at}
-        isOp={true}
-        onQuote={handleQuote}
-      />
-
-      {/* Replies */}
-      {posts.map((post) => (
+      {/* Posts List (OP + Replies) */}
+      {posts.map((post, index) => (
         <ForumPost
           key={post.id}
           postId={post.id}
           content={post.content}
           author={post.author}
           date={post.created_at}
+          isOp={index === 0}
           isAdmin={isAdmin}
           onDelete={handleDeletePost}
           onQuote={handleQuote}
@@ -308,22 +363,14 @@ const Thread: React.FC<ThreadProps> = ({
             </Typography>
           </Box>
           <Box sx={{ p: 3 }}>
-            <TextField
-              fullWidth
-              multiline
-              rows={4}
-              variant="outlined"
-              placeholder="Roll for Charisma... or just type here..."
-              value={newReply}
-              onChange={(e) => setNewReply(e.target.value)}
-              disabled={submitting}
-              sx={{
-                mb: 2,
-                "& .MuiOutlinedInput-root": {
-                  bgcolor: alpha(theme.palette.background.default, 0.5),
-                },
-              }}
-            />
+            <Box sx={{ mb: 2 }}>
+              <RichTextEditor
+                content={newReply}
+                onChange={setNewReply}
+                placeholder="Roll for Charisma... or just type here..."
+                onImageUpload={(file) => uploadImage(file, user.id)}
+              />
+            </Box>
             <Box
               sx={{
                 display: "flex",

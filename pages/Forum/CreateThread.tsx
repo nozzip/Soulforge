@@ -15,6 +15,8 @@ import {
   Send as SendIcon,
 } from "@mui/icons-material";
 import { supabase } from "../../src/supabase";
+import RichTextEditor from "../../components/Editor/RichTextEditor";
+import { uploadImage } from "../../utils/imageHandler";
 
 interface CreateThreadProps {
   categoryId: string;
@@ -135,19 +137,20 @@ const CreateThread: React.FC<CreateThreadProps> = ({
           placeholder="Ej: Busco grupo para campaña de Curse of Strahd"
         />
 
-        <TextField
-          label="Contenido"
-          fullWidth
-          multiline
-          rows={10}
-          variant="outlined"
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          required
-          disabled={loading}
-          placeholder="Escribe aquí tu mensaje... (Soporta Markdown básico)"
-          sx={{ mb: 4 }}
-        />
+        <Box sx={{ mb: 4 }}>
+          <Typography
+            variant="caption"
+            sx={{ mb: 1, display: "block", color: "text.secondary" }}
+          >
+            Contenido
+          </Typography>
+          <RichTextEditor
+            content={content}
+            onChange={setContent}
+            placeholder="Escribe aquí tu mensaje... (Soporta Markdown, Dados, Spoilers)"
+            onImageUpload={(file) => uploadImage(file, user.id)}
+          />
+        </Box>
 
         <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
           <Button

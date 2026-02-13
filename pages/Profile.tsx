@@ -23,6 +23,7 @@ import {
 } from "@mui/icons-material";
 import { supabase } from "../src/supabase";
 import { Profile as ProfileType } from "../types";
+import AvatarSelectionModal from "../components/AvatarSelectionModal";
 
 interface ProfileProps {
   user: any; // Using any to avoid strict type issues with Auth User vs Profile
@@ -51,6 +52,7 @@ const Profile: React.FC<ProfileProps> = ({ user }) => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [avatarModalOpen, setAvatarModalOpen] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -219,8 +221,7 @@ const Profile: React.FC<ProfileProps> = ({ user }) => {
                   borderRadius: "50%",
                 }}
                 onClick={() => {
-                  const url = prompt("Introduce la URL de tu avatar:");
-                  if (url) setFormData({ ...formData, avatar_url: url });
+                  setAvatarModalOpen(true);
                 }}
               >
                 <EditIcon fontSize="small" />
@@ -353,6 +354,14 @@ const Profile: React.FC<ProfileProps> = ({ user }) => {
           </Box>
         )}
       </Paper>
+      <AvatarSelectionModal
+        open={avatarModalOpen}
+        onClose={() => setAvatarModalOpen(false)}
+        onSelect={(url) => {
+          setFormData({ ...formData, avatar_url: url });
+          setAvatarModalOpen(false);
+        }}
+      />
     </Container>
   );
 };

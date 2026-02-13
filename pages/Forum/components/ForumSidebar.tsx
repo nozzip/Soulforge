@@ -34,14 +34,14 @@ import { ForumThread, Product } from "../../../types";
 const MOCK_SIDEBAR_LFG = [
   {
     id: "1",
-    title: "Curse of Strahd: Into the Mists",
+    title: "La Maldición de Strahd: En la Niebla",
     system: "D&D 5e",
     author: "DungeonMasterX",
     time: "20:00 EST",
   },
   {
     id: "2",
-    title: "The Heist of the Century",
+    title: "El Golpe del Siglo",
     system: "Blades in the Dark",
     author: "RogueLeader",
     time: "14:00 GMT",
@@ -164,15 +164,15 @@ const ForumSidebar: React.FC<ForumSidebarProps> = ({
               fontSize: "1rem",
             }}
           >
-            LOOKING FOR GROUP
+            BUSCANDO GRUPO
           </Typography>
         </Box>
         <List disablePadding>
           {lfgPosts.length === 0 ? (
             <ListItem>
               <ListItemText
-                primary="No active quests"
-                secondary="Be the first to post one!"
+                primary="No hay misiones activas"
+                secondary="¡Sé el primero en publicar una!"
                 primaryTypographyProps={{
                   color: "text.secondary",
                   fontFamily: "Cinzel, serif",
@@ -238,7 +238,7 @@ const ForumSidebar: React.FC<ForumSidebarProps> = ({
                               fontStyle: "italic",
                             }}
                           >
-                            by {post.gm_profile?.username || "Unknown"} •{" "}
+                            by {post.gm_profile?.username || "Desconocido"} •{" "}
                             {post.date}
                           </Typography>
                         </Box>
@@ -276,7 +276,7 @@ const ForumSidebar: React.FC<ForumSidebarProps> = ({
               fontSize: "0.75rem",
             }}
           >
-            VIEW ALL REQUESTS
+            VER TODAS LAS MISIONES
           </Button>
         </Box>
       </Card>
@@ -311,7 +311,7 @@ const ForumSidebar: React.FC<ForumSidebarProps> = ({
               }}
             >
               <Chip
-                label="FRESH FROM THE FORGE"
+                label="RECIÉN FORJADO"
                 color="secondary"
                 size="small"
                 sx={{
@@ -350,7 +350,8 @@ const ForumSidebar: React.FC<ForumSidebarProps> = ({
                   fontSize: "0.8rem",
                 }}
               >
-                {latestProduct.description || "A new artifact discovered..."}
+                {latestProduct.description ||
+                  "Un nuevo artefacto descubierto..."}
               </Typography>
               <Box
                 sx={{
@@ -372,7 +373,7 @@ const ForumSidebar: React.FC<ForumSidebarProps> = ({
                     color="secondary.main"
                     fontWeight="bold"
                   >
-                    INSPECT
+                    INSPECCIONAR
                   </Typography>
                   <ArrowForwardIcon
                     fontSize="small"
@@ -395,7 +396,7 @@ const ForumSidebar: React.FC<ForumSidebarProps> = ({
           }}
         >
           <Typography variant="caption" color="text.secondary">
-            Stoking the forge...
+            Avivando la forja...
           </Typography>
         </Card>
       )}
@@ -423,7 +424,7 @@ const ForumSidebar: React.FC<ForumSidebarProps> = ({
               letterSpacing: 1,
             }}
           >
-            ADVENTURERS GUILD
+            GREMIO DE AVENTUREROS
           </Typography>
         </Box>
         <CardContent>
@@ -481,7 +482,7 @@ const ForumSidebar: React.FC<ForumSidebarProps> = ({
               <OnlineIcon sx={{ fontSize: 10 }} />{" "}
               {onlineCount.toLocaleString()}
             </Box>{" "}
-            heroes registered in the realm.
+            héroes registrados en el reino.
           </Typography>
         </CardContent>
       </Card>

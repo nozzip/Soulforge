@@ -55,6 +55,26 @@ const Category: React.FC<CategoryProps> = ({
 
   useEffect(() => {
     fetchCategoryAndThreads();
+
+    const channel = supabase
+      .channel(`category_threads:${categoryId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "forum_threads",
+          filter: `category_id=eq.${categoryId}`,
+        },
+        () => {
+          fetchCategoryAndThreads();
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [categoryId]);
 
   const fetchCategoryAndThreads = async () => {
@@ -112,6 +132,40 @@ const Category: React.FC<CategoryProps> = ({
     } catch (error) {
       console.error("Error deleting thread:", error);
       alert("Error al borrar el hilo.");
+    }
+  };
+
+  const handlePinThread = async (
+    threadId: string,
+    pinned: boolean,
+    e: React.MouseEvent,
+  ) => {
+    e.stopPropagation();
+    try {
+      const { error } = await supabase
+        .from("forum_threads")
+        .update({ is_pinned: pinned })
+        .eq("id", threadId);
+
+      if (error) throw error;
+
+      // Update state locally
+      setThreads((prev) =>
+        prev
+          .map((t) => (t.id === threadId ? { ...t, is_pinned: pinned } : t))
+          .sort((a, b) => {
+            if (a.is_pinned === b.is_pinned) {
+              return (
+                new Date(b.updated_at).getTime() -
+                new Date(a.updated_at).getTime()
+              );
+            }
+            return a.is_pinned ? -1 : 1;
+          }),
+      );
+    } catch (error) {
+      console.error("Error pinning thread:", error);
+      alert("Error al fijar el hilo.");
     }
   };
 
@@ -229,14 +283,31 @@ const Category: React.FC<CategoryProps> = ({
                   disablePadding
                   secondaryAction={
                     isAdmin && (
-                      <IconButton
-                        edge="end"
-                        aria-label="delete"
-                        onClick={(e) => handleDeleteThread(thread.id, e)}
-                        color="error"
-                      >
-                        <DeleteIcon />
-                      </IconButton>
+                      <Box>
+                        <IconButton
+                          edge="end"
+                          aria-label="pin"
+                          onClick={(e) =>
+                            handlePinThread(thread.id, !thread.is_pinned, e)
+                          }
+                          sx={{
+                            color: thread.is_pinned
+                              ? "secondary.main"
+                              : "text.disabled",
+                            mr: 1,
+                          }}
+                        >
+                          <PushPinIcon />
+                        </IconButton>
+                        <IconButton
+                          edge="end"
+                          aria-label="delete"
+                          onClick={(e) => handleDeleteThread(thread.id, e)}
+                          color="error"
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Box>
                     )
                   }
                 >
@@ -248,8 +319,13 @@ const Category: React.FC<CategoryProps> = ({
                       px: 3,
                       pr: isAdmin ? 8 : 3, // Add padding for delete button
                       transition: "all 0.2s",
+                      bgcolor: thread.is_pinned
+                        ? alpha(theme.palette.secondary.main, 0.08)
+                        : "transparent",
                       "&:hover": {
-                        bgcolor: alpha(theme.palette.secondary.main, 0.05),
+                        bgcolor: thread.is_pinned
+                          ? alpha(theme.palette.secondary.main, 0.15)
+                          : alpha(theme.palette.secondary.main, 0.05),
                       },
                     }}
                   >

@@ -188,6 +188,8 @@ const Navbar: React.FC<NavbarProps> = ({
   const [anchorElUser, setAnchorElUser] = useState<null | HTMLElement>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
   const isCheckout = currentView === ViewState.CHECKOUT;
@@ -208,24 +210,6 @@ const Navbar: React.FC<NavbarProps> = ({
     setMobileOpen(!mobileOpen);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      onSearch(searchInput);
-      setIsFocused(false);
-      (e.target as HTMLInputElement).blur();
-    }
-  };
-
-  const handleSearchClick = () => {
-    onSearch(searchInput);
-  };
-
-  const handleSuggestionClick = (productId: string) => {
-    onProductSelect(productId);
-    setIsFocused(false);
-    setSearchInput("");
-  };
-
   const searchSuggestions = useMemo(() => {
     if (!searchInput.trim()) return [];
     const lowerQuery = searchInput.toLowerCase();
@@ -237,6 +221,43 @@ const Navbar: React.FC<NavbarProps> = ({
       )
       .slice(0, 5);
   }, [searchInput, products]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setSelectedIndex((prev) =>
+        Math.min(prev + 1, searchSuggestions.length - 1),
+      );
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setSelectedIndex((prev) => Math.max(prev - 1, -1));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (selectedIndex >= 0 && selectedIndex < searchSuggestions.length) {
+        handleSuggestionClick(searchSuggestions[selectedIndex].id);
+      } else {
+        onSearch(searchInput);
+        setIsFocused(false);
+        (e.target as HTMLInputElement).blur();
+      }
+    }
+  };
+
+  const handleSearchClick = () => {
+    onSearch(searchInput);
+  };
+
+  const handleSuggestionClick = (productId: string) => {
+    onProductSelect(productId);
+    setIsFocused(false);
+    setSearchInput("");
+    setSelectedIndex(-1);
+  };
+
+  // Reset selected index when search input changes
+  React.useEffect(() => {
+    setSelectedIndex(-1);
+  }, [searchInput]);
 
   const drawerContent = (
     <Box
@@ -606,16 +627,20 @@ const Navbar: React.FC<NavbarProps> = ({
                             <List dense>
                               {searchSuggestions.length > 0 ? (
                                 <>
-                                  {searchSuggestions.map((product) => (
+                                  {searchSuggestions.map((product, index) => (
                                     <ListItem key={product.id} disablePadding>
                                       <ListItemButton
+                                        selected={index === selectedIndex}
                                         onClick={() =>
                                           handleSuggestionClick(product.id)
                                         }
                                         sx={{
+                                          bgcolor:
+                                            index === selectedIndex
+                                              ? "rgba(255, 255, 255, 0.15)"
+                                              : "transparent",
                                           "&:hover": {
-                                            bgcolor:
-                                              "rgba(255, 255, 255, 0.05)",
+                                            bgcolor: "rgba(255, 255, 255, 0.1)",
                                           },
                                         }}
                                       >

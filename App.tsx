@@ -21,6 +21,7 @@ import Thread from "./pages/Forum/Thread";
 import CreateThread from "./pages/Forum/CreateThread";
 import LFGBoard from "./pages/Forum/LFG/LFGBoard";
 import Profile from "./pages/Profile";
+import EditorTest from "./pages/EditorTest";
 import { ViewState, Product } from "./types";
 import { ThemeProvider, CssBaseline } from "@mui/material";
 import { fantasyTheme, warhammerTheme } from "./src/theme";
@@ -451,6 +452,8 @@ const App: React.FC = () => {
             onThreadSelect={handleForumThreadSelect}
             onProductSelect={handleProductClick}
             onLFGClick={handleLFGClick}
+            user={user}
+            isAdmin={isAdmin}
           />
         );
       case ViewState.FORUM_CATEGORY:
@@ -464,7 +467,11 @@ const App: React.FC = () => {
             isAdmin={isAdmin}
           />
         ) : (
-          <ForumHome onCategorySelect={handleForumCategorySelect} />
+          <ForumHome
+            onCategorySelect={handleForumCategorySelect}
+            user={user}
+            isAdmin={isAdmin}
+          />
         );
       case ViewState.FORUM_CREATE_THREAD:
         return selectedForumCategoryId ? (
@@ -477,7 +484,11 @@ const App: React.FC = () => {
             user={user}
           />
         ) : (
-          <ForumHome onCategorySelect={handleForumCategorySelect} />
+          <ForumHome
+            onCategorySelect={handleForumCategorySelect}
+            user={user}
+            isAdmin={isAdmin}
+          />
         );
       case ViewState.FORUM_LFG:
         return <LFGBoard onBack={handleForumBackToHome} />;
@@ -499,7 +510,11 @@ const App: React.FC = () => {
             isAdmin={isAdmin}
           />
         ) : (
-          <ForumHome onCategorySelect={handleForumCategorySelect} />
+          <ForumHome
+            onCategorySelect={handleForumCategorySelect}
+            user={user}
+            isAdmin={isAdmin}
+          />
         );
       case ViewState.PROFILE:
         return user ? (
@@ -507,6 +522,8 @@ const App: React.FC = () => {
         ) : (
           <Login setView={handleSetView} onLogin={handleLogin} />
         );
+      case ViewState.EDITOR_TEST:
+        return <EditorTest />;
       default:
         return <Home setView={handleSetView} />;
     }

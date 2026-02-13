@@ -19,7 +19,10 @@ import {
   Delete as DeleteIcon,
   Shield as ShieldIcon,
   AutoAwesome as MagicIcon,
+  PushPin as PinIcon,
 } from "@mui/icons-material";
+import parse, { DOMNode, Element, domToReact } from "html-react-parser";
+import DiceComponent from "../../../components/Editor/extensions/DiceComponent";
 
 interface ForumPostProps {
   content: string;
@@ -71,86 +74,76 @@ const ForumPost: React.FC<ForumPostProps> = ({
 
   const stats = getMockStats(author?.username || "Guest");
 
-  const formatContent = (text: string) => {
-    // Simple BBCode parser
-    const parts = text.split(
-      /(\[quote author=".*?"\].*?\[\/quote\]|\[insight\].*?\[\/insight\])/gs,
-    );
+  // We use html-react-parser to safely render HTML and hydrate custom components like <dice-roll>
+  // We use html-react-parser to safely render HTML and hydrate custom components like <dice-roll>
+  const parsedContent = parse(content || "", {
+    replace: (domNode) => {
+      if (domNode instanceof Element) {
+        if (domNode.name === "dice-roll") {
+          const formula = domNode.attribs.formula || "1d20";
+          const result = parseInt(domNode.attribs.result || "0", 10);
+          return <DiceComponent formula={formula} result={result} />;
+        }
+        if (domNode.name === "img") {
+          let {
+            src,
+            alt,
+            width,
+            height,
+            style: styleAttr,
+            "data-align": dataAlign,
+          } = domNode.attribs;
 
-    return parts.map((part, index) => {
-      if (part.startsWith("[quote")) {
-        const authorMatch = part.match(/author="(.*?)"/);
-        const contentMatch = part.match(/\](.*?)\[\/quote\]/s);
-        const author = authorMatch ? authorMatch[1] : "Unknown";
-        const content = contentMatch ? contentMatch[1].trim() : "";
-        return (
-          <Paper
-            key={index}
-            sx={{
-              bgcolor: alpha(theme.palette.action.disabledBackground, 0.1),
-              p: 2,
-              my: 2,
-              borderLeft: `4px solid ${theme.palette.secondary.main}`,
-            }}
-          >
-            <Typography
-              variant="caption"
-              sx={{
-                fontWeight: "bold",
-                color: "secondary.main",
-                mb: 1,
-                display: "block",
-              }}
-            >
-              {author} wrote:
-            </Typography>
-            <Typography
-              variant="body2"
-              sx={{ fontStyle: "italic", color: "text.secondary" }}
-            >
-              {content}
-            </Typography>
-          </Paper>
-        );
+          // Check inline style if attributes are missing
+          if (styleAttr && (!width || !height)) {
+            const widthMatch = styleAttr.match(/width:\s*([^;]+)/);
+            const heightMatch = styleAttr.match(/height:\s*([^;]+)/);
+            if (widthMatch && !width) width = widthMatch[1];
+            if (heightMatch && !height) height = heightMatch[1];
+          }
+
+          // Normalization: Ensure units if it's just a number
+          if (width && !isNaN(Number(width))) width = `${width}px`;
+          if (height && !isNaN(Number(height))) height = `${height}px`;
+
+          const style: React.CSSProperties = {
+            maxWidth: "100%",
+            borderRadius: "4px",
+            objectFit: "contain",
+            display: "block", // Default for center/unaligned
+          };
+
+          if (dataAlign === "left") {
+            style.float = "left";
+            style.marginRight = "1rem";
+            style.marginBottom = "0.5rem";
+            style.display = "inline-block";
+            style.clear = "both"; // Optional, depending on pref
+          } else if (dataAlign === "right") {
+            style.float = "right";
+            style.marginLeft = "1rem";
+            style.marginBottom = "0.5rem";
+            style.display = "inline-block";
+            style.clear = "both";
+          } else {
+            // Center or default
+            style.margin = "0 auto";
+            style.display = "block";
+          }
+
+          if (width) style.width = width;
+          if (height) style.height = height;
+
+          return <img src={src} alt={alt} style={style} />;
+        }
       }
-      if (part.startsWith("[insight]")) {
-        const contentMatch = part.match(/\[insight\](.*?)\[\/insight\]/s);
-        const content = contentMatch ? contentMatch[1].trim() : "";
-        return (
-          <Box
-            key={index}
-            sx={{
-              my: 2,
-              border: `1px dashed ${theme.palette.info.main}`,
-              bgcolor: alpha(theme.palette.info.main, 0.05),
-              p: 2,
-              borderRadius: 1,
-            }}
-          >
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 1,
-                mb: 1,
-                color: "info.main",
-              }}
-            >
-              <MagicIcon fontSize="small" />
-              <Typography variant="subtitle2" fontWeight="bold">
-                ROLL FOR INSIGHT (DM Note)
-              </Typography>
-            </Box>
-            <Typography variant="body2" color="text.secondary">
-              {content}
-            </Typography>
-          </Box>
-        );
-      }
-      // Return text with line breaks
-      return <span key={index}>{part}</span>;
-    });
-  };
+      return domNode;
+    },
+  });
+
+  // We are no longer using the regex parser for simplicity and because we now store HTML.
+  // We utilize dangerouslySetInnerHTML with the Tiptap content.
+  // Security Note: Tiptap content should be sanitized on output, but for a real app we'd use DOMPurify here.
 
   return (
     <Paper
@@ -195,8 +188,8 @@ const ForumPost: React.FC<ForumPostProps> = ({
           }}
         >
           {isOp
-            ? "INITIATIVE #1 (OP)"
-            : `POSTED ${formatDate(date).toUpperCase()}`}
+            ? "INICIATIVA #1 (OP)"
+            : `PUBLICADO ${formatDate(date).toUpperCase()}`}
         </Typography>
         <Box>
           <IconButton size="small" sx={{ color: "text.secondary" }}>
@@ -240,9 +233,11 @@ const ForumPost: React.FC<ForumPostProps> = ({
             <Avatar
               src={author?.avatar_url}
               alt={author?.username}
+              variant="rounded"
               sx={{
                 width: 96,
                 height: 96,
+                borderRadius: 2,
                 border: `2px solid ${theme.palette.secondary.main}`,
                 boxShadow: `0 0 15px ${alpha(theme.palette.secondary.main, 0.3)}`,
               }}
@@ -272,7 +267,7 @@ const ForumPost: React.FC<ForumPostProps> = ({
               mb: 0.5,
             }}
           >
-            {author?.username || "Unknown"}
+            {author?.username || "Desconocido"}
           </Typography>
 
           <Typography
@@ -281,7 +276,7 @@ const ForumPost: React.FC<ForumPostProps> = ({
             gutterBottom
             sx={{ fontStyle: "italic" }}
           >
-            {author?.title || "Adventurer"}
+            {author?.title || "Aventurero"}
           </Typography>
 
           {/* Stats Grid */}
@@ -337,7 +332,7 @@ const ForumPost: React.FC<ForumPostProps> = ({
               }}
             />
             <Typography variant="caption" color="text.secondary">
-              IN SESSION
+              EN SESIÓN
             </Typography>
           </Box>
         </Box>
@@ -352,27 +347,31 @@ const ForumPost: React.FC<ForumPostProps> = ({
               fontFamily: '"Newsreader", serif',
               fontSize: "1.1rem",
               lineHeight: 1.7,
-              whiteSpace: "pre-wrap",
               mb: 3,
               flex: 1,
+              "& p": { margin: "0 0 1em 0" },
+              "& blockquote": {
+                borderLeft: `3px solid ${theme.palette.secondary.main}`,
+                paddingLeft: "1rem",
+                fontStyle: "italic",
+                color: "text.secondary",
+                margin: "1em 0",
+              },
+              "& .spoiler": {
+                backgroundColor: "#000",
+                color: "#000",
+                cursor: "pointer",
+                borderRadius: "4px",
+                padding: "0 4px",
+                transition: "color 0.2s",
+                "&:hover": {
+                  color: "#fff",
+                },
+              },
+              // Images are handled by the parser replacement now to support resizing
             }}
           >
-            {/* Simple decoration for formatting simulation */}
-            {isOp && content && (
-              <Typography
-                component="span"
-                sx={{
-                  display: "block",
-                  mb: 2,
-                  fontStyle: "italic",
-                  color: "secondary.main",
-                  fontSize: "1.2rem",
-                }}
-              >
-                "{content.substring(0, 50)}..."
-              </Typography>
-            )}
-            {formatContent(content || "")}
+            {parsedContent}
           </Typography>
 
           {/* Action Bar */}
@@ -395,7 +394,7 @@ const ForumPost: React.FC<ForumPostProps> = ({
                 onQuote && onQuote(content, author?.username || "Unknown")
               }
             >
-              Quote
+              Citar
             </Button>
 
             {isAdmin && postId && onDelete && (
@@ -405,7 +404,18 @@ const ForumPost: React.FC<ForumPostProps> = ({
                 color="error"
                 onClick={() => onDelete(postId)}
               >
-                Delete
+                Borrar
+              </Button>
+            )}
+
+            {isAdmin && postId && onDelete && (
+              <Button
+                startIcon={<DeleteIcon />}
+                size="small"
+                color="error"
+                onClick={() => onDelete(postId)}
+              >
+                Borrar
               </Button>
             )}
           </Box>
