@@ -20,6 +20,7 @@ import { HistoryEdu, Error as ErrorIcon } from "@mui/icons-material";
 import { DecorativeCorners, FancyPaper } from "../components/StyledComponents";
 import { supabase } from "../src/supabase";
 import { User } from "@supabase/supabase-js";
+import { DEFAULT_AVATAR_URL } from "../constants";
 
 interface SignupProps {
   setView: (view: ViewState) => void;
@@ -91,8 +92,7 @@ const Signup: React.FC<SignupProps> = ({ setView, onLogin }) => {
         data: {
           full_name: name,
           username: name,
-          avatar_url:
-            "https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/avatars/default.png",
+          avatar_url: DEFAULT_AVATAR_URL,
         },
       },
     });
@@ -115,8 +115,7 @@ const Signup: React.FC<SignupProps> = ({ setView, onLogin }) => {
         id: data.user.id,
         username: name,
         full_name: name,
-        avatar_url:
-          "https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/avatars/default.png",
+        avatar_url: DEFAULT_AVATAR_URL,
       });
 
       if (profileError) {

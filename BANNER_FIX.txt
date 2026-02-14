@@ -1,0 +1,3 @@
+He implementado el cambio solicitado. Ahora, cada vez que entres al Catálogo (ya sea desde un producto, el menú o al volver), la página automáticamente hará scroll hacia el contenido (filtros y productos), **saltándose completamente el banner**.
+
+Esto asegura que el "scoop" visual siempre esté en lo importante: las miniaturas. El banner sigue estando ahí si subes, pero ya no será lo primero que veas al navegar.

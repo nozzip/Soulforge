@@ -22,11 +22,13 @@ import {
   EmojiEvents as TrophyIcon,
 } from "@mui/icons-material";
 import { supabase } from "../src/supabase";
+import { DEFAULT_AVATAR_URL } from "../constants";
 import { Profile as ProfileType } from "../types";
 import AvatarSelectionModal from "../components/AvatarSelectionModal";
 
 interface ProfileProps {
   user: any; // Using any to avoid strict type issues with Auth User vs Profile
+  onProfileUpdate?: () => void;
 }
 
 const FACTIONS = [
@@ -46,7 +48,7 @@ const getTitle = (level: number) => {
   return "Novice Adventurer";
 };
 
-const Profile: React.FC<ProfileProps> = ({ user }) => {
+const Profile: React.FC<ProfileProps> = ({ user, onProfileUpdate }) => {
   const theme = useTheme();
   const [profile, setProfile] = useState<ProfileType | null>(null);
   const [loading, setLoading] = useState(true);
@@ -131,6 +133,7 @@ const Profile: React.FC<ProfileProps> = ({ user }) => {
 
       setProfile({ ...profile, ...updates } as ProfileType);
       setEditMode(false);
+      if (onProfileUpdate) onProfileUpdate();
     } catch (error: any) {
       alert("Error saving profile: " + error.message);
     } finally {
@@ -198,8 +201,7 @@ const Profile: React.FC<ProfileProps> = ({ user }) => {
           <Box sx={{ position: "relative" }}>
             <Avatar
               src={
-                formData.avatar_url ||
-                "https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/avatars/default.png"
+                formData.avatar_url || DEFAULT_AVATAR_URL
               }
               sx={{
                 width: 140,

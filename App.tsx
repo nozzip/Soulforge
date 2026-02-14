@@ -1,5 +1,5 @@
 /// <reference lib="dom" />
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { CartProvider } from "./context/CartContext";
 import Layout from "./components/Layout";
 import Home from "./pages/Home";
@@ -10,25 +10,29 @@ import ProductDetail from "./pages/ProductDetail";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Wishlist from "./pages/Wishlist";
-import Admin from "./pages/Admin";
+import Admin from "@/src/features/admin";
 import Orders from "./pages/Orders";
 import Feedback from "./pages/Feedback";
 import HowToBuy from "./pages/HowToBuy";
 import NewAdventurerGuide from "./pages/NewAdventurerGuide";
-import ForumHome from "./pages/Forum/ForumHome";
-import Category from "./pages/Forum/Category";
-import Thread from "./pages/Forum/Thread";
-import CreateThread from "./pages/Forum/CreateThread";
-import LFGBoard from "./pages/Forum/LFG/LFGBoard";
+import {
+  ForumHome,
+  Category,
+  Thread,
+  CreateThread,
+  LFGBoard
+} from "@/src/features/forum";
 import Profile from "./pages/Profile";
 import EditorTest from "./pages/EditorTest";
 import ErrorBoundary from "./components/ErrorBoundary";
-import { ViewState, Product } from "./types";
+import ForgeLoader from "./components/ForgeLoader";
+import { ViewState, Product, Profile as ProfileType } from "./types";
 import { ThemeProvider, CssBaseline } from "@mui/material";
 import { fantasyTheme, warhammerTheme } from "./src/theme";
 import { supabase } from "./src/supabase";
 import { User } from "@supabase/supabase-js";
 import { updatePageMeta, getSEOForView } from "./utils/seo";
+import { DEFAULT_AVATAR_URL } from "./constants";
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewState>(ViewState.HOME);
@@ -65,29 +69,8 @@ const App: React.FC = () => {
     sortOption: "newest",
   });
 
-  // Products State
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  // Fetch Products from Supabase
-  const fetchProducts = async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from("products")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      console.error("Error fetching products:", error);
-    } else if (data) {
-      setProducts(data as Product[]);
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchProducts();
-  }, []);
+  // Products State - Removed (Migrated to React Query)
+  // Loading State - Removed (Migrated to Suspense)
 
   // Dynamic Metadata State
   const [categories, setCategories] = useState<string[]>(() => {
@@ -125,6 +108,7 @@ const App: React.FC = () => {
   // User State
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [userProfile, setUserProfile] = useState<ProfileType | null>(null);
 
   useEffect(() => {
     // Check active session
@@ -141,6 +125,43 @@ const App: React.FC = () => {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const fetchProfile = async () => {
+    if (!user) {
+      setUserProfile(null);
+      return;
+    }
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (!error && data) {
+      setUserProfile(data);
+    } else if (!error && !data) {
+      // Fallback for new users without profile yet
+      const metadataAvatar = user.user_metadata?.avatar_url;
+      const finalAvatar = (metadataAvatar && !metadataAvatar.includes('images/avatars/'))
+        ? metadataAvatar
+        : DEFAULT_AVATAR_URL;
+
+      setUserProfile({
+        id: user.id,
+        avatar_url: finalAvatar,
+        username: user.user_metadata?.full_name || user.email?.split("@")[0],
+        full_name: user.user_metadata?.full_name || "",
+        xp: 0,
+        level: 1,
+      } as ProfileType);
+
+    }
+  };
+
+  // Fetch profile when user changes
+  useEffect(() => {
+    fetchProfile();
+  }, [user]);
 
   // Check if user is admin
   // Check if user is admin
@@ -262,31 +283,77 @@ const App: React.FC = () => {
 
     const shouldRestore = isBackNav && options?.resetScroll !== true;
 
-    console.log('[Navigation] Navigating:', { from: prevView, to: view, isBackNav, resetScroll: options?.resetScroll, shouldRestore, savedScroll: viewScrollPositions[view] });
+    // console.log('[Navigation] Navigating:', { from: prevView, to: view, isBackNav, resetScroll: options?.resetScroll, shouldRestore, savedScroll: viewScrollPositions[view] });
 
     if (shouldRestore) {
       const savedPos = viewScrollPositions[view] || 0;
-      console.log('[Navigation] Restoring scroll to:', savedPos);
+      // console.log("[Navigation] Restoring scroll to:", savedPos);
       setCurrentView(view);
-      // Restauramos con un pequeño delay para permitir el renderizado
-      // Intentamos dos veces para asegurar que el contenido se haya renderizado
-      setTimeout(() => {
-        console.log('[Navigation] Attempt 1 restore to', savedPos);
-        window.scrollTo({ top: savedPos, behavior: 'instant' });
-      }, 100);
-      setTimeout(() => {
-        // Solo si no estamos ya cerca (permitir que el usuario haya movido el scroll)
-        if (Math.abs(window.scrollY - savedPos) > 100) {
-          console.log('[Navigation] Attempt 2 restore to', savedPos);
-          window.scrollTo({ top: savedPos, behavior: 'instant' });
+
+      // Robust scroll restoration
+      const attemptRestore = (attempt: number) => {
+        if (attempt > 10) return; // Stop after 10 attempts (~1.5s)
+
+        const currentScroll = window.scrollY;
+        const maxScroll =
+          document.documentElement.scrollHeight - window.innerHeight;
+
+        // If page is too short to restore to savedPos, wait for it to grow
+        if (savedPos > maxScroll && maxScroll < 5000) {
+          // ...
+          setTimeout(() => attemptRestore(attempt + 1), 150);
+          return;
         }
-      }, 300);
+
+        // Special case: If returning to Catalog and savedPos is near 0 (banner),
+        // try to scroll to content ensuring user sees filters/products not just banner.
+        if (view === ViewState.CATALOG && savedPos < 300) {
+          const catalogContent = document.getElementById("catalog-content");
+          if (catalogContent) {
+            // console.log(
+            //   "[Navigation] Low saved scroll on Catalog return. Scrolling to content anchor.",
+            // );
+            catalogContent.scrollIntoView({ behavior: "smooth" });
+            return; // Done
+          }
+        }
+
+        if (Math.abs(currentScroll - savedPos) > 50) {
+          window.scrollTo({ top: savedPos, behavior: "instant" });
+          setTimeout(() => attemptRestore(attempt + 1), 100);
+        } else {
+          // console.log("[Navigation] Scroll restored successfully");
+        }
+      };
+
+      // Start attempts
+      // If we are restoring to < 300 in catalog, skip instant scroll to 0 and let attemptRestore handle anchor
+      if (!(view === ViewState.CATALOG && savedPos < 300)) {
+        window.scrollTo({ top: savedPos, behavior: "instant" });
+      }
+      setTimeout(() => attemptRestore(1), 50);
     } else {
-      console.log('[Navigation] Resetting scroll to 0');
+      // console.log("[Navigation] Resetting scroll");
       // Navegación nueva o forzada al top
-      setViewScrollPositions(prev => ({ ...prev, [view]: 0 }));
+      setViewScrollPositions((prev) => ({ ...prev, [view]: 0 }));
       setCurrentView(view);
-      window.scrollTo(0, 0);
+
+      if (view === ViewState.CATALOG) {
+        // Force scroll to content, skipping banner even on fresh visits
+        setTimeout(() => {
+          const catalogContent = document.getElementById("catalog-content");
+          if (catalogContent) {
+            console.log(
+              "[Navigation] Initial Catalog visit. Scrolling to content.",
+            );
+            catalogContent.scrollIntoView({ behavior: "smooth" });
+          } else {
+            window.scrollTo(0, 0);
+          }
+        }, 100);
+      } else {
+        window.scrollTo(0, 0);
+      }
     }
 
     if (view === ViewState.CATALOG && !shouldRestore) {
@@ -329,13 +396,11 @@ const App: React.FC = () => {
   };
 
   // Update SEO metadata when view or product changes
+  // Update SEO metadata when view or product changes
   useEffect(() => {
-    const currentProduct = selectedProductId
-      ? products.find((p) => p.id === selectedProductId)
-      : null;
-    const seoData = getSEOForView(currentView, currentProduct);
+    const seoData = getSEOForView(currentView, null); // Refactor SEO later if needed
     updatePageMeta(seoData);
-  }, [currentView, selectedProductId, products]);
+  }, [currentView, selectedProductId]);
 
   const handleLogin = (newUser: User) => {
     setUser(newUser);
@@ -351,37 +416,7 @@ const App: React.FC = () => {
     setCurrentView(ViewState.HOME);
   };
 
-  const handleAddProduct = (newProduct: Product) => {
-    setProducts((prev) => [newProduct, ...prev]);
-  };
-
-  const handleDeleteProduct = async (id: string) => {
-    const { error } = await supabase.from("products").delete().eq("id", id);
-    if (error) {
-      alert("Error al eliminar producto: " + error.message);
-    } else {
-      setProducts((prev) => prev.filter((p) => p.id !== id));
-    }
-  };
-
-  const handleUpdateProduct = (updatedProduct: Product) => {
-    setProducts((prev) =>
-      prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p)),
-    );
-
-    // Auto-add new category to global list if it doesn't exist
-    if (
-      updatedProduct.category &&
-      !categories.includes(updatedProduct.category)
-    ) {
-      setCategories((prev) => [...prev, updatedProduct.category]);
-    }
-
-    // Auto-add new size to global list if it doesn't exist
-    if (updatedProduct.size && !sizes.includes(updatedProduct.size)) {
-      setSizes((prev) => [...prev, updatedProduct.size]);
-    }
-  };
+  // Product Handlers - Removed (Migrated to React Query mutations)
 
   const handleAddCategory = (cat: string) => {
     if (!categories.includes(cat)) setCategories((prev) => [...prev, cat]);
@@ -426,21 +461,6 @@ const App: React.FC = () => {
   };
 
   const renderView = () => {
-    const designers = Array.from(
-      new Set(products.map((p) => p.designer).filter(Boolean)),
-    ) as string[];
-    const creatureTypes = Array.from(
-      new Set(products.map((p) => p.creature_type).filter(Boolean)),
-    ) as string[];
-    const weapons = Array.from(
-      new Set(
-        products
-          .map((p) => p.weapon)
-          .filter(Boolean)
-          .flatMap((w) => (w as string).split("/").map((s) => s.trim())),
-      ),
-    ).sort() as string[];
-
     return (
       <ErrorBoundary>
         {(() => {
@@ -450,27 +470,18 @@ const App: React.FC = () => {
                 <Home
                   setView={handleSetView}
                   onFilterNavigate={handleNavigateWithFilters}
-                  products={products}
                 />
               );
             case ViewState.CATALOG:
               return (
                 <Catalog
-                  products={products}
                   categories={categories}
                   sizes={sizes}
                   onProductClick={handleProductClick}
                   initialSearchQuery={globalSearchQuery}
                   wishlist={wishlist}
                   toggleWishlist={toggleWishlist}
-                  loading={loading}
-                  designers={designers}
-                  creatureTypes={creatureTypes}
-                  weapons={weapons}
                   isAdmin={isAdmin}
-                  onDeleteProduct={handleDeleteProduct}
-                  onUpdateProduct={handleUpdateProduct}
-                  onRefreshProducts={fetchProducts}
                   catalogState={catalogState}
                   onCatalogStateChange={setCatalogState}
                 />
@@ -482,7 +493,6 @@ const App: React.FC = () => {
             case ViewState.PRODUCT_DETAIL:
               return (
                 <ProductDetail
-                  products={products}
                   productId={selectedProductId}
                   setView={handleSetView}
                   wishlist={wishlist}
@@ -492,12 +502,14 @@ const App: React.FC = () => {
                     user
                       ? {
                         name:
-                          user.user_metadata?.full_name || user.email || "Usuario",
+                          user.user_metadata?.full_name ||
+                          user.email ||
+                          "Usuario",
                         id: user.id,
+                        avatar: userProfile?.avatar_url || DEFAULT_AVATAR_URL,
                       }
                       : null
                   }
-                  onUpdateProduct={handleUpdateProduct}
                   onProductClick={handleProductClick}
                 />
               );
@@ -508,7 +520,6 @@ const App: React.FC = () => {
             case ViewState.WISHLIST:
               return (
                 <Wishlist
-                  products={products}
                   setView={handleSetView}
                   onProductClick={handleProductClick}
                   wishlist={wishlist}
@@ -519,7 +530,11 @@ const App: React.FC = () => {
               return <Orders setView={handleSetView} />;
             case ViewState.FEEDBACK:
               return (
-                <Feedback setView={handleSetView} user={user} onLogin={handleLogin} />
+                <Feedback
+                  setView={handleSetView}
+                  user={user}
+                  onLogin={handleLogin}
+                />
               );
             case ViewState.HOW_TO_BUY:
               return <HowToBuy setView={handleSetView} />;
@@ -529,13 +544,13 @@ const App: React.FC = () => {
               return (
                 <Admin
                   setView={handleSetView}
-                  onAddProduct={handleAddProduct}
                   categories={categories}
                   sizes={sizes}
                   onAddCategory={handleAddCategory}
                   onAddSize={handleAddSize}
                   onDeleteCategory={handleDeleteCategory}
                   onDeleteSize={handleDeleteSize}
+                  isAdmin={isAdmin}
                 />
               );
             case ViewState.FORUM_HOME:
@@ -555,7 +570,9 @@ const App: React.FC = () => {
                   categoryId={selectedForumCategoryId}
                   onThreadSelect={handleForumThreadSelect}
                   onBack={handleForumBackToHome}
-                  onCreateThread={() => handleSetView(ViewState.FORUM_CREATE_THREAD)}
+                  onCreateThread={() =>
+                    handleSetView(ViewState.FORUM_CREATE_THREAD)
+                  }
                   user={user}
                   isAdmin={isAdmin}
                 />
@@ -598,7 +615,9 @@ const App: React.FC = () => {
                   categoryId={selectedForumCategoryId}
                   onThreadSelect={handleForumThreadSelect}
                   onBack={handleForumBackToHome}
-                  onCreateThread={() => handleSetView(ViewState.FORUM_CREATE_THREAD)}
+                  onCreateThread={() =>
+                    handleSetView(ViewState.FORUM_CREATE_THREAD)
+                  }
                   user={user}
                   isAdmin={isAdmin}
                 />
@@ -610,11 +629,7 @@ const App: React.FC = () => {
                 />
               );
             case ViewState.PROFILE:
-              return (
-                <Profile
-                  user={user}
-                />
-              );
+              return <Profile user={user} onProfileUpdate={fetchProfile} />;
             case ViewState.EDITOR_TEST:
               return <EditorTest />;
             default:
@@ -622,7 +637,6 @@ const App: React.FC = () => {
                 <Home
                   setView={handleSetView}
                   onFilterNavigate={handleNavigateWithFilters}
-                  products={products}
                 />
               );
           }
@@ -663,20 +677,22 @@ const App: React.FC = () => {
     <ThemeProvider theme={isWarhammer ? warhammerTheme : fantasyTheme}>
       <CssBaseline />
       <CartProvider>
-        <Layout
-          products={products}
-          setView={handleSetView}
-          currentView={currentView}
-          onSearch={handleSearch}
-          onProductSelect={handleProductClick}
-          user={user ? user.user_metadata.full_name || user.email : null}
-          isAdmin={isAdmin}
-          onLogout={handleLogout}
-          isWarhammer={isWarhammer}
-          onToggleTheme={toggleTheme}
-        >
-          {renderView()}
-        </Layout>
+        <Suspense fallback={<ForgeLoader />}>
+          <Layout
+            setView={handleSetView}
+            currentView={currentView}
+            onSearch={handleSearch}
+            onProductSelect={handleProductClick}
+            user={user ? user.user_metadata?.full_name || user.email : null}
+            userProfile={userProfile}
+            isAdmin={isAdmin}
+            onLogout={handleLogout}
+            isWarhammer={isWarhammer}
+            onToggleTheme={toggleTheme}
+          >
+            {renderView()}
+          </Layout>
+        </Suspense>
       </CartProvider>
     </ThemeProvider>
   );

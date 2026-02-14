@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 import React from "react";
-import { ViewState, Product } from "../types";
+import { ViewState, Product, Profile } from "../types";
 import {
   Box,
   Typography,
@@ -25,9 +25,9 @@ interface LayoutProps {
   onSearch: (query: string) => void;
   onProductSelect: (id: string) => void;
   user?: string | null;
+  userProfile?: Profile | null;
   isAdmin?: boolean;
   onLogout?: () => void;
-  products: Product[];
   isWarhammer: boolean;
   onToggleTheme: () => void;
 }
@@ -39,9 +39,9 @@ const Layout: React.FC<LayoutProps> = ({
   onSearch,
   onProductSelect,
   user,
+  userProfile,
   isAdmin,
   onLogout,
-  products,
   isWarhammer,
   onToggleTheme,
 }) => {
@@ -62,9 +62,9 @@ const Layout: React.FC<LayoutProps> = ({
         onSearch={onSearch}
         onProductSelect={onProductSelect}
         user={user}
+        userProfile={userProfile}
         isAdmin={isAdmin}
         onLogout={onLogout}
-        products={products}
         isWarhammer={isWarhammer}
         onToggleTheme={onToggleTheme}
       />

@@ -10,6 +10,9 @@ import React, {
 import { Product, ViewState } from "../types";
 import { useCart } from "../context/CartContext";
 import { formatCurrency } from "../utils/currency.tsx";
+import { useProducts } from "@/src/hooks/useProducts";
+import { useDeleteProduct, useUpdateProduct } from "@/src/hooks/useProductMutations";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Box,
   Container,
@@ -49,19 +52,12 @@ import {
 import {
   Search,
   FilterList,
-  Add,
-  Favorite,
-  FavoriteBorder,
-  Public,
-  Straighten,
-  AutoStories,
-  SentimentDissatisfied,
   Close,
-  Delete,
   AccountTree,
   DragIndicator,
   LinkOff, // Imported LinkOff
   KeyboardArrowUp,
+  SentimentDissatisfied,
 } from "@mui/icons-material";
 import {
   DndContext,
@@ -79,6 +75,8 @@ import ForgeLoader from "../components/ForgeLoader";
 import { ProductCard } from "../components/ProductCard";
 import { DraggableProductCard } from "../components/DraggableProductCard";
 import { useProductGrouping } from "../hooks/useProductGrouping";
+import { CatalogFilters } from "../src/components/catalog/CatalogFilters";
+import { CatalogHeader } from "../src/components/catalog/CatalogHeader";
 
 interface CatalogState {
   page: number;
@@ -92,22 +90,14 @@ interface CatalogState {
 }
 
 interface CatalogProps {
-  products: Product[];
   categories: string[];
   sizes: string[];
   onProductClick: (id: string) => void;
   initialSearchQuery?: string;
   wishlist: string[];
   toggleWishlist: (id: string) => void;
-  loading?: boolean;
-  designers?: string[];
-  creatureTypes?: string[];
-  weapons?: string[];
   isAdmin: boolean;
   user?: { name: string; id: string } | null;
-  onDeleteProduct?: (id: string) => void;
-  onUpdateProduct?: (product: Product) => void;
-  onRefreshProducts?: () => Promise<void>;
   catalogState: CatalogState;
   onCatalogStateChange: (state: CatalogState) => void;
 }
@@ -115,24 +105,25 @@ interface CatalogProps {
 const ITEMS_PER_PAGE = 9;
 
 const Catalog: React.FC<CatalogProps> = ({
-  products,
   categories,
   sizes,
   onProductClick,
   initialSearchQuery,
   wishlist,
   toggleWishlist,
-  loading = false,
-  designers = [],
-  creatureTypes = [],
-  weapons = [],
   isAdmin,
-  onDeleteProduct,
-  onUpdateProduct,
-  onRefreshProducts,
+  user,
   catalogState,
   onCatalogStateChange,
 }) => {
+  const { data: products } = useProducts();
+  const designers = useMemo(() => Array.from(new Set(products.map((p) => p.designer).filter(Boolean))), [products]) as string[];
+  const creatureTypes = useMemo(() => Array.from(new Set(products.map((p) => p.creature_type).filter(Boolean))), [products]) as string[];
+  const weapons = useMemo(() => Array.from(new Set(products.map((p) => p.weapon).filter(Boolean).flatMap((w) => (w as string).split("/").map((s) => s.trim())))), [products]).sort() as string[];
+  const { mutateAsync: deleteProduct } = useDeleteProduct();
+  const { mutateAsync: updateProduct } = useUpdateProduct();
+  const queryClient = useQueryClient();
+  const handleRefresh = async () => queryClient.invalidateQueries({ queryKey: ["products"] });
   const { addToCart } = useCart();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("lg"));
@@ -185,7 +176,7 @@ const Catalog: React.FC<CatalogProps> = ({
     error: groupingError,
     successMessage,
     clearMessages,
-  } = useProductGrouping(onUpdateProduct || (() => { }), onRefreshProducts);
+  } = useProductGrouping(updateProduct, handleRefresh);
 
   // Scroll to top logic
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -202,6 +193,30 @@ const Catalog: React.FC<CatalogProps> = ({
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Sync state with parent (App.tsx)
+  useEffect(() => {
+    onCatalogStateChange({
+      page: currentPage,
+      searchQuery,
+      selectedCategories,
+      selectedSizes,
+      selectedDesigners,
+      selectedCreatureTypes,
+      selectedWeapons,
+      sortOption,
+    });
+  }, [
+    currentPage,
+    searchQuery,
+    selectedCategories,
+    selectedSizes,
+    selectedDesigners,
+    selectedCreatureTypes,
+    selectedWeapons,
+    sortOption,
+    onCatalogStateChange,
+  ]);
 
   const scrollToTop = () => {
     window.scrollTo({
@@ -273,41 +288,7 @@ const Catalog: React.FC<CatalogProps> = ({
   // Remove the automatic reset pagination effect that runs on mount
   // and replace it with manual resets in handlers.
 
-  const sortedOptions = (options: string[]) =>
-    [...options].sort((a, b) => a.localeCompare(b));
-
-  const FILTER_GROUPS = [
-    {
-      id: "category",
-      title: "Origen del Mundo",
-      icon: <Public fontSize="small" />,
-      options: sortedOptions(categories),
-    },
-    {
-      id: "size",
-      title: "Tamaño",
-      icon: <Straighten fontSize="small" />,
-      options: sortedOptions(sizes),
-    },
-    {
-      id: "designer",
-      title: "Gran Maestro (Diseñador)",
-      icon: <Search fontSize="small" />,
-      options: sortedOptions(designers),
-    },
-    {
-      id: "creature_type",
-      title: "Naturaleza de Criatura",
-      icon: <SentimentDissatisfied fontSize="small" />,
-      options: sortedOptions(creatureTypes),
-    },
-    {
-      id: "weapon",
-      title: "Arsenales (Armas)",
-      icon: <Search fontSize="small" />,
-      options: sortedOptions(weapons),
-    },
-  ];
+  // Filter logic moved to CatalogFilters component - Wait, NO! logic stays here, UI moved.
 
   const toggleFilter = (
     type: "category" | "size" | "designer" | "creature_type" | "weapon",
@@ -425,10 +406,6 @@ const Catalog: React.FC<CatalogProps> = ({
     }
 
     // Grouping Logic
-    // We ONLY group if the user is NOT searching for specific attributes that might be hidden inside a set.
-    // If filtering by Size, Creature Type, or Weapon -> SHOW ALL INDIVIDUAL ITEMS (No Grouping)
-    // Otherwise (Default, Category, Designer, Search) -> GROUP BY SET
-
     const shouldUngroup =
       selectedSizes.length > 0 ||
       selectedCreatureTypes.length > 0 ||
@@ -451,8 +428,6 @@ const Catalog: React.FC<CatalogProps> = ({
       });
     }
 
-    // Default Behavior: Group products by set_name
-    // UNLESS in Ungrouping Mode
     if (isAdmin && isUngroupingMode) {
       return baseFiltered.sort((a, b) => {
         switch (sortOption) {
@@ -472,41 +447,31 @@ const Catalog: React.FC<CatalogProps> = ({
 
     const groupedProducts: Product[] = [];
     const setsMap = new Map<string, Product[]>();
-    const processedIds = new Set<string>(); // Keep track of processed IDs to prevent duplicates
+    const processedIds = new Set<string>();
 
-    // 1. First pass: Collect all products into sets or standalone
     baseFiltered.forEach((p) => {
-      // Robust check for set name, handling potential whitespace or case issues
       const setName = p.set_name?.trim();
 
       if (setName && setName !== "Sin set") {
-        // Use normalized key for map to avoid simple casing mismatch, though display uses setName
         const key = setName.toLowerCase();
         if (!setsMap.has(key)) {
           setsMap.set(key, []);
         }
         setsMap.get(key)!.push(p);
       } else {
-        // If it's a standalone product, add it directly
         groupedProducts.push(p);
         processedIds.add(p.id);
       }
     });
 
-    // 2. Process each set: Create ONE representative product
     setsMap.forEach((setProducts) => {
       if (setProducts.length === 0) return;
 
-      // Sort by priority: 1) "header" in name, 2) by ID (stable sort)
       const sorted = [...setProducts].sort((a, b) => {
         const aHasHeader = a.name.toLowerCase().includes("header");
         const bHasHeader = b.name.toLowerCase().includes("header");
         if (aHasHeader && !bHasHeader) return -1;
         if (!aHasHeader && bHasHeader) return 1;
-
-        // If no header preference, try to match the exact set name if possible,
-        // but since we grouped by key, the set names are effectively the same.
-        // Just use ID for stability.
         return a.id.localeCompare(b.id);
       });
 
@@ -514,7 +479,6 @@ const Catalog: React.FC<CatalogProps> = ({
 
       groupedProducts.push({
         ...header,
-        // Ensure subItems contains ALL other items in the set
         subItems: others.map((item) => ({
           id: item.id,
           name: item.name,
@@ -523,7 +487,6 @@ const Catalog: React.FC<CatalogProps> = ({
         })),
       });
 
-      // Mark all these IDs as processed so they don't appear again
       setProducts.forEach((p) => processedIds.add(p.id));
     });
 
@@ -535,7 +498,6 @@ const Catalog: React.FC<CatalogProps> = ({
           return b.price - a.price;
         case "newest":
         default:
-          // Ensure robust ID comparison
           const idA = Number(a.id);
           const idB = Number(b.id);
           if (!isNaN(idA) && !isNaN(idB)) {
@@ -553,6 +515,8 @@ const Catalog: React.FC<CatalogProps> = ({
     selectedWeapons,
     sortOption,
     products,
+    isAdmin, // Added dependencies that were likely missing or implicit
+    isUngroupingMode,
   ]);
 
   // Pagination Logic
@@ -568,256 +532,6 @@ const Catalog: React.FC<CatalogProps> = ({
       setCurrentPage(1);
     },
     [],
-  );
-
-  const FilterContent = useMemo(
-    () => (
-      <Box
-        sx={{
-          p: 3,
-          height: "100%",
-          overflowY: "auto",
-          background: (theme) =>
-            `linear-gradient(to bottom, ${alpha(theme.palette.background.paper, 0.9)}, ${theme.palette.background.default})`,
-        }}
-      >
-        {isMobile && (
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              mb: 2,
-            }}
-          >
-            <Typography variant="h6" color="secondary.main">
-              Filtros
-            </Typography>
-            <IconButton onClick={() => setShowFilters(false)}>
-              <Close />
-            </IconButton>
-          </Box>
-        )}
-
-        <Box sx={{ position: "relative", mb: 4 }}>
-          <Typography
-            variant="subtitle2"
-            sx={{
-              color: "secondary.main",
-              textTransform: "uppercase",
-              letterSpacing: 1,
-              mb: 1,
-              pb: 1,
-              borderBottom: 1,
-              borderColor: (theme) => alpha(theme.palette.secondary.main, 0.2),
-            }}
-          >
-            Búsqueda en el Índice
-          </Typography>
-          <TextField
-            fullWidth
-            variant="outlined"
-            placeholder="Buscar en los archivos..."
-            value={searchQuery}
-            onChange={handleSearchChange}
-            slotProps={{
-              input: {
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search color="secondary" />
-                  </InputAdornment>
-                ),
-              },
-            }}
-          />
-        </Box>
-
-        <Stack spacing={4}>
-          {FILTER_GROUPS.map((group) => (
-            <Box key={group.id}>
-              <Typography
-                variant="subtitle2"
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 1,
-                  color: "grey.300",
-                  mb: 1,
-                  textTransform: "uppercase",
-                  letterSpacing: 1,
-                }}
-              >
-                <Box component="span" sx={{ color: "primary.main" }}>
-                  {group.icon}
-                </Box>{" "}
-                {group.title}
-              </Typography>
-              <List
-                dense
-                disablePadding
-                sx={{
-                  borderLeft: 1,
-                  borderColor: (theme) =>
-                    alpha(theme.palette.secondary.main, 0.1),
-                  pl: 1,
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: 0.5,
-                }}
-              >
-                {group.options.map((opt) => {
-                  let isSelected = false;
-                  if (group.id === "category")
-                    isSelected = selectedCategories.includes(opt);
-                  else if (group.id === "size")
-                    isSelected = selectedSizes.includes(opt);
-                  else if (group.id === "designer")
-                    isSelected = selectedDesigners.includes(opt);
-                  else if (group.id === "creature_type")
-                    isSelected = selectedCreatureTypes.includes(opt);
-                  else if (group.id === "weapon")
-                    isSelected = selectedWeapons.includes(opt);
-
-                  return (
-                    <ListItem
-                      key={opt}
-                      component="div"
-                      disablePadding
-                      onClick={() => toggleFilter(group.id as any, opt)}
-                      sx={{
-                        cursor: "pointer",
-                        "&:hover": { bgcolor: "transparent" },
-                      }}
-                    >
-                      <ListItemIcon sx={{ minWidth: 32 }}>
-                        <Checkbox
-                          edge="start"
-                          checked={isSelected}
-                          tabIndex={-1}
-                          disableRipple
-                          sx={{
-                            p: 0.5,
-                            color: "grey.700",
-                            "&.Mui-checked": { color: "primary.main" },
-                          }}
-                        />
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={opt}
-                        primaryTypographyProps={{
-                          variant: "body2",
-                          color: isSelected ? "common.white" : "grey.500",
-                          fontWeight: isSelected ? "bold" : "normal",
-                        }}
-                      />
-                    </ListItem>
-                  );
-                })}
-              </List>
-            </Box>
-          ))}
-        </Stack>
-
-        {/* Active Filters Section - Moved to bottom */}
-        {(selectedCategories.length > 0 ||
-          selectedSizes.length > 0 ||
-          selectedDesigners.length > 0 ||
-          selectedCreatureTypes.length > 0 ||
-          selectedWeapons.length > 0) && (
-            <Box sx={{ mt: 4, mb: 2 }}>
-              <Typography
-                variant="caption"
-                color="grey.500"
-                sx={{
-                  mb: 1,
-                  display: "block",
-                  textTransform: "uppercase",
-                  letterSpacing: 1,
-                }}
-              >
-                Filtros Activos
-              </Typography>
-              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                {selectedCategories.map((cat) => (
-                  <Chip
-                    key={`cat-${cat}`}
-                    label={cat}
-                    onDelete={() => toggleFilter("category", cat)}
-                    size="small"
-                    color="primary"
-                  />
-                ))}
-                {selectedSizes.map((size) => (
-                  <Chip
-                    key={`size-${size}`}
-                    label={size}
-                    onDelete={() => toggleFilter("size", size)}
-                    size="small"
-                    color="primary"
-                  />
-                ))}
-                {selectedDesigners.map((designer) => (
-                  <Chip
-                    key={`des-${designer}`}
-                    label={designer}
-                    onDelete={() => toggleFilter("designer", designer)}
-                    size="small"
-                    color="primary"
-                  />
-                ))}
-                {selectedCreatureTypes.map((type) => (
-                  <Chip
-                    key={`type-${type}`}
-                    label={type}
-                    onDelete={() => toggleFilter("creature_type", type)}
-                    size="small"
-                    color="primary"
-                  />
-                ))}
-                {selectedWeapons.map((weapon) => (
-                  <Chip
-                    key={`weap-${weapon}`}
-                    label={weapon}
-                    onDelete={() => toggleFilter("weapon", weapon)}
-                    size="small"
-                    color="primary"
-                  />
-                ))}
-
-                <Chip
-                  label="Limpiar todo"
-                  onClick={handleReset}
-                  size="small"
-                  variant="outlined"
-                  color="secondary"
-                  sx={{ borderColor: "secondary.main", color: "secondary.main" }}
-                />
-              </Box>
-            </Box>
-          )}
-
-        <Button
-          fullWidth
-          variant="outlined"
-          color="secondary"
-          onClick={handleReset}
-          sx={{ mt: 2, letterSpacing: 2 }}
-        >
-          Reiniciar Índice
-        </Button>
-      </Box>
-    ),
-    [
-      searchQuery,
-      isMobile,
-      selectedCategories,
-      selectedSizes,
-      selectedDesigners,
-      selectedCreatureTypes,
-      selectedWeapons,
-      handleSearchChange,
-      handleReset,
-    ],
   );
 
   return (
@@ -908,59 +622,16 @@ const Catalog: React.FC<CatalogProps> = ({
         </Box>
       </Box>
 
-      <Container maxWidth="xl" sx={{ py: 4, px: { xs: 2, lg: 8 } }}>
+      <Container maxWidth="xl" sx={{ py: 4, px: { xs: 2, lg: 8 } }} id="catalog-content">
         {/* Controls Bar (Replacing SectionHeader) */}
-        <Box
-          sx={{
-            mb: 4,
-            pb: 2,
-            borderBottom: 1,
-            borderColor: (t) => alpha(t.palette.secondary.main, 0.2),
-            display: "flex",
-            justifyContent: "flex-end",
-            alignItems: "center",
+        <CatalogHeader
+          count={filteredProducts.length}
+          sortOption={sortOption}
+          onSortChange={(value) => {
+            setSortOption(value);
+            setCurrentPage(1);
           }}
-        >
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 2,
-              flexWrap: "wrap",
-            }}
-          >
-            <Typography variant="body2" sx={{ color: "grey.500" }}>
-              Mostrando {filteredProducts.length} Artefactos
-            </Typography>
-            <FormControl size="small" sx={{ minWidth: 180 }}>
-              <Select
-                value={sortOption}
-                onChange={(e) => {
-                  setSortOption(e.target.value);
-                  setCurrentPage(1);
-                }}
-                variant="outlined"
-                sx={{
-                  color: "common.white",
-                  bgcolor: "rgba(0,0,0,0.2)",
-                  ".MuiOutlinedInput-notchedOutline": {
-                    borderColor: (theme) =>
-                      alpha(theme.palette.secondary.main, 0.3),
-                  },
-                  "&:hover .MuiOutlinedInput-notchedOutline": {
-                    borderColor: (theme) =>
-                      alpha(theme.palette.secondary.main, 0.6),
-                  },
-                  ".MuiSvgIcon-root": { color: "secondary.main" },
-                }}
-              >
-                <MenuItem value="newest">Ordenar por: Más reciente</MenuItem>
-                <MenuItem value="price-asc">Precio: Menor a Mayor</MenuItem>
-                <MenuItem value="price-desc">Precio: Mayor a Menor</MenuItem>
-              </Select>
-            </FormControl>
-          </Box>
-        </Box>
+        />
 
         <Grid container spacing={4}>
           {/* Sidebar - Desktop */}
@@ -980,7 +651,22 @@ const Catalog: React.FC<CatalogProps> = ({
                   `0 0 40px ${alpha(theme.palette.common.black, 0.5)}, inset 0 0 30px ${alpha(theme.palette.common.black, 0.3)}`,
               }}
             >
-              {FilterContent}
+              <CatalogFilters
+                searchQuery={searchQuery}
+                onSearchChange={handleSearchChange}
+                categories={categories}
+                sizes={sizes}
+                designers={designers}
+                creatureTypes={creatureTypes}
+                weapons={weapons}
+                selectedCategories={selectedCategories}
+                selectedSizes={selectedSizes}
+                selectedDesigners={selectedDesigners}
+                selectedCreatureTypes={selectedCreatureTypes}
+                selectedWeapons={selectedWeapons}
+                onToggleFilter={toggleFilter}
+                onReset={handleReset}
+              />
             </Paper>
           </Grid>
 
@@ -1000,29 +686,30 @@ const Catalog: React.FC<CatalogProps> = ({
               onClose={() => setShowFilters(false)}
               PaperProps={{ sx: { width: 300, bgcolor: "background.default" } }}
             >
-              {FilterContent}
+              <CatalogFilters
+                searchQuery={searchQuery}
+                onSearchChange={handleSearchChange}
+                categories={categories}
+                sizes={sizes}
+                designers={designers}
+                creatureTypes={creatureTypes}
+                weapons={weapons}
+                selectedCategories={selectedCategories}
+                selectedSizes={selectedSizes}
+                selectedDesigners={selectedDesigners}
+                selectedCreatureTypes={selectedCreatureTypes}
+                selectedWeapons={selectedWeapons}
+                onToggleFilter={toggleFilter}
+                onReset={handleReset}
+                isMobile
+                onCloseMobile={() => setShowFilters(false)}
+              />
             </Drawer>
           </Grid>
 
           {/* Product Grid */}
           <Grid size={{ xs: 12, lg: 9 }}>
-            {loading ? (
-              <Box
-                sx={{
-                  py: 10,
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  bgcolor: (theme) => alpha(theme.palette.common.white, 0.02),
-                  borderRadius: 2,
-                  border: 1,
-                  borderColor: (theme) =>
-                    alpha(theme.palette.secondary.main, 0.1),
-                }}
-              >
-                <ForgeLoader message="Invocando artefactos..." size="large" />
-              </Box>
-            ) : filteredProducts.length === 0 ? (
+            {filteredProducts.length === 0 ? (
               <Box
                 sx={{
                   display: "flex",
@@ -1065,9 +752,19 @@ const Catalog: React.FC<CatalogProps> = ({
                     count={totalPages}
                     page={currentPage}
                     onChange={(_, p) => {
-                      console.log('[Catalog] Page changed to', p, '- scrolling top');
+                      console.log(
+                        "[Catalog] Page changed to",
+                        p,
+                        "- scrolling to content",
+                      );
                       setCurrentPage(p);
-                      window.scrollTo({ top: 0, behavior: "smooth" });
+                      const catalogContent =
+                        document.getElementById("catalog-content");
+                      if (catalogContent) {
+                        catalogContent.scrollIntoView({ behavior: "smooth" });
+                      } else {
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }
                     }}
                     color="secondary"
                     shape="rounded"
@@ -1090,7 +787,7 @@ const Catalog: React.FC<CatalogProps> = ({
                 </Box>
 
                 {/* Admin Grouping Mode UI */}
-                {isAdmin && onUpdateProduct && (
+                {isAdmin && (
                   <Paper
                     sx={{
                       mb: 3,
@@ -1207,7 +904,7 @@ const Catalog: React.FC<CatalogProps> = ({
                               onProductClick={onProductClick}
                               onToggleWishlist={toggleWishlist}
                               onAddToCart={addToCart}
-                              onDeleteProduct={onDeleteProduct}
+                              onDeleteProduct={deleteProduct}
                               onUngroup={(id) => handleUngroup(id, products)}
                             />
                           ) : (
@@ -1219,7 +916,7 @@ const Catalog: React.FC<CatalogProps> = ({
                               onProductClick={onProductClick}
                               onToggleWishlist={toggleWishlist}
                               onAddToCart={addToCart}
-                              onDeleteProduct={onDeleteProduct}
+                              onDeleteProduct={deleteProduct}
                               onUngroup={(id) => handleUngroup(id, products)}
                             />
                           )}
@@ -1268,7 +965,13 @@ const Catalog: React.FC<CatalogProps> = ({
                     page={currentPage}
                     onChange={(_, p) => {
                       setCurrentPage(p);
-                      window.scrollTo({ top: 0, behavior: "smooth" });
+                      const catalogContent =
+                        document.getElementById("catalog-content");
+                      if (catalogContent) {
+                        catalogContent.scrollIntoView({ behavior: "smooth" });
+                      } else {
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }
                     }}
                     color="secondary"
                     shape="rounded"

@@ -57,6 +57,8 @@ export interface Product {
   price: number;
   image: string;
   size?: string;
+  scale?: string;
+  badge?: string;
   description?: string;
   subItems?: SubItem[];
   // New fields from CSV/Supabase
@@ -134,4 +136,12 @@ export interface LFGChatMessage {
   content: string;
   is_read: boolean;
   sender_profile?: Profile; // Joined from profiles
+}
+
+export interface GuideStep {
+  title: string;
+  description: string;
+  longDescription: string;
+  icon: React.ReactNode;
+  tip?: string;
 }

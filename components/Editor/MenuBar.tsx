@@ -14,7 +14,6 @@ import {
   Redo,
   Title,
   Image as ImageIcon,
-  Casino,
   Visibility,
   FormatAlignLeft,
   FormatAlignCenter,
@@ -273,21 +272,6 @@ const MenuBar = ({ editor, addImage }: MenuBarProps) => {
         </>
       )}
 
-      <Divider
-        orientation="vertical"
-        flexItem
-        sx={{ borderColor: "rgba(212, 175, 55, 0.3)", mx: 0.5 }}
-      />
-
-      <Tooltip title="Tirar D20">
-        <IconButton
-          onClick={() => (editor.chain().focus() as any).setDice("1d20").run()}
-          sx={ButtonStyle}
-          size="small"
-        >
-          <Casino fontSize="small" />
-        </IconButton>
-      </Tooltip>
 
       <Tooltip title="Spoiler">
         <IconButton

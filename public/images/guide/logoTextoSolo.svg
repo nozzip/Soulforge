@@ -10,7 +10,7 @@
 </linearGradient>
 </defs>
 <g transform="translate(0.000000,1147.000000) scale(0.100000,-0.100000)"
-fill="url(#soulforgeGrad)" stroke="none">
+fill="url(#soulforgeGrad)" stroke="white" stroke-width="300" paint-order="stroke" stroke-linejoin="round">
 <path d="M28795 8934 c-203 -120 -360 -187 -490 -210 -22 -4 -74 -15 -115 -26
 -111 -29 -352 -35 -1545 -36 -1066 -2 -1219 2 -1425 37 -63 11 -185 30 -270
 42 -85 12 -221 35 -303 51 -173 35 -197 34 -141 -3 63 -43 165 -135 214 -193

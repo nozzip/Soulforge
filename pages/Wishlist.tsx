@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { ViewState, Product } from '../types';
 import { useCart } from '../context/CartContext';
 import { formatCurrency } from '../utils/currency.tsx';
+import { useProducts } from "@/src/hooks/useProducts";
 import {
   Box,
   Container,
@@ -23,14 +24,14 @@ import { Favorite, Delete, BookmarkRemove, Backpack } from '@mui/icons-material'
 import { SectionHeader } from '../components/StyledComponents';
 
 interface WishlistProps {
-  products: Product[];
   setView: (view: ViewState) => void;
   onProductClick: (id: string) => void;
   wishlist: string[];
   toggleWishlist: (id: string) => void;
 }
 
-const Wishlist: React.FC<WishlistProps> = ({ products, setView, onProductClick, wishlist, toggleWishlist }) => {
+const Wishlist: React.FC<WishlistProps> = ({ setView, onProductClick, wishlist, toggleWishlist }) => {
+  const { data: products } = useProducts();
   const theme = useTheme();
   const { addToCart } = useCart();
 

@@ -8,7 +8,6 @@ import Underline from "@tiptap/extension-underline";
 import Placeholder from "@tiptap/extension-placeholder";
 import TextAlign from "@tiptap/extension-text-align";
 import Mention from "@tiptap/extension-mention";
-import DiceExtension from "./extensions/DiceExtension";
 import { Spoiler } from "./extensions/SpoilerExtension";
 import { Box, Paper, GlobalStyles } from "@mui/material";
 import MenuBar from "./MenuBar";
@@ -59,7 +58,6 @@ const RichTextEditor = ({
       Placeholder.configure({
         placeholder,
       }),
-      DiceExtension,
       Spoiler,
       // We'll enable Mention when we have the suggestion logic ready
       // Mention.configure({

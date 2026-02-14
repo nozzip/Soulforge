@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef } from "react";
-import { ViewState, Product } from "../types";
+import { ViewState, Product, Profile } from "../types";
 import { useCart } from "../context/CartContext";
 import {
   AppBar,
@@ -26,6 +26,7 @@ import {
   Tooltip,
   Slide,
   useScrollTrigger,
+  Avatar,
 } from "@mui/material";
 import { styled, alpha } from "@mui/material/styles";
 import {
@@ -42,6 +43,8 @@ import {
   HelpOutline as HelpIcon,
 } from "@mui/icons-material";
 import SvgIcon, { SvgIconProps } from "@mui/material/SvgIcon";
+import { useProducts } from "@/src/hooks/useProducts";
+import { useQueryClient } from "@tanstack/react-query";
 
 // Custom Treasure Chest Icon
 const TreasureChestIcon = (props: SvgIconProps) => (
@@ -162,9 +165,9 @@ interface NavbarProps {
   onSearch: (query: string) => void;
   onProductSelect: (id: string) => void;
   user?: string | null;
+  userProfile?: Profile | null;
   isAdmin?: boolean;
   onLogout?: () => void;
-  products: Product[];
   isWarhammer: boolean;
   onToggleTheme: () => void;
 }
@@ -175,13 +178,14 @@ const Navbar: React.FC<NavbarProps> = ({
   onSearch,
   onProductSelect,
   user,
+  userProfile,
   isAdmin,
   onLogout,
-  products,
   isWarhammer,
   onToggleTheme,
 }) => {
   const theme = useTheme();
+  const { data: products } = useProducts();
   const { totalItems } = useCart();
   const [searchInput, setSearchInput] = useState("");
   const [isFocused, setIsFocused] = useState(false);
@@ -409,12 +413,19 @@ const Navbar: React.FC<NavbarProps> = ({
                 fontStyle: "italic",
               }}
             >
-              Sesión iniciada como {user}
+              Sesión iniciada como {userProfile?.username || user}
             </ListSubheader>
             <ListItem disablePadding>
               <ListItemButton onClick={() => setView(ViewState.PROFILE)}>
                 <ListItemIcon>
-                  <PersonIcon sx={{ color: "secondary.main" }} />
+                  {userProfile?.avatar_url ? (
+                    <Avatar
+                      src={userProfile.avatar_url}
+                      sx={{ width: 24, height: 24, border: 1, borderColor: 'secondary.main' }}
+                    />
+                  ) : (
+                    <PersonIcon sx={{ color: "secondary.main" }} />
+                  )}
                 </ListItemIcon>
                 <ListItemText
                   primary="Mi Perfil"
@@ -548,8 +559,8 @@ const Navbar: React.FC<NavbarProps> = ({
                       component="img"
                       src={
                         isWarhammer
-                          ? `${import.meta.env.BASE_URL}images/guide/logoTextoSolo.svg`
-                          : `${import.meta.env.BASE_URL}images/guide/logoTextoSolo_fantasy.svg`
+                          ? `https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/guide/logoTextoSolo.svg`
+                          : `https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/guide/logoTextoSolo_fantasy.svg`
                       }
                       alt="Soulforge"
                       sx={{
@@ -858,16 +869,26 @@ const Navbar: React.FC<NavbarProps> = ({
                         <IconButton
                           onClick={handleOpenUserMenu}
                           sx={{
-                            p: 0.5,
+                            p: 0, // Profile images look better without padding adjustment if they are avatars
                             ml: 1,
                             border: user ? 1 : 0,
                             borderColor: "secondary.main",
                             borderRadius: "50%",
+                            overflow: "hidden"
                           }}
                         >
-                          <PersonIcon
-                            sx={{ color: user ? "secondary.main" : "inherit" }}
-                          />
+                          {userProfile?.avatar_url ? (
+                            <Avatar
+                              src={userProfile.avatar_url}
+                              sx={{ width: 32, height: 32 }}
+                            />
+                          ) : (
+                            <Box sx={{ p: 0.5, display: 'flex' }}>
+                              <PersonIcon
+                                sx={{ color: user ? "secondary.main" : "inherit" }}
+                              />
+                            </Box>
+                          )}
                         </IconButton>
                       </Tooltip>
                       <Menu
@@ -894,7 +915,7 @@ const Navbar: React.FC<NavbarProps> = ({
                           <Typography variant="caption" color="text.secondary">
                             Sesión iniciada como
                           </Typography>
-                          <Typography variant="subtitle2">{user}</Typography>
+                          <Typography variant="subtitle2">{userProfile?.username || user}</Typography>
                         </Box>
                         <MenuItem
                           onClick={() => {

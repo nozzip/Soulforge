@@ -1,0 +1,369 @@
+import React, { useEffect, useState } from "react";
+import {
+  Container,
+  Grid,
+  Card,
+  CardContent,
+  Typography,
+  Box,
+  CircularProgress,
+  alpha,
+  useTheme,
+  CardActionArea,
+  Avatar,
+  Divider,
+} from "@mui/material";
+import { supabase } from "@/src/supabase";
+import { ForumCategory } from "@/types";
+import {
+  Groups as GroupsIcon, // Used for 'buscador' check? No, string check.
+  ReportProblem as HorrorIcon, // Used?
+  MenuBook as BookIcon,
+  Security as DmIcon, // Header icon
+  Pets as BeastIcon, // Header icon
+  Add as AddIcon,
+  Category as CategoryIcon,
+} from "@mui/icons-material";
+
+import {
+  Fab,
+  Zoom,
+} from "@mui/material";
+import ForumSidebar from "../components/ForumSidebar";
+import { ForumCategoryCard } from "../components/ForumCategoryCard";
+import { NewCategoryDialog } from "../components/NewCategoryDialog";
+
+
+// Helper to group categories (mock logic until DB schema supports groups)
+const getCategoryGroup = (name: string) => {
+  const n = name.toLowerCase();
+  if (n.includes("reglas") || n.includes("builds")) return "MANUAL DEL JUGADOR";
+  if (n.includes("master") || n.includes("lore") || n.includes("mundo"))
+    return "GUÍA DEL DUNGEON MASTER";
+  return "DISCUSIÓN GENERAL";
+};
+
+interface ForumHomeProps {
+  onCategorySelect: (categoryId: string) => void;
+  onThreadSelect?: (threadId: string) => void;
+  onProductSelect?: (productId: string) => void;
+  onLFGClick?: () => void;
+  user?: any;
+  isAdmin?: boolean;
+}
+
+const ForumHome: React.FC<ForumHomeProps> = ({
+  onCategorySelect,
+  onThreadSelect,
+  onProductSelect,
+  onLFGClick,
+  user,
+  isAdmin = false,
+}) => {
+  const theme = useTheme();
+  const [categories, setCategories] = useState<ForumCategory[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [categoryStats, setCategoryStats] = useState<
+    Record<string, { threads: number; posts: number }>
+  >({});
+
+  // Admin FAB State
+  const [fabOpen, setFabOpen] = useState(false);
+  const [newCatDialogOpen, setNewCatDialogOpen] = useState(false);
+
+  // isAdmin is now passed as prop
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("forum_categories")
+        .select("*")
+        .order("sort_order", { ascending: true });
+
+      if (error) {
+        console.error("Supabase error fetching categories:", error);
+      }
+      if (data) {
+        setCategories(data);
+        fetchStats(data);
+      }
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchStats = async (cats: ForumCategory[]) => {
+    const stats: Record<string, { threads: number; posts: number }> = {};
+
+    for (const cat of cats) {
+      // Get thread count
+      const { count: threadCount } = await supabase
+        .from("forum_threads")
+        .select("*", { count: "exact", head: true })
+        .eq("category_id", cat.id);
+
+      // Get post count (joined via threads) - this is a bit expensive, maybe just distinct threads?
+      // Simpler approach for now: Get threads for this category, then count posts for those threads
+      // optimization: we can just count threads for SCROLLS and maybe skip posts (RUNES) if too heavy,
+      // or just do a second query.
+      // Let's try to get post count by joining.
+      // Actually Supabase doesn't support deep join count easily in one go without a view/rpc.
+      // We will just report Thread Count (Scrolls) and Post Count (Runes).
+      // For Runes, we'll query forum_posts where thread_id is in (threads of this cat).
+      // That might be too much. Let's just do threads for now as "Scrolls" and maybe 0 or a random number for Runes if strictly needed,
+      // OR better: Just show Threads and maybe "Replies" if we can.
+      // Let's try to get all threads ids first.
+      const { data: threads } = await supabase
+        .from("forum_threads")
+        .select("id")
+        .eq("category_id", cat.id);
+
+      let postCount = 0;
+      if (threads && threads.length > 0) {
+        const threadIds = threads.map((t) => t.id);
+        const { count } = await supabase
+          .from("forum_posts")
+          .select("*", { count: "exact", head: true })
+          .in("thread_id", threadIds);
+        postCount = count || 0;
+      }
+
+      stats[cat.id] = {
+        threads: threadCount || 0,
+        posts: postCount,
+      };
+    }
+    setCategoryStats(stats);
+  };
+
+  const handleCreateCategory = async (name: string, description: string, sortOrder: number) => {
+    try {
+      const { data, error } = await supabase
+        .from("forum_categories")
+        .insert({
+          name,
+          description,
+          sort_order: sortOrder,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        setCategories(
+          [...categories, data].sort((a, b) => a.sort_order - b.sort_order),
+        );
+        setNewCatDialogOpen(false);
+      }
+    } catch (error) {
+      console.error("Error creating category:", error);
+      alert("Error al crear la categoría");
+    }
+  };
+
+  const groupedCategories = categories.reduce(
+    (acc, cat) => {
+      const group = getCategoryGroup(cat.name);
+      if (!acc[group]) acc[group] = [];
+      acc[group].push(cat);
+      return acc;
+    },
+    {} as Record<string, ForumCategory[]>,
+  );
+
+  // Define group order
+  const groupOrder = [
+    "MANUAL DEL JUGADOR",
+    "GUÍA DEL DUNGEON MASTER",
+    "DISCUSIÓN GENERAL",
+  ];
+
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "60vh",
+        }}
+      >
+        <CircularProgress color="secondary" />
+      </Box>
+    );
+  }
+
+  return (
+    <Container maxWidth="xl" sx={{ mt: 16, mb: 10 }}>
+      {/* Hero Banner */}
+      <Box
+        sx={{
+          textAlign: "center",
+          mb: 6,
+          py: 6,
+          px: 4,
+          borderRadius: 0,
+          borderTop: `2px solid ${theme.palette.secondary.main}`,
+          borderBottom: `2px solid ${theme.palette.secondary.main}`,
+          background: `linear-gradient(to right, ${alpha(theme.palette.background.default, 0)}, ${alpha(theme.palette.secondary.main, 0.1)}, ${alpha(theme.palette.background.default, 0)})`,
+          position: "relative",
+        }}
+      >
+        <Typography
+          variant="h2"
+          sx={{
+            fontFamily: "Cinzel, serif",
+            fontWeight: 800,
+            color: "secondary.main", // Gold
+            textShadow: "0 2px 4px rgba(0,0,0,0.8)",
+            letterSpacing: 2,
+            mb: 1,
+          }}
+        >
+          LA TABERNA DEL DRAGÓN
+        </Typography>
+        <Typography
+          variant="h6"
+          sx={{
+            fontFamily: '"Newsreader", serif',
+            color: "text.primary",
+            fontStyle: "italic",
+            maxWidth: 800,
+            mx: "auto",
+            opacity: 0.9,
+          }}
+        >
+          "El fuego es cálido, la cerveza está fría y las historias son
+          legendarias. Bienvenido a casa, aventurero."
+        </Typography>
+      </Box>
+
+      <Grid container spacing={4}>
+        {/* Main Content - Categories */}
+        <Grid size={{ xs: 12, lg: 8 }}>
+          {groupOrder.map((groupName) => {
+            const groupCats = groupedCategories[groupName];
+            if (!groupCats || groupCats.length === 0) return null;
+
+            let HeaderIcon = BookIcon;
+            if (groupName.includes("MASTER")) HeaderIcon = DmIcon;
+            if (groupName.includes("MONSTER")) HeaderIcon = BeastIcon;
+
+            return (
+              <Box key={groupName} sx={{ mb: 5 }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 2,
+                    mb: 2,
+                    borderBottom: `1px solid ${alpha(theme.palette.secondary.main, 0.3)}`,
+                    pb: 1,
+                  }}
+                >
+                  <HeaderIcon color="secondary" sx={{ fontSize: 30 }} />
+                  <Typography
+                    variant="h5"
+                    sx={{
+                      fontFamily: "Cinzel, serif",
+                      fontWeight: 700,
+                      color: "secondary.main",
+                      letterSpacing: 1,
+                    }}
+                  >
+                    {groupName}
+                  </Typography>
+                </Box>
+
+                <Grid container spacing={2}>
+                  {groupCats.map((category) => {
+                    return (
+                      <Grid size={{ xs: 12 }} key={category.id}>
+                        <ForumCategoryCard
+                          category={category}
+                          stats={categoryStats[category.id]}
+                          onCategorySelect={onCategorySelect}
+                          onLFGClick={onLFGClick}
+                        />
+                      </Grid>
+                    );
+                  })}
+                </Grid>
+              </Box>
+            );
+          })}
+        </Grid>
+
+        {/* Sidebar */}
+        <Grid size={{ xs: 12, lg: 4 }}>
+          {onThreadSelect && (
+            <ForumSidebar
+              onThreadSelect={onThreadSelect}
+              onProductSelect={onProductSelect}
+              onLFGClick={onLFGClick}
+            />
+          )}
+        </Grid>
+      </Grid>
+
+      {/* Admin FAB */}
+      {isAdmin && (
+        <Box sx={{ position: "fixed", bottom: 32, right: 32, zIndex: 1000 }}>
+          <Zoom in={fabOpen}>
+            <Box
+              sx={{
+                mb: 2,
+                display: "flex",
+                flexDirection: "column",
+                gap: 2,
+                alignItems: "flex-end",
+              }}
+            >
+              <Fab
+                color="secondary"
+                size="small"
+                variant="extended"
+                onClick={() => setNewCatDialogOpen(true)}
+                sx={{ fontFamily: "Cinzel, serif", fontWeight: "bold" }}
+              >
+                <CategoryIcon sx={{ mr: 1 }} />
+                Nueva Categoría
+              </Fab>
+              {/* Note: Thread creation is usually context-dependent (inside a category), 
+                  but we could add a "Quick Thread" that asks for category selection. 
+                  For now let's just do Category since that's global. 
+              */}
+            </Box>
+          </Zoom>
+          <Fab
+            color="secondary"
+            aria-label="add"
+            onClick={() => setFabOpen(!fabOpen)}
+            sx={{
+              transform: fabOpen ? "rotate(45deg)" : "rotate(0deg)",
+              transition: "transform 0.3s",
+            }}
+          >
+            <AddIcon />
+          </Fab>
+        </Box>
+      )}
+
+      {/* New Category Dialog */}
+      <NewCategoryDialog
+        open={newCatDialogOpen}
+        onClose={() => setNewCatDialogOpen(false)}
+        onCreate={handleCreateCategory}
+      />
+    </Container>
+  );
+};
+
+export default ForumHome;

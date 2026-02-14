@@ -11,8 +11,11 @@ import { ViewState, Product, SubItem } from "../types";
 import { useCart } from "../context/CartContext";
 import { formatCurrency } from "../utils/currency.tsx";
 import { supabase } from "../src/supabase";
+import { DEFAULT_AVATAR_URL } from "../constants";
 import DOMPurify from "isomorphic-dompurify";
 import { safeReadImageAsDataURL } from "../utils/imageValidation";
+import { useProducts } from "@/src/hooks/useProducts";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Box,
   Container,
@@ -75,6 +78,7 @@ interface Review {
   id: string;
   product_id: string;
   user_name: string;
+  user_avatar?: string;
   rating: number;
   text: string;
   image: string | null;
@@ -82,14 +86,12 @@ interface Review {
 }
 
 interface ProductDetailProps {
-  products: Product[];
   productId: string | null;
   setView: (view: ViewState) => void;
   wishlist: string[];
   toggleWishlist: (id: string) => void;
   isAdmin?: boolean;
-  user?: { name: string; id: string } | null;
-  onUpdateProduct?: (product: Product) => void;
+  user?: { name: string; id: string; avatar?: string } | null;
   onProductClick?: (id: string) => void;
 }
 
@@ -335,16 +337,16 @@ const ProductDetailSkeleton = () => (
 );
 
 const ProductDetail: React.FC<ProductDetailProps> = ({
-  products,
   productId,
   setView,
   wishlist,
   toggleWishlist,
   isAdmin = false,
   user = null,
-  onUpdateProduct,
   onProductClick,
 }) => {
+  const { data: products } = useProducts();
+  const queryClient = useQueryClient();
   const { addToCart } = useCart();
   const [currentProductId, setCurrentProductId] = useState(productId);
 
@@ -575,7 +577,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
   };
 
   const handleSave = async () => {
-    if (!product || !onUpdateProduct) return;
+    if (!product) return;
     setIsSaving(true);
 
     // Convert price to number if it's a string
@@ -624,7 +626,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
 
       if (productData) {
         // Need to refresh context or callback
-        onUpdateProduct(productData as Product);
+        queryClient.invalidateQueries({ queryKey: ["products"] });
         setIsEditing(false);
         // Force reload would be better here but let's rely on parent update
         // If set name changed, we might need a bigger refresh
@@ -656,8 +658,8 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
       id?: string;
       isGallery?: boolean;
     }[] = [
-      { name: "Principal", url: currentMainImage || "", id: activeProduct.id },
-    ];
+        { name: "Principal", url: currentMainImage || "", id: activeProduct.id },
+      ];
 
     // Add additional gallery images
     if (currentGallery.length > 0) {
@@ -797,6 +799,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
     const reviewData = {
       product_id: productId,
       user_name: user.name,
+      user_avatar: user.avatar,
       rating: newReview.rating,
       text: sanitizedText,
       image: newReview.image,
@@ -871,7 +874,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
       console.error("Error uploading image:", error);
       alert(
         "Error uploading image: " +
-          (error instanceof Error ? error.message : "Unknown error"),
+        (error instanceof Error ? error.message : "Unknown error"),
       );
     } finally {
       setIsSaving(false);
@@ -987,7 +990,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
             transition: "all 0.3s",
           }}
         >
-          Volver a los Archivos
+          Volver al Catálogo
         </Button>
 
         <Box
@@ -1478,26 +1481,33 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
                 onChange={handleEditChange}
               />
             ) : (
-              <Typography
-                variant="body1"
-                color="text.secondary"
-                paragraph
-                fontStyle="italic"
+              <Box
                 sx={{
-                  opacity: 0.9,
-                  minHeight: "100px",
-                  display: "block",
-                  textIndent: "1.5rem",
-                  textAlign: "justify",
-                  lineHeight: 1.7,
-                  marginBottom: "1rem",
+                  bgcolor: (theme) => alpha(theme.palette.background.paper, 0.3),
+                  p: 3,
+                  borderRadius: 2,
+                  border: 1,
+                  borderColor: (theme) =>
+                    alpha(theme.palette.secondary.main, 0.1),
                 }}
               >
-                "
-                {activeProduct.description ||
-                  "Un raro artefacto recuperado de las mazmorras más profundas. Los detalles de su origen están envueltos en misterio, pero su artesanía es innegable."}
-                "
-              </Typography>
+                <Typography
+                  variant="body1"
+                  color="text.secondary"
+                  sx={{
+                    opacity: 0.9,
+                    minHeight: "100px",
+                    display: "block",
+                    textAlign: "justify",
+                    lineHeight: 2, // More relaxed line height
+                    whiteSpace: "pre-line", // Respect key formatting
+                    fontFamily: '"Merriweather", serif', // More readable serif for lore
+                  }}
+                >
+                  {activeProduct.description ||
+                    "Un raro artefacto recuperado de las mazmorras más profundas. Los detalles de su origen están envueltos en misterio, pero su artesanía es innegable."}
+                </Typography>
+              </Box>
             )}
           </Box>
 
@@ -1583,7 +1593,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
                   boxShadow:
                     activeProduct.id === product.id
                       ? (theme) =>
-                          `0 0 15px ${alpha(theme.palette.secondary.main, 0.3)}`
+                        `0 0 15px ${alpha(theme.palette.secondary.main, 0.3)}`
                       : "none",
                 }}
               />
@@ -1601,7 +1611,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
                     boxShadow:
                       activeProduct.id === item.id
                         ? (theme) =>
-                            `0 0 15px ${alpha(theme.palette.secondary.main, 0.3)}`
+                          `0 0 15px ${alpha(theme.palette.secondary.main, 0.3)}`
                         : "none",
                   }}
                 />
@@ -1687,15 +1697,15 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
                 // Get unique options for this field if it's editable
                 const options = isEditable
                   ? Array.from(
-                      new Set(
-                        products
-                          .map(
-                            (p) =>
-                              p[spec.editableField as keyof Product] as string,
-                          )
-                          .filter(Boolean),
-                      ),
-                    ).sort()
+                    new Set(
+                      products
+                        .map(
+                          (p) =>
+                            p[spec.editableField as keyof Product] as string,
+                        )
+                        .filter(Boolean),
+                    ),
+                  ).sort()
                   : [];
 
                 return (
@@ -2298,10 +2308,14 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
                     >
                       <Box sx={{ display: "flex", gap: 2 }}>
                         <Avatar
+                          src={review.user_avatar?.includes('images/avatars/') ? DEFAULT_AVATAR_URL : review.user_avatar}
+                          alt={review.user_name}
                           sx={{
                             bgcolor: "rgba(197, 160, 89, 0.2)",
                             color: "secondary.main",
                             fontWeight: "bold",
+                            border: 1,
+                            borderColor: "rgba(197, 160, 89, 0.3)",
                           }}
                         >
                           {review.user_name.charAt(0)}
