@@ -38,6 +38,8 @@ import {
 } from "@mui/icons-material";
 import { supabase } from "@/src/supabase";
 import { LFGPost, Profile } from "@/types";
+import RichTextEditor from "@/components/Editor/RichTextEditor";
+import RichTextDisplay from "@/components/Editor/RichTextDisplay";
 import LFGPostDetails from "./LFGPostDetails";
 import LFGApplicationManagement from "./LFGApplicationManagement";
 import { useAdmin } from "@/src/hooks/useAdmin";
@@ -604,23 +606,26 @@ const LFGBoard: React.FC<LFGBoardProps> = ({ onBack }) => {
                   </Grid>
                 </Grid>
 
-                <TextField
-                  label="Sinopsis"
-                  variant="filled"
-                  fullWidth
-                  multiline
-                  rows={4}
-                  value={formData.synopsis}
-                  onChange={(e) =>
-                    setFormData({ ...formData, synopsis: e.target.value })
-                  }
-                  placeholder="Detalles del contrato..."
-                  sx={{
-                    bgcolor: "rgba(0,0,0,0.3)",
-                    textarea: { color: "#e0e0e0" },
-                    label: { color: "#9e9e9e" },
-                  }}
-                />
+                <Box sx={{ mb: 2 }}>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      mb: 1,
+                      display: "block",
+                      color: "#c5a059",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    SINOPSIS
+                  </Typography>
+                  <RichTextEditor
+                    content={formData.synopsis}
+                    onChange={(content) =>
+                      setFormData({ ...formData, synopsis: content })
+                    }
+                    placeholder="Detalles del contrato..."
+                  />
+                </Box>
 
                 <TextField
                   label="Plataforma / VTT"
@@ -1121,20 +1126,20 @@ const LFGBoard: React.FC<LFGBoardProps> = ({ onBack }) => {
                       />
 
                       {/* Synopsis */}
-                      <Typography
-                        variant="body1"
+                      <RichTextDisplay
+                        content={`"${post.synopsis}"`}
                         sx={{
                           fontStyle: "italic",
-                          fontWeight: 700, // Bolder
+                          fontWeight: 700,
                           fontFamily: '"Newsreader", serif',
                           fontSize: "1.2rem",
                           lineHeight: 1.6,
                           color: "#2d1b15",
                           maxWidth: "90%",
+                          textAlign: "center",
+                          "& p": { margin: 0 },
                         }}
-                      >
-                        "{post.synopsis}"
-                      </Typography>
+                      />
 
                       {/* Footer: Tags & GM */}
                       <Box

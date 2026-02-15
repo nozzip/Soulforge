@@ -1,5 +1,5 @@
 /// <reference lib="dom" />
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, Suspense, useMemo } from "react";
 import { CartProvider } from "./context/CartContext";
 import Layout from "./components/Layout";
 import Home from "./pages/Home";
@@ -20,8 +20,9 @@ import {
   Category,
   Thread,
   CreateThread,
-  LFGBoard
+  LFGBoard,
 } from "@/src/features/forum";
+import { useProducts } from "@/src/hooks/useProducts";
 import Profile from "./pages/Profile";
 import EditorTest from "./pages/EditorTest";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -55,7 +56,9 @@ const App: React.FC = () => {
   }, []);
 
   // Scroll persistence for main views
-  const [viewScrollPositions, setViewScrollPositions] = useState<Record<string, number>>({});
+  const [viewScrollPositions, setViewScrollPositions] = useState<
+    Record<string, number>
+  >({});
 
   // Catalog state persistence
   const [catalogState, setCatalogState] = useState({
@@ -96,6 +99,21 @@ const App: React.FC = () => {
   });
 
   // Persistence Effects
+  const { data: products = [] } = useProducts();
+
+  const allCategories = useMemo(() => {
+    const fromProducts = Array.from(
+      new Set(products.map((p) => p.category).filter(Boolean)),
+    );
+    return Array.from(new Set([...categories, ...fromProducts])).sort();
+  }, [products, categories]);
+
+  const allSizes = useMemo(() => {
+    const fromProducts = Array.from(
+      new Set(products.map((p) => p.size).filter(Boolean)),
+    );
+    return Array.from(new Set([...sizes, ...fromProducts])).sort();
+  }, [products, sizes]);
 
   useEffect(() => {
     localStorage.setItem("resinforge_categories", JSON.stringify(categories));
@@ -142,9 +160,10 @@ const App: React.FC = () => {
     } else if (!error && !data) {
       // Fallback for new users without profile yet
       const metadataAvatar = user.user_metadata?.avatar_url;
-      const finalAvatar = (metadataAvatar && !metadataAvatar.includes('images/avatars/'))
-        ? metadataAvatar
-        : DEFAULT_AVATAR_URL;
+      const finalAvatar =
+        metadataAvatar && !metadataAvatar.includes("images/avatars/")
+          ? metadataAvatar
+          : DEFAULT_AVATAR_URL;
 
       setUserProfile({
         id: user.id,
@@ -154,7 +173,6 @@ const App: React.FC = () => {
         xp: 0,
         level: 1,
       } as ProfileType);
-
     }
   };
 
@@ -265,20 +283,21 @@ const App: React.FC = () => {
       ViewState.FORUM_HOME,
       ViewState.FORUM_CATEGORY,
       ViewState.HOW_TO_BUY,
-      ViewState.NEW_ADVENTURER
+      ViewState.NEW_ADVENTURER,
     ];
 
     if (mainViews.includes(prevView)) {
-      setViewScrollPositions(prev => ({
+      setViewScrollPositions((prev) => ({
         ...prev,
-        [prevView]: window.scrollY
+        [prevView]: window.scrollY,
       }));
     }
 
     // Identificar si es una navegación de "regreso" a un padre
     const isBackNav =
       (prevView === ViewState.PRODUCT_DETAIL && view === ViewState.CATALOG) ||
-      (prevView === ViewState.FORUM_THREAD && view === ViewState.FORUM_CATEGORY) ||
+      (prevView === ViewState.FORUM_THREAD &&
+        view === ViewState.FORUM_CATEGORY) ||
       (prevView === ViewState.FORUM_CATEGORY && view === ViewState.FORUM_HOME);
 
     const shouldRestore = isBackNav && options?.resetScroll !== true;
@@ -358,11 +377,14 @@ const App: React.FC = () => {
 
     if (view === ViewState.CATALOG && !shouldRestore) {
       setGlobalSearchQuery("");
-      setCatalogState(prev => ({ ...prev, page: 1 }));
+      setCatalogState((prev) => ({ ...prev, page: 1 }));
     }
   };
 
-  const handleSetView = (view: ViewState, options?: { resetScroll?: boolean }) => {
+  const handleSetView = (
+    view: ViewState,
+    options?: { resetScroll?: boolean },
+  ) => {
     navigateTo(view, options);
   };
 
@@ -382,7 +404,7 @@ const App: React.FC = () => {
       selectedWeapons: [],
     }));
     // Al navegar desde Home, siempre vamos al top
-    setViewScrollPositions(prev => ({ ...prev, [ViewState.CATALOG]: 0 }));
+    setViewScrollPositions((prev) => ({ ...prev, [ViewState.CATALOG]: 0 }));
     window.scrollTo(0, 0);
     setCurrentView(ViewState.CATALOG);
   };
@@ -390,7 +412,7 @@ const App: React.FC = () => {
   const handleSearch = (query: string) => {
     setGlobalSearchQuery(query);
     setCatalogState((prev) => ({ ...prev, searchQuery: query, page: 1 }));
-    setViewScrollPositions(prev => ({ ...prev, [ViewState.CATALOG]: 0 }));
+    setViewScrollPositions((prev) => ({ ...prev, [ViewState.CATALOG]: 0 }));
     window.scrollTo(0, 0);
     setCurrentView(ViewState.CATALOG);
   };
@@ -475,8 +497,8 @@ const App: React.FC = () => {
             case ViewState.CATALOG:
               return (
                 <Catalog
-                  categories={categories}
-                  sizes={sizes}
+                  categories={allCategories}
+                  sizes={allSizes}
                   onProductClick={handleProductClick}
                   initialSearchQuery={globalSearchQuery}
                   wishlist={wishlist}
@@ -501,13 +523,13 @@ const App: React.FC = () => {
                   user={
                     user
                       ? {
-                        name:
-                          user.user_metadata?.full_name ||
-                          user.email ||
-                          "Usuario",
-                        id: user.id,
-                        avatar: userProfile?.avatar_url || DEFAULT_AVATAR_URL,
-                      }
+                          name:
+                            user.user_metadata?.full_name ||
+                            user.email ||
+                            "Usuario",
+                          id: user.id,
+                          avatar: userProfile?.avatar_url || DEFAULT_AVATAR_URL,
+                        }
                       : null
                   }
                   onProductClick={handleProductClick}
@@ -544,8 +566,8 @@ const App: React.FC = () => {
               return (
                 <Admin
                   setView={handleSetView}
-                  categories={categories}
-                  sizes={sizes}
+                  categories={allCategories}
+                  sizes={allSizes}
                   onAddCategory={handleAddCategory}
                   onAddSize={handleAddSize}
                   onDeleteCategory={handleDeleteCategory}

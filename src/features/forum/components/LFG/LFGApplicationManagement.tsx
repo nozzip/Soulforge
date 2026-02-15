@@ -25,12 +25,9 @@ import {
   ChatBubbleOutline,
 } from "@mui/icons-material";
 import { supabase } from "@/src/supabase";
-import {
-  LFGPost,
-  LFGApplication,
-  LFGChatMessage,
-  Profile,
-} from "@/types";
+import { LFGPost, LFGApplication, LFGChatMessage, Profile } from "@/types";
+import RichTextDisplay from "@/components/Editor/RichTextDisplay";
+import RichTextEditor from "@/components/Editor/RichTextEditor";
 
 interface LFGApplicationManagementProps {
   post: LFGPost;
@@ -509,17 +506,15 @@ const LFGApplicationManagement: React.FC<LFGApplicationManagementProps> = ({
                   >
                     PERGAMINO ORIGINAL:
                   </Typography>
-                  <Typography
-                    variant="body1"
+                  <RichTextDisplay
+                    content={`"${selectedApp.message}"`}
                     sx={{
                       mt: 0.5,
                       fontStyle: "italic",
                       color: "#bdbdbd",
                       fontFamily: '"Newsreader", serif',
                     }}
-                  >
-                    "{selectedApp.message}"
-                  </Typography>
+                  />
                 </Box>
 
                 {/* Chat Area */}
@@ -589,12 +584,10 @@ const LFGApplicationManagement: React.FC<LFGApplicationManagementProps> = ({
                               </Typography>
                             </IconButton>
                           )}
-                          <Typography
-                            variant="body2"
+                          <RichTextDisplay
+                            content={msg.content}
                             sx={{ color: "#e0e0e0", fontSize: "0.95rem" }}
-                          >
-                            {msg.content}
-                          </Typography>
+                          />
                           <Typography
                             variant="caption"
                             sx={{
@@ -629,27 +622,10 @@ const LFGApplicationManagement: React.FC<LFGApplicationManagementProps> = ({
                     boxShadow: "0 -2px 10px rgba(0,0,0,0.3)",
                   }}
                 >
-                  <TextField
-                    fullWidth
-                    size="small"
+                  <RichTextEditor
+                    content={newMessage}
+                    onChange={setNewMessage}
                     placeholder="Escribe un mensaje..."
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-                    sx={{
-                      bgcolor: "rgba(0, 0, 0, 0.2)",
-                      input: { color: "#e0e0e0", fontFamily: "inherit" },
-                      "& .MuiOutlinedInput-root": {
-                        "& fieldset": {
-                          borderColor: "rgba(93, 64, 55, 0.5)",
-                        },
-                        "&:hover fieldset": { borderColor: "#c5a059" },
-                        "&.Mui-focused fieldset": {
-                          borderColor: "#c5a059",
-                          boxShadow: "0 0 5px rgba(197, 160, 89, 0.3)",
-                        },
-                      },
-                    }}
                   />
                   <IconButton
                     onClick={handleSendMessage}

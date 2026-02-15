@@ -11,7 +11,10 @@ import { Product, ViewState } from "../types";
 import { useCart } from "../context/CartContext";
 import { formatCurrency } from "../utils/currency.tsx";
 import { useProducts } from "@/src/hooks/useProducts";
-import { useDeleteProduct, useUpdateProduct } from "@/src/hooks/useProductMutations";
+import {
+  useDeleteProduct,
+  useUpdateProduct,
+} from "@/src/hooks/useProductMutations";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Box,
@@ -116,14 +119,34 @@ const Catalog: React.FC<CatalogProps> = ({
   catalogState,
   onCatalogStateChange,
 }) => {
-  const { data: products } = useProducts();
-  const designers = useMemo(() => Array.from(new Set(products.map((p) => p.designer).filter(Boolean))), [products]) as string[];
-  const creatureTypes = useMemo(() => Array.from(new Set(products.map((p) => p.creature_type).filter(Boolean))), [products]) as string[];
-  const weapons = useMemo(() => Array.from(new Set(products.map((p) => p.weapon).filter(Boolean).flatMap((w) => (w as string).split("/").map((s) => s.trim())))), [products]).sort() as string[];
+  const { data: products = [] } = useProducts();
+  const designers = useMemo(
+    () => Array.from(new Set(products.map((p) => p.designer).filter(Boolean))),
+    [products],
+  ) as string[];
+  const creatureTypes = useMemo(
+    () =>
+      Array.from(new Set(products.map((p) => p.creature_type).filter(Boolean))),
+    [products],
+  ) as string[];
+  const weapons = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          products
+            .map((p) => p.weapon)
+            .filter(Boolean)
+            .flatMap((w) => (w as string).split("/").map((s) => s.trim())),
+        ),
+      ),
+    [products],
+  ).sort() as string[];
+
   const { mutateAsync: deleteProduct } = useDeleteProduct();
   const { mutateAsync: updateProduct } = useUpdateProduct();
   const queryClient = useQueryClient();
-  const handleRefresh = async () => queryClient.invalidateQueries({ queryKey: ["products"] });
+  const handleRefresh = async () =>
+    queryClient.invalidateQueries({ queryKey: ["products"] });
   const { addToCart } = useCart();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("lg"));
@@ -133,12 +156,12 @@ const Catalog: React.FC<CatalogProps> = ({
   );
 
   useEffect(() => {
-    console.log('[Catalog] Mounted. State:', {
+    console.log("[Catalog] Mounted. State:", {
       page: catalogState.page,
       searchQuery: catalogState.searchQuery,
-      initialSearchQuery
+      initialSearchQuery,
     });
-    return () => console.log('[Catalog] Unmounted');
+    return () => console.log("[Catalog] Unmounted");
   }, []);
   const [selectedCategories, setSelectedCategories] = useState<string[]>(
     catalogState.selectedCategories || [],
@@ -155,7 +178,9 @@ const Catalog: React.FC<CatalogProps> = ({
   const [selectedWeapons, setSelectedWeapons] = useState<string[]>(
     catalogState.selectedWeapons || [],
   );
-  const [sortOption, setSortOption] = useState(catalogState.sortOption || "newest");
+  const [sortOption, setSortOption] = useState(
+    catalogState.sortOption || "newest",
+  );
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(catalogState.page);
@@ -622,7 +647,11 @@ const Catalog: React.FC<CatalogProps> = ({
         </Box>
       </Box>
 
-      <Container maxWidth="xl" sx={{ py: 4, px: { xs: 2, lg: 8 } }} id="catalog-content">
+      <Container
+        maxWidth="xl"
+        sx={{ py: 4, px: { xs: 2, lg: 8 } }}
+        id="catalog-content"
+      >
         {/* Controls Bar (Replacing SectionHeader) */}
         <CatalogHeader
           count={filteredProducts.length}
@@ -934,9 +963,9 @@ const Catalog: React.FC<CatalogProps> = ({
                           isWishlisted={false}
                           isAdmin={false}
                           isDragging
-                          onProductClick={() => { }}
-                          onToggleWishlist={() => { }}
-                          onAddToCart={() => { }}
+                          onProductClick={() => {}}
+                          onToggleWishlist={() => {}}
+                          onAddToCart={() => {}}
                         />
                       </Box>
                     )}

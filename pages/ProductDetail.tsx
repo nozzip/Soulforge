@@ -12,6 +12,8 @@ import { useCart } from "../context/CartContext";
 import { formatCurrency } from "../utils/currency.tsx";
 import { supabase } from "../src/supabase";
 import { DEFAULT_AVATAR_URL } from "../constants";
+import RichTextEditor from "../components/Editor/RichTextEditor";
+import RichTextDisplay from "../components/Editor/RichTextDisplay";
 import DOMPurify from "isomorphic-dompurify";
 import { safeReadImageAsDataURL } from "../utils/imageValidation";
 import { useProducts } from "@/src/hooks/useProducts";
@@ -345,7 +347,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
   user = null,
   onProductClick,
 }) => {
-  const { data: products } = useProducts();
+  const { data: products = [] } = useProducts();
   const queryClient = useQueryClient();
   const { addToCart } = useCart();
   const [currentProductId, setCurrentProductId] = useState(productId);
@@ -544,10 +546,44 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
 
   // Derived Related Products
   const relatedProducts = useMemo(() => {
-    if (!product) return [];
-    return products
-      .filter((p) => p.category === product.category && p.id !== product.id)
-      .slice(0, 3);
+    if (!product || products.length <= 1) return [];
+
+    // Filter out current product and its set members
+    const excludeIds = new Set([
+      product.id,
+      ...(product.subItems?.map((s) => s.id) || []),
+    ]);
+
+    const candidates = products.filter((p) => !excludeIds.has(p.id));
+
+    // Priority 1: Same category
+    const sameCategory = candidates.filter(
+      (p) => p.category === product.category,
+    );
+
+    // Priority 2: Same creature type or designer (but different category)
+    const sameSpecs = candidates.filter(
+      (p) =>
+        p.category !== product.category &&
+        ((p.creature_type === product.creature_type && product.creature_type) ||
+          (p.designer === product.designer && product.designer)),
+    );
+
+    // Priority 3: Fallback (shuffled)
+    const fallback = candidates.filter(
+      (p) =>
+        p.category !== product.category &&
+        !sameSpecs.some((s) => s.id === p.id),
+    );
+
+    // Combine in order of relevance and shuffle within groups if needed
+    const combined = [
+      ...sameCategory.sort(() => 0.5 - Math.random()),
+      ...sameSpecs.sort(() => 0.5 - Math.random()),
+      ...fallback.sort(() => 0.5 - Math.random()),
+    ];
+
+    return combined.slice(0, 3);
   }, [product, products]);
 
   // Structured gallery data with names for the chips
@@ -658,8 +694,8 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
       id?: string;
       isGallery?: boolean;
     }[] = [
-        { name: "Principal", url: currentMainImage || "", id: activeProduct.id },
-      ];
+      { name: "Principal", url: currentMainImage || "", id: activeProduct.id },
+    ];
 
     // Add additional gallery images
     if (currentGallery.length > 0) {
@@ -874,7 +910,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
       console.error("Error uploading image:", error);
       alert(
         "Error uploading image: " +
-        (error instanceof Error ? error.message : "Unknown error"),
+          (error instanceof Error ? error.message : "Unknown error"),
       );
     } finally {
       setIsSaving(false);
@@ -1471,19 +1507,20 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
               Lore y Descripción
             </Typography>
             {isEditing ? (
-              <TextField
-                fullWidth
-                multiline
-                rows={4}
-                name="description"
-                label="Lore del Artefacto"
-                value={editForm.description}
-                onChange={handleEditChange}
-              />
+              <Box sx={{ mt: 1 }}>
+                <RichTextEditor
+                  content={editForm.description || ""}
+                  onChange={(content) =>
+                    setEditForm((prev) => ({ ...prev, description: content }))
+                  }
+                  placeholder="Escribe el lore de este artefacto..."
+                />
+              </Box>
             ) : (
               <Box
                 sx={{
-                  bgcolor: (theme) => alpha(theme.palette.background.paper, 0.3),
+                  bgcolor: (theme) =>
+                    alpha(theme.palette.background.paper, 0.3),
                   p: 3,
                   borderRadius: 2,
                   border: 1,
@@ -1491,22 +1528,20 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
                     alpha(theme.palette.secondary.main, 0.1),
                 }}
               >
-                <Typography
-                  variant="body1"
-                  color="text.secondary"
+                <RichTextDisplay
+                  content={
+                    activeProduct.description ||
+                    "Un raro artefacto recuperado de las mazmorras más profundas. Los detalles de su origen están envueltos en misterio, pero su artesanía es innegable."
+                  }
                   sx={{
                     opacity: 0.9,
                     minHeight: "100px",
-                    display: "block",
                     textAlign: "justify",
-                    lineHeight: 2, // More relaxed line height
-                    whiteSpace: "pre-line", // Respect key formatting
-                    fontFamily: '"Merriweather", serif', // More readable serif for lore
+                    lineHeight: 2,
+                    fontFamily: '"Newsreader", serif',
+                    "& p": { margin: 0, mb: 2 },
                   }}
-                >
-                  {activeProduct.description ||
-                    "Un raro artefacto recuperado de las mazmorras más profundas. Los detalles de su origen están envueltos en misterio, pero su artesanía es innegable."}
-                </Typography>
+                />
               </Box>
             )}
           </Box>
@@ -1593,7 +1628,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
                   boxShadow:
                     activeProduct.id === product.id
                       ? (theme) =>
-                        `0 0 15px ${alpha(theme.palette.secondary.main, 0.3)}`
+                          `0 0 15px ${alpha(theme.palette.secondary.main, 0.3)}`
                       : "none",
                 }}
               />
@@ -1611,7 +1646,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
                     boxShadow:
                       activeProduct.id === item.id
                         ? (theme) =>
-                          `0 0 15px ${alpha(theme.palette.secondary.main, 0.3)}`
+                            `0 0 15px ${alpha(theme.palette.secondary.main, 0.3)}`
                         : "none",
                   }}
                 />
@@ -1697,15 +1732,15 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
                 // Get unique options for this field if it's editable
                 const options = isEditable
                   ? Array.from(
-                    new Set(
-                      products
-                        .map(
-                          (p) =>
-                            p[spec.editableField as keyof Product] as string,
-                        )
-                        .filter(Boolean),
-                    ),
-                  ).sort()
+                      new Set(
+                        products
+                          .map(
+                            (p) =>
+                              p[spec.editableField as keyof Product] as string,
+                          )
+                          .filter(Boolean),
+                      ),
+                    ).sort()
                   : [];
 
                 return (
@@ -1888,7 +1923,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
                       {p.name}
                     </Typography>
                     <Typography variant="body2" color="secondary">
-                      {p.price.toFixed(0)} GP
+                      {formatCurrency(p.price)}
                     </Typography>
                   </CardContent>
                 </Card>
@@ -2308,7 +2343,11 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
                     >
                       <Box sx={{ display: "flex", gap: 2 }}>
                         <Avatar
-                          src={review.user_avatar?.includes('images/avatars/') ? DEFAULT_AVATAR_URL : review.user_avatar}
+                          src={
+                            review.user_avatar?.includes("images/avatars/")
+                              ? DEFAULT_AVATAR_URL
+                              : review.user_avatar
+                          }
                           alt={review.user_name}
                           sx={{
                             bgcolor: "rgba(197, 160, 89, 0.2)",

@@ -8,13 +8,10 @@ import {
   List,
   ListItem,
   Button,
-  InputBase,
+  Stack,
+  IconButton,
 } from "@mui/material";
-import {
-  RssFeed as RssFeedIcon,
-  Share as ShareIcon,
-  Forum as ForumIcon,
-} from "@mui/icons-material";
+import { Instagram, WhatsApp } from "@mui/icons-material";
 import WhatsAppButton from "./WhatsAppButton";
 import Navbar from "./Navbar";
 
@@ -81,177 +78,226 @@ const Layout: React.FC<LayoutProps> = ({
             bgcolor: "background.default",
             borderTop: 1,
             borderColor: "secondary.main",
-            py: 6,
+            py: 8,
             px: 2,
             mt: "auto",
+            position: "relative",
+            overflow: "hidden",
+            "&::before": {
+              content: '""',
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              height: "2px",
+              background: (theme) =>
+                `linear-gradient(90deg, transparent, ${theme.palette.secondary.main}, transparent)`,
+            },
           }}
         >
           <Container maxWidth="lg">
             <Box
               sx={{
                 display: "grid",
-                gridTemplateColumns: { xs: "1fr", md: "1fr 1fr 1fr 1fr" },
-                gap: 4,
+                gridTemplateColumns: {
+                  xs: "1fr",
+                  sm: "1fr 1fr",
+                  md: "2fr 1fr 1fr 1fr",
+                },
+                gap: 6,
               }}
             >
               <Box>
                 <Typography
-                  variant="h6"
+                  variant="h5"
                   color="secondary.main"
                   gutterBottom
-                  sx={{ fontFamily: "Cinzel, serif" }}
+                  sx={{
+                    fontFamily: "Cinzel, serif",
+                    fontWeight: 700,
+                    letterSpacing: 4,
+                  }}
                 >
                   SOULFORGE
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  The premiere destination for high-fidelity 3D resin prints.
-                  Designed by gamers, for gamers.
-                </Typography>
-              </Box>
-              <Box>
                 <Typography
-                  variant="subtitle2"
-                  color="common.white"
-                  gutterBottom
-                  sx={{ letterSpacing: 2 }}
-                >
-                  ARCHIVOS
-                </Typography>
-                <List dense disablePadding>
-                  {[
-                    "Catálogos",
-                    "Ediciones Limitadas",
-                    "Caja de Suscripción",
-                    "Guías de Pintura",
-                  ].map((text) => (
-                    <ListItem key={text} disablePadding sx={{ py: 0.5 }}>
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{
-                          "&:hover": {
-                            color: "primary.main",
-                            cursor: "pointer",
-                          },
-                        }}
-                      >
-                        {text}
-                      </Typography>
-                    </ListItem>
-                  ))}
-                </List>
-              </Box>
-              <Box>
-                <Typography
-                  variant="subtitle2"
-                  color="common.white"
-                  gutterBottom
-                  sx={{ letterSpacing: 2 }}
-                >
-                  LORE Y LEYES
-                </Typography>
-                <List dense disablePadding>
-                  {[
-                    "Rituales de Envío",
-                    "El Juramento del Alquimista",
-                    "Pergaminos del Mercader",
-                    "Sigilo de Privacidad",
-                  ].map((text) => (
-                    <ListItem key={text} disablePadding sx={{ py: 0.5 }}>
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{
-                          "&:hover": {
-                            color: "primary.main",
-                            cursor: "pointer",
-                          },
-                        }}
-                      >
-                        {text}
-                      </Typography>
-                    </ListItem>
-                  ))}
-                </List>
-              </Box>
-              <Box>
-                <Typography
-                  variant="subtitle2"
-                  color="common.white"
-                  gutterBottom
-                  sx={{ letterSpacing: 2 }}
-                >
-                  DESPACHO
-                </Typography>
-                <Typography
-                  variant="caption"
+                  variant="body2"
                   color="text.secondary"
-                  display="block"
-                  sx={{ mb: 1, fontStyle: "italic" }}
+                  sx={{
+                    maxWidth: 300,
+                    lineHeight: 1.8,
+                    fontStyle: "italic",
+                    mb: 4,
+                  }}
                 >
-                  Suscríbete para alertas de nuevos lanzamientos.
+                  Donde las leyendas se forjan en resina de alta fidelidad.
+                  Artefactos diseñados para elevar tus partidas de rol y
+                  colecciones.
                 </Typography>
-                <Box sx={{ display: "flex" }}>
-                  <InputBase
-                    placeholder="Email"
+                <Stack direction="row" spacing={2}>
+                  <IconButton
+                    component="a"
+                    href="https://www.instagram.com/soulforge.miniatures"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     sx={{
-                      bgcolor: "background.paper",
-                      px: 2,
-                      py: 0.5,
-                      borderRadius: "4px 0 0 4px",
+                      color: "secondary.main",
                       border: 1,
-                      borderColor: "secondary.main",
-                      color: "common.white",
-                      width: "100%",
+                      borderColor: "rgba(197, 160, 89, 0.3)",
+                      "&:hover": {
+                        color: "common.white",
+                        bgcolor: "secondary.main",
+                        borderColor: "secondary.main",
+                      },
                     }}
-                  />
-                  <Button
-                    variant="contained"
-                    sx={{ borderRadius: "0 4px 4px 0" }}
                   >
-                    Unirse
-                  </Button>
-                </Box>
-                <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
-                  <RssFeedIcon
+                    <Instagram />
+                  </IconButton>
+                  <IconButton
+                    component="a"
+                    href={`https://wa.me/543815621699?text=${encodeURIComponent("Saludos desde el portal de Soulforge. Necesito asistencia del Gremio...")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     sx={{
                       color: "secondary.main",
-                      "&:hover": { color: "white" },
-                      cursor: "pointer",
+                      border: 1,
+                      borderColor: "rgba(197, 160, 89, 0.3)",
+                      "&:hover": {
+                        color: "common.white",
+                        bgcolor: "secondary.main",
+                        borderColor: "secondary.main",
+                      },
                     }}
-                  />
-                  <ShareIcon
-                    sx={{
-                      color: "secondary.main",
-                      "&:hover": { color: "white" },
-                      cursor: "pointer",
-                    }}
-                  />
-                  <ForumIcon
-                    sx={{
-                      color: "secondary.main",
-                      "&:hover": { color: "white" },
-                      cursor: "pointer",
-                    }}
-                  />
-                </Box>
+                  >
+                    <WhatsApp />
+                  </IconButton>
+                </Stack>
+              </Box>
+
+              <Box>
+                <Typography
+                  variant="subtitle2"
+                  color="common.white"
+                  gutterBottom
+                  sx={{ letterSpacing: 2, fontWeight: "bold", mb: 2 }}
+                >
+                  EL REINO
+                </Typography>
+                <List dense disablePadding>
+                  {[
+                    { text: "Catálogo de Héroes", view: ViewState.CATALOG },
+                    {
+                      text: "La Taberna (Mesa de Rol)",
+                      view: ViewState.FORUM_HOME,
+                    },
+                    { text: "Bestiario LFG", view: ViewState.FORUM_LFG },
+                  ].map((item) => (
+                    <ListItem key={item.text} disablePadding sx={{ py: 0.75 }}>
+                      <Typography
+                        variant="body2"
+                        onClick={() => setView(item.view)}
+                        sx={{
+                          color: "text.secondary",
+                          cursor: "pointer",
+                          transition: "color 0.2s",
+                          "&:hover": { color: "primary.main" },
+                        }}
+                      >
+                        {item.text}
+                      </Typography>
+                    </ListItem>
+                  ))}
+                </List>
+              </Box>
+
+              <Box>
+                <Typography
+                  variant="subtitle2"
+                  color="common.white"
+                  gutterBottom
+                  sx={{ letterSpacing: 2, fontWeight: "bold", mb: 2 }}
+                >
+                  SABIDURÍA
+                </Typography>
+                <List dense disablePadding>
+                  {[
+                    { text: "Guía de Compra", view: ViewState.HOW_TO_BUY },
+                    {
+                      text: "Iniciación al Rol",
+                      view: ViewState.NEW_ADVENTURER,
+                    },
+                    { text: "Soporte del Gremio", view: ViewState.FEEDBACK },
+                  ].map((item) => (
+                    <ListItem key={item.text} disablePadding sx={{ py: 0.75 }}>
+                      <Typography
+                        variant="body2"
+                        onClick={() => setView(item.view)}
+                        sx={{
+                          color: "text.secondary",
+                          cursor: "pointer",
+                          transition: "color 0.2s",
+                          "&:hover": { color: "primary.main" },
+                        }}
+                      >
+                        {item.text}
+                      </Typography>
+                    </ListItem>
+                  ))}
+                </List>
+              </Box>
+
+              <Box>
+                <Typography
+                  variant="subtitle2"
+                  color="common.white"
+                  gutterBottom
+                  sx={{ letterSpacing: 2, fontWeight: "bold", mb: 2 }}
+                >
+                  CUENTA
+                </Typography>
+                <List dense disablePadding>
+                  {[
+                    { text: "Mi Perfil", view: ViewState.PROFILE },
+                    { text: "Lista de Deseos", view: ViewState.WISHLIST },
+                    { text: "Historial de Pedidos", view: ViewState.ORDERS },
+                  ].map((item) => (
+                    <ListItem key={item.text} disablePadding sx={{ py: 0.75 }}>
+                      <Typography
+                        variant="body2"
+                        onClick={() => setView(item.view)}
+                        sx={{
+                          color: "text.secondary",
+                          cursor: "pointer",
+                          transition: "color 0.2s",
+                          "&:hover": { color: "primary.main" },
+                        }}
+                      >
+                        {item.text}
+                      </Typography>
+                    </ListItem>
+                  ))}
+                </List>
               </Box>
             </Box>
+
             <Typography
               variant="caption"
               display="block"
               align="center"
               sx={{
-                mt: 8,
+                mt: 10,
                 pt: 4,
                 borderTop: 1,
                 borderColor: "rgba(197, 160, 89, 0.1)",
                 color: "text.secondary",
                 letterSpacing: 2,
+                opacity: 0.6,
               }}
             >
-              © {new Date().getFullYear()} Soulforge Miniatures. Todos los
-              derechos reservados. No es un producto de Wizards of the Coast.
+              © {new Date().getFullYear()} Soulforge Miniatures. Forjado con
+              pasión por aventureros.
+              <br />
+              No es un producto oficial de Wizards of the Coast.
             </Typography>
           </Container>
         </Box>

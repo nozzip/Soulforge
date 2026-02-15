@@ -26,6 +26,8 @@ import {
 import { supabase } from "@/src/supabase";
 import { LFGPost, Profile } from "@/types";
 import { DEFAULT_AVATAR_URL } from "@/constants";
+import RichTextDisplay from "@/components/Editor/RichTextDisplay";
+import RichTextEditor from "@/components/Editor/RichTextEditor";
 
 interface LFGPostDetailsProps {
   post: LFGPost;
@@ -111,7 +113,8 @@ const LFGPostDetails: React.FC<LFGPostDetailsProps> = ({
             currentUser.email?.split("@")[0] ||
             "Aventurero",
           full_name: currentUser.user_metadata?.full_name || "Desconocido",
-          avatar_url: currentUser.user_metadata?.avatar_url || DEFAULT_AVATAR_URL,
+          avatar_url:
+            currentUser.user_metadata?.avatar_url || DEFAULT_AVATAR_URL,
         });
 
         if (profileError) {
@@ -274,21 +277,18 @@ const LFGPostDetails: React.FC<LFGPostDetailsProps> = ({
               >
                 Sinopsis
               </Typography>
-              <Typography
-                variant="body1"
+              <RichTextDisplay
+                content={post.synopsis}
                 sx={{
                   fontFamily: '"Newsreader", serif',
                   fontSize: "1.15rem",
                   lineHeight: 1.8,
                   mb: 4,
-                  whiteSpace: "pre-wrap",
                   color: "#e0e0e0",
                   fontWeight: 400,
                   textShadow: "0 1px 2px rgba(0,0,0,0.5)",
                 }}
-              >
-                {post.synopsis}
-              </Typography>
+              />
             </Box>
 
             <Box sx={{ mb: 4 }}>
@@ -553,29 +553,10 @@ const LFGPostDetails: React.FC<LFGPostDetailsProps> = ({
                   >
                     Mensaje al vacío:
                   </Typography>
-                  <TextField
-                    fullWidth
-                    multiline
-                    rows={3}
-                    size="small"
-                    value={applicationMessage}
-                    onChange={(e) => setApplicationMessage(e.target.value)}
-                    sx={{
-                      mb: 2,
-                      bgcolor: "rgba(0, 0, 0, 0.3)",
-                      input: { color: "#e0e0e0", fontFamily: "inherit" },
-                      textarea: { color: "#e0e0e0", fontFamily: "inherit" },
-                      "& .MuiOutlinedInput-root": {
-                        "& fieldset": {
-                          borderColor: "#5d4037",
-                        },
-                        "&:hover fieldset": { borderColor: "#c5a059" },
-                        "&.Mui-focused fieldset": {
-                          borderColor: "#c5a059",
-                          boxShadow: "0 0 5px rgba(197, 160, 89, 0.3)",
-                        },
-                      },
-                    }}
+                  <RichTextEditor
+                    content={applicationMessage}
+                    onChange={setApplicationMessage}
+                    placeholder="Escribe tu mensaje al director..."
                   />
                   <Button
                     variant="contained"

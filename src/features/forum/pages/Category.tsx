@@ -31,6 +31,7 @@ import {
 import { supabase } from "@/src/supabase";
 import { ForumThread, ForumCategory, Profile } from "@/types";
 import { DEFAULT_AVATAR_URL } from "@/constants";
+import RichTextDisplay from "@/components/Editor/RichTextDisplay";
 
 interface CategoryProps {
   categoryId: string;
@@ -225,13 +226,14 @@ const Category: React.FC<CategoryProps> = ({
             >
               {category?.name}
             </Typography>
-            <Typography
-              variant="subtitle1"
-              color="text.secondary"
-              sx={{ fontStyle: "italic" }}
-            >
-              {category?.description}
-            </Typography>
+            <RichTextDisplay
+              content={category?.description || ""}
+              sx={{
+                fontStyle: "italic",
+                color: "text.secondary",
+                fontSize: "1rem",
+              }}
+            />
           </Box>
           {user && (
             <Button
@@ -384,7 +386,13 @@ const Category: React.FC<CategoryProps> = ({
                             }}
                           >
                             <Avatar
-                              src={thread.author?.avatar_url?.includes('images/avatars/') ? DEFAULT_AVATAR_URL : thread.author?.avatar_url}
+                              src={
+                                thread.author?.avatar_url?.includes(
+                                  "images/avatars/",
+                                )
+                                  ? DEFAULT_AVATAR_URL
+                                  : thread.author?.avatar_url
+                              }
                               alt={thread.author?.username}
                               sx={{ width: 24, height: 24 }}
                             />

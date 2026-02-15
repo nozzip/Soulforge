@@ -23,6 +23,7 @@ import {
 } from "@mui/icons-material";
 import parse, { DOMNode, Element } from "html-react-parser";
 import { DEFAULT_AVATAR_URL } from "@/constants";
+import RichTextDisplay from "@/components/Editor/RichTextDisplay";
 
 interface ForumPostProps {
   content: string;
@@ -74,70 +75,8 @@ const ForumPost: React.FC<ForumPostProps> = ({
 
   const stats = getMockStats(author?.username || "Invitado");
 
-  // We use html-react-parser to safely render HTML and handle custom elements
-  const parsedContent = parse(content || "", {
-    replace: (domNode) => {
-      if (domNode instanceof Element) {
-        if (domNode.name === "img") {
-          let {
-            src,
-            alt,
-            width,
-            height,
-            style: styleAttr,
-            "data-align": dataAlign,
-          } = domNode.attribs;
-
-          // Check inline style if attributes are missing
-          if (styleAttr && (!width || !height)) {
-            const widthMatch = styleAttr.match(/width:\s*([^;]+)/);
-            const heightMatch = styleAttr.match(/height:\s*([^;]+)/);
-            if (widthMatch && !width) width = widthMatch[1];
-            if (heightMatch && !height) height = heightMatch[1];
-          }
-
-          // Normalization: Ensure units if it's just a number
-          if (width && !isNaN(Number(width))) width = `${width}px`;
-          if (height && !isNaN(Number(height))) height = `${height}px`;
-
-          const style: React.CSSProperties = {
-            maxWidth: "100%",
-            borderRadius: "4px",
-            objectFit: "contain",
-            display: "block", // Default for center/unaligned
-          };
-
-          if (dataAlign === "left") {
-            style.float = "left";
-            style.marginRight = "1rem";
-            style.marginBottom = "0.5rem";
-            style.display = "inline-block";
-            style.clear = "both"; // Optional, depending on pref
-          } else if (dataAlign === "right") {
-            style.float = "right";
-            style.marginLeft = "1rem";
-            style.marginBottom = "0.5rem";
-            style.display = "inline-block";
-            style.clear = "both";
-          } else {
-            // Center or default
-            style.margin = "0 auto";
-            style.display = "block";
-          }
-
-          if (width) style.width = width;
-          if (height) style.height = height;
-
-          return <img src={src} alt={alt} style={style} />;
-        }
-      }
-      return domNode;
-    },
-  });
-
-  // We are no longer using the regex parser for simplicity and because we now store HTML.
-  // We utilize dangerouslySetInnerHTML with the Tiptap content.
-  // Security Note: Tiptap content should be sanitized on output, but for a real app we'd use DOMPurify here.
+  // We utilize RichTextDisplay to safely render HTML and handle custom elements
+  // Security Note: Tiptap content should be sanitized on output, but for a real app we'd use DOMPurify in RichTextDisplay.
 
   return (
     <Paper
@@ -225,7 +164,11 @@ const ForumPost: React.FC<ForumPostProps> = ({
           {/* Avatar Frame */}
           <Box sx={{ position: "relative", mb: 2 }}>
             <Avatar
-              src={author?.avatar_url?.includes('images/avatars/') ? DEFAULT_AVATAR_URL : author?.avatar_url}
+              src={
+                author?.avatar_url?.includes("images/avatars/")
+                  ? DEFAULT_AVATAR_URL
+                  : author?.avatar_url
+              }
               alt={author?.username}
               variant="rounded"
               sx={{
@@ -334,39 +277,16 @@ const ForumPost: React.FC<ForumPostProps> = ({
         {/* Right Column: Content */}
         <Box sx={{ flex: 1, p: 3, display: "flex", flexDirection: "column" }}>
           {/* Post Content */}
-          <Typography
-            component="div"
-            variant="body1"
+          <RichTextDisplay
+            content={content}
             sx={{
               fontFamily: '"Newsreader", serif',
               fontSize: "1.1rem",
               lineHeight: 1.7,
               mb: 3,
               flex: 1,
-              "& p": { margin: "0 0 1em 0" },
-              "& blockquote": {
-                borderLeft: `3px solid ${theme.palette.secondary.main}`,
-                paddingLeft: "1rem",
-                fontStyle: "italic",
-                color: "text.secondary",
-                margin: "1em 0",
-              },
-              "& .spoiler": {
-                backgroundColor: "#000",
-                color: "#000",
-                cursor: "pointer",
-                borderRadius: "4px",
-                padding: "0 4px",
-                transition: "color 0.2s",
-                "&:hover": {
-                  color: "#fff",
-                },
-              },
-              // Images are handled by the parser replacement now to support resizing
             }}
-          >
-            {parsedContent}
-          </Typography>
+          />
 
           {/* Action Bar */}
           <Box
