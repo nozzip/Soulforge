@@ -2,15 +2,16 @@
  width="2907.000000pt" height="1147.000000pt" viewBox="0 0 2907.000000 1147.000000"
  preserveAspectRatio="xMidYMid meet">
 
+
 <defs>
-<linearGradient id="soulforgeGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-<stop offset="0%" style="stop-color:#172659;stop-opacity:1" />
-<stop offset="50%" style="stop-color:#164a87;stop-opacity:1" />
-<stop offset="100%" style="stop-color:#2e7fc3;stop-opacity:1" />
+<linearGradient id="fantasyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+<stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" />
+<stop offset="50%" style="stop-color:#DAA520;stop-opacity:1" />
+<stop offset="100%" style="stop-color:#8B0000;stop-opacity:1" />
 </linearGradient>
 </defs>
 <g transform="translate(0.000000,1147.000000) scale(0.100000,-0.100000)"
-fill="url(#soulforgeGrad)" stroke="white" stroke-width="300" paint-order="stroke" stroke-linejoin="round">
+fill="url(#fantasyGrad)" stroke="white" stroke-width="300" paint-order="stroke" stroke-linejoin="round">
 <path d="M28795 8934 c-203 -120 -360 -187 -490 -210 -22 -4 -74 -15 -115 -26
 -111 -29 -352 -35 -1545 -36 -1066 -2 -1219 2 -1425 37 -63 11 -185 30 -270
 42 -85 12 -221 35 -303 51 -173 35 -197 34 -141 -3 63 -43 165 -135 214 -193
