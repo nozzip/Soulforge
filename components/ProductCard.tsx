@@ -1,6 +1,7 @@
 import React from "react";
 import { Product } from "../types";
 import { formatCurrency } from "../utils/currency.tsx";
+import { getOptimizedImageUrl } from "../utils/imageValidation";
 import {
   Box,
   Card,
@@ -12,6 +13,7 @@ import {
   alpha,
   Chip,
   useTheme,
+  Skeleton,
 } from "@mui/material";
 import {
   Add,
@@ -110,7 +112,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           sx={{
             position: "absolute",
             inset: 0,
-            backgroundImage: `url("${product.image}")`,
+            backgroundImage: `url("${getOptimizedImageUrl(product.image, 400)}")`,
             backgroundSize: "contain",
             backgroundRepeat: "no-repeat",
             backgroundPosition: "center",
@@ -310,6 +312,44 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             </Tooltip>
           )}
         </Box>
+      </CardActions>
+    </Card>
+  );
+};
+
+export const ProductCardSkeleton = () => {
+  const theme = useTheme();
+  return (
+    <Card
+      sx={{
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        bgcolor: "background.paper",
+        border: 1,
+        borderColor: "divider",
+      }}
+    >
+      <Skeleton
+        variant="rectangular"
+        width="100%"
+        sx={{ pt: "100%", bgcolor: alpha(theme.palette.secondary.main, 0.1) }}
+        animation="wave"
+      />
+      <CardContent sx={{ flexGrow: 1, pb: 1 }}>
+        <Skeleton
+          variant="text"
+          width="80%"
+          height={32}
+          sx={{ mb: 1 }}
+          animation="wave"
+        />
+        <Skeleton variant="text" width="40%" height={20} animation="wave" />
+        <Skeleton variant="text" width="60%" height={20} animation="wave" />
+      </CardContent>
+      <CardActions sx={{ px: 2, pb: 2, justifyContent: "space-between" }}>
+        <Skeleton variant="text" width="30%" height={32} animation="wave" />
+        <Skeleton variant="circular" width={40} height={40} animation="wave" />
       </CardActions>
     </Card>
   );

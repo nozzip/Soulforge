@@ -16,7 +16,9 @@ import {
 } from "@mui/icons-material";
 import { supabase } from "@/src/supabase";
 import RichTextEditor from "@/components/Editor/RichTextEditor";
+import DOMPurify from "isomorphic-dompurify";
 import { uploadImage } from "@/utils/imageHandler";
+import { useToast } from "@/context/ToastContext";
 
 interface CreateThreadProps {
   categoryId: string;
@@ -32,17 +34,60 @@ const CreateThread: React.FC<CreateThreadProps> = ({
   user,
 }) => {
   const theme = useTheme();
+  const { showToast } = useToast();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      showToast("Debes iniciar sesión para publicar.", "warning");
+      return;
+    }
+
+    // Check suspension
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("forum_suspended_until")
+      .eq("id", user.id)
+      .single();
+
+    if (profile?.forum_suspended_until) {
+      const suspendedUntil = new Date(profile.forum_suspended_until);
+      if (suspendedUntil > new Date()) {
+        const dateStr = suspendedUntil.toLocaleDateString();
+        const timeStr = suspendedUntil.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+        showToast(
+          `Tu cuenta está suspendida de participar en el foro hasta el ${dateStr} a las ${timeStr}.`,
+          "error",
+        );
+        return;
+      }
+    }
+
     if (!title.trim() || !content.trim()) return;
 
+    // Sanitize
+    const sanitizedTitle = DOMPurify.sanitize(title.trim());
+    const sanitizedContent = DOMPurify.sanitize(content.trim());
+
+    // Validate lengths
+    if (sanitizedTitle.length < 5) {
+      showToast("El título debe tener al menos 5 caracteres.", "warning");
+      return;
+    }
+
+    const textOnly = sanitizedContent.replace(/<[^>]*>/g, "").trim();
+    if (textOnly.length < 10) {
+      showToast("El contenido debe tener al menos 10 caracteres.", "warning");
+      return;
+    }
+
     setLoading(true);
-    setError(null);
 
     try {
       // 1. Create Thread
@@ -52,7 +97,7 @@ const CreateThread: React.FC<CreateThreadProps> = ({
         .insert({
           category_id: categoryId,
           author_id: user.id,
-          title: title.trim(),
+          title: sanitizedTitle,
           view_count: 0,
         })
         .select()
@@ -65,7 +110,7 @@ const CreateThread: React.FC<CreateThreadProps> = ({
       const { error: postError } = await supabase.from("forum_posts").insert({
         thread_id: threadData.id,
         author_id: user.id,
-        content: content.trim(),
+        content: sanitizedContent,
       });
 
       if (postError) throw postError;
@@ -74,7 +119,7 @@ const CreateThread: React.FC<CreateThreadProps> = ({
       onThreadCreated(threadData.id);
     } catch (err: any) {
       console.error("Error creating thread:", err);
-      setError(err.message || "Error al crear el hilo.");
+      showToast(err.message || "Error al crear el hilo.", "error");
     } finally {
       setLoading(false);
     }
@@ -118,12 +163,6 @@ const CreateThread: React.FC<CreateThreadProps> = ({
           borderRadius: 2,
         }}
       >
-        {error && (
-          <Typography color="error" sx={{ mb: 3 }}>
-            {error}
-          </Typography>
-        )}
-
         <TextField
           label="Título del Hilo"
           fullWidth

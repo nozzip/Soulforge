@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
-import React, { useState } from 'react';
-import { ViewState } from '../types';
+import React, { useState } from "react";
+import { ViewState } from "../types";
 import {
   Box,
   Container,
@@ -12,13 +12,13 @@ import {
   Divider,
   CircularProgress,
   alpha,
-  useTheme
-} from '@mui/material';
-import { Lock, ArrowForward } from '@mui/icons-material';
-import { DecorativeCorners, FancyPaper } from '../components/StyledComponents';
-import { supabase } from '../src/supabase';
-import { User } from '@supabase/supabase-js';
-import { Alert, Collapse } from '@mui/material';
+  useTheme,
+} from "@mui/material";
+import { Lock, ArrowForward, Google } from "@mui/icons-material";
+import { DecorativeCorners, FancyPaper } from "../components/StyledComponents";
+import { supabase } from "../src/supabase";
+import { User } from "@supabase/supabase-js";
+import { Alert, Collapse } from "@mui/material";
 
 interface LoginProps {
   setView: (view: ViewState) => void;
@@ -27,11 +27,25 @@ interface LoginProps {
 
 const Login: React.FC<LoginProps> = ({ setView, onLogin }) => {
   const theme = useTheme();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
+
+  const handleGoogleLogin = async () => {
+    setError(null);
+    const { error: authError } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: window.location.origin,
+      },
+    });
+
+    if (authError) {
+      setError(authError.message);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,10 +55,12 @@ const Login: React.FC<LoginProps> = ({ setView, onLogin }) => {
     let loginEmail = email;
 
     // Check if input is username (no @ symbol)
-    if (!email.includes('@')) {
+    if (!email.includes("@")) {
       // Try to get email from username using RPC function
-      const { data: emailData, error: rpcError } = await supabase
-        .rpc('get_email_from_username', { input_username: email.trim() });
+      const { data: emailData, error: rpcError } = await supabase.rpc(
+        "get_email_from_username",
+        { input_username: email.trim() },
+      );
 
       if (rpcError) {
         setError(`Error al buscar usuario: ${rpcError.message}`);
@@ -53,7 +69,9 @@ const Login: React.FC<LoginProps> = ({ setView, onLogin }) => {
       }
 
       if (!emailData) {
-        setError('Usuario no encontrado. Verifica que el nombre de usuario sea correcto.');
+        setError(
+          "Usuario no encontrado. Verifica que el nombre de usuario sea correcto.",
+        );
         setIsLoading(false);
         return;
       }
@@ -61,13 +79,13 @@ const Login: React.FC<LoginProps> = ({ setView, onLogin }) => {
       loginEmail = emailData;
     }
 
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { data, error: loginError } = await supabase.auth.signInWithPassword({
       email: loginEmail,
       password,
     });
 
-    if (error) {
-      setError(error.message);
+    if (loginError) {
+      setError(loginError.message);
       setIsLoading(false);
     } else if (data.user) {
       onLogin(data.user);
@@ -75,45 +93,87 @@ const Login: React.FC<LoginProps> = ({ setView, onLogin }) => {
   };
 
   return (
-    <Container maxWidth="sm" sx={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      py: 6,
-      position: 'relative',
-      '&::before': {
-        content: '""',
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        width: '100vw',
-        height: '100vh',
-        backgroundImage: 'url(https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/sign/Soulforge%20-%20Misc/nozzip_a_fantasy_forest_--ar_8953_--profile_dehgnq4_--stylize_1_5b23a4ac-5a4a-42ee-bb78-6c774444151d.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV84MjAxNjBmNy1jMzIxLTRmMWUtYWEwOC04YzZkMTNkOTgyZTUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJTb3VsZm9yZ2UgLSBNaXNjL25venppcF9hX2ZhbnRhc3lfZm9yZXN0Xy0tYXJfODk1M18tLXByb2ZpbGVfZGVoZ25xNF8tLXN0eWxpemVfMV81YjIzYTRhYy01YTRhLTQyZWUtYmI3OC02Yzc3NDQ0NDE1MWQucG5nIiwiaWF0IjoxNzY5Mzc4Nzk3LCJleHAiOjE5MjcwNTg3OTd9.AldMF4YQdVveQNEZo0Pg-BiqdFlNNRdXbsLtvAylhjk)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-        transform: 'scale(1.0)',
-        WebkitTransform: 'scale(1.0)',
-        opacity: 0.35,
-        zIndex: -1
-      }
-    }}>
-      <FancyPaper sx={{ width: '100%', maxWidth: 400 }}>
+    <Container
+      maxWidth="sm"
+      sx={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        py: 6,
+        position: "relative",
+        "&::before": {
+          content: '""',
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: "100vw",
+          height: "100vh",
+          backgroundImage:
+            "url(https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/sign/Soulforge%20-%20Misc/nozzip_a_fantasy_forest_--ar_8953_--profile_dehgnq4_--stylize_1_5b23a4ac-5a4a-42ee-bb78-6c774444151d.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV84MjAxNjBmNy1jMzIxLTRmMWUtYWEwOC04YzZkMTNkOTgyZTUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJTb3VsZm9yZ2UgLSBNaXNjL25venppcF9hX2ZhbnRhc3lfZm9yZXN0Xy0tYXJfODk1M18tLXByb2ZpbGVfZGVoZ25xNF8tLXN0eWxpemVfMV81YjIzYTRhYy01YTRhLTQyZWUtYmI3OC02Yzc3NDQ0NDE1MWQucG5nIiwiaWF0IjoxNzY5Mzc4Nzk3LCJleHAiOjE5MjcwNTg3OTd9.AldMF4YQdVveQNEZo0Pg-BiqdFlNNRdXbsLtvAylhjk)",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+          transform: "scale(1.0)",
+          WebkitTransform: "scale(1.0)",
+          opacity: 0.35,
+          zIndex: -1,
+        },
+      }}
+    >
+      <FancyPaper sx={{ width: "100%", maxWidth: 400 }}>
         <DecorativeCorners />
 
-        <Box sx={{ textAlign: 'center', mb: 5 }}>
-          <Box sx={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 64, height: 64, borderRadius: '50%', bgcolor: (t) => alpha(t.palette.secondary.main, 0.1), border: 1, borderColor: (t) => alpha(t.palette.secondary.main, 0.3), mb: 2, color: 'secondary.main' }}>
+        <Box sx={{ textAlign: "center", mb: 5 }}>
+          <Box
+            sx={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 64,
+              height: 64,
+              borderRadius: "50%",
+              bgcolor: (t) => alpha(t.palette.secondary.main, 0.1),
+              border: 1,
+              borderColor: (t) => alpha(t.palette.secondary.main, 0.3),
+              mb: 2,
+              color: "secondary.main",
+            }}
+          >
             <Lock sx={{ fontSize: 28 }} />
           </Box>
-          <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'common.white', textTransform: 'uppercase', letterSpacing: 3 }}>Identifícate</Typography>
-          <Typography variant="body2" sx={{ color: 'grey.500', fontStyle: 'italic', mt: 1 }}>Accede a los archivos de forma segura.</Typography>
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: "bold",
+              color: "common.white",
+              textTransform: "uppercase",
+              letterSpacing: 3,
+            }}
+          >
+            Identifícate
+          </Typography>
+          <Typography
+            variant="body2"
+            sx={{ color: "grey.500", fontStyle: "italic", mt: 1 }}
+          >
+            Accede a los archivos de forma segura.
+          </Typography>
         </Box>
 
         <Collapse in={!!error}>
-          <Alert severity="error" sx={{ mb: 3, bgcolor: alpha(theme.palette.error.main, 0.1), color: 'error.main', border: 1, borderColor: 'error.main' }}>
+          <Alert
+            severity="error"
+            sx={{
+              mb: 3,
+              bgcolor: alpha(theme.palette.error.main, 0.1),
+              color: "error.main",
+              border: 1,
+              borderColor: "error.main",
+            }}
+          >
             {error}
           </Alert>
         </Collapse>
@@ -149,13 +209,14 @@ const Login: React.FC<LoginProps> = ({ setView, onLogin }) => {
               size="large"
               sx={{
                 py: 2,
-                fontWeight: 'bold',
+                fontWeight: "bold",
                 letterSpacing: 3,
                 border: 1,
                 borderColor: (t) => alpha(t.palette.secondary.main, 0.2),
-                boxShadow: (t) => `0 0 20px ${alpha(t.palette.primary.main, 0.3)}`,
-                '&:hover': { transform: 'scale(1.02)' },
-                '&:active': { transform: 'scale(0.98)' }
+                boxShadow: (t) =>
+                  `0 0 20px ${alpha(t.palette.primary.main, 0.3)}`,
+                "&:hover": { transform: "scale(1.02)" },
+                "&:active": { transform: "scale(0.98)" },
               }}
             >
               {isLoading ? (
@@ -170,22 +231,60 @@ const Login: React.FC<LoginProps> = ({ setView, onLogin }) => {
           </Stack>
         </Box>
 
-        <Divider sx={{ my: 4 }} />
+        <Divider sx={{ my: 4 }}>
+          <Typography
+            variant="caption"
+            sx={{
+              color: "grey.600",
+              px: 1,
+              textTransform: "uppercase",
+              letterSpacing: 1,
+            }}
+          >
+            o utiliza magia externa
+          </Typography>
+        </Divider>
 
-        <Box sx={{ textAlign: 'center' }}>
-          <Typography variant="body2" sx={{ color: 'grey.500', fontStyle: 'italic', mb: 1 }}>¿Eres nuevo en la forja?</Typography>
+        <Button
+          fullWidth
+          variant="outlined"
+          onClick={handleGoogleLogin}
+          disabled={isLoading}
+          startIcon={<Google />}
+          sx={{
+            py: 1.5,
+            borderColor: (t) => alpha(t.palette.secondary.main, 0.3),
+            color: "common.white",
+            fontWeight: "bold",
+            letterSpacing: 1,
+            "&:hover": {
+              borderColor: "secondary.main",
+              bgcolor: (t) => alpha(t.palette.secondary.main, 0.05),
+            },
+          }}
+        >
+          Continuar con Google
+        </Button>
+
+        <Box sx={{ textAlign: "center", mt: 4 }}>
+          <Typography
+            variant="body2"
+            sx={{ color: "grey.500", fontStyle: "italic", mb: 1 }}
+          >
+            ¿Eres nuevo en la forja?
+          </Typography>
           <Button
             onClick={() => !isLoading && setView(ViewState.SIGNUP)}
             disabled={isLoading}
-            endIcon={<ArrowForward sx={{ transition: 'transform 0.2s' }} />}
+            endIcon={<ArrowForward sx={{ transition: "transform 0.2s" }} />}
             sx={{
-              color: 'secondary.main',
-              fontWeight: 'bold',
-              textTransform: 'uppercase',
+              color: "secondary.main",
+              fontWeight: "bold",
+              textTransform: "uppercase",
               letterSpacing: 2,
-              fontSize: '0.7rem',
-              '&:hover': { color: 'common.white' },
-              '&:hover .MuiSvgIcon-root': { transform: 'translateX(4px)' }
+              fontSize: "0.7rem",
+              "&:hover": { color: "common.white" },
+              "&:hover .MuiSvgIcon-root": { transform: "translateX(4px)" },
             }}
           >
             Inscribir Nuevo Nombre

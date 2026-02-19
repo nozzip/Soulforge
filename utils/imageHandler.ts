@@ -11,6 +11,18 @@ export const uploadImage = async (
   userId: string,
 ): Promise<string | null> => {
   try {
+    // 0. Validation
+    const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+    if (file.size > MAX_SIZE) {
+      alert("La imagen es demasiado grande. El límite es de 5MB.");
+      return null;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      alert("El archivo debe ser una imagen válida.");
+      return null;
+    }
+
     // 1. Convert/Resize to WebP
     const webpBlob = await convertToWebP(file);
 

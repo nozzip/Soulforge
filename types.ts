@@ -37,6 +37,9 @@ export interface ForumThread {
   created_at: string;
   updated_at: string;
   author?: Profile; // Joined data
+  likes_count?: number;
+  replies_count?: number;
+  is_edited?: boolean;
 }
 
 export interface ForumPost {
@@ -48,6 +51,8 @@ export interface ForumPost {
   created_at: string;
   updated_at: string;
   author?: Profile; // Joined data
+  likes_count?: number;
+  is_edited?: boolean;
 }
 
 export interface Product {
@@ -144,4 +149,55 @@ export interface GuideStep {
   longDescription: string;
   icon: React.ReactNode;
   tip?: string;
+}
+
+export interface Guild {
+  id: string;
+  name: string;
+  description?: string;
+  leader_id: string;
+  image_url?: string;
+  created_at: string;
+  leader?: Profile;
+  members_count?: number; // Aggregated
+}
+
+export interface GuildMember {
+  id: string;
+  guild_id: string;
+  user_id: string;
+  role: "leader" | "officer" | "member";
+  status: "pending" | "accepted" | "rejected";
+  joined_at: string;
+  profile?: Profile; // Joined
+  guild?: Guild; // Joined
+}
+
+export interface OrderItem {
+  id: string;
+  order_id: string;
+  product_id: string;
+  name: string;
+  quantity: number;
+  price_gp: number;
+  image?: string;
+  total_price?: number;
+}
+
+export interface Order {
+  id: string;
+  created_at: string;
+  user_id?: string;
+  status: string;
+  total_gp: number;
+  shipping_address: string;
+  contact_email: string;
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string;
+  customer_dni?: string;
+  contract_number?: string;
+  admin_notes?: string;
+  order_items: OrderItem[];
+  phone?: string;
 }

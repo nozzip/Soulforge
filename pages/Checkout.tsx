@@ -84,9 +84,6 @@ const Checkout: React.FC = () => {
 
   const [formData, setFormData] = useState({
     name: "",
-    email: "",
-    phone: "",
-    dni: "",
     province: "",
     address: "",
     city: "",
@@ -219,9 +216,6 @@ const Checkout: React.FC = () => {
           shipping_method: "A coordinar",
           status: "Recibido",
           customer_name: formData.name,
-          customer_email: formData.email,
-          customer_phone: formData.phone,
-          customer_dni: formData.dni,
         })
         .select()
         .single();
@@ -300,7 +294,7 @@ const Checkout: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: 6 }}>
+    <Container maxWidth="lg" sx={{ pt: 16, pb: 6 }}>
       <Grid container spacing={6}>
         {/* Form Section */}
         <Grid size={{ xs: 12, lg: 8 }}>
@@ -504,39 +498,6 @@ const Checkout: React.FC = () => {
                     onChange={handleInputChange}
                     label="Nombre del Destinatario"
                     placeholder="Galdor el Veloz"
-                    required
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField
-                    fullWidth
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    label="Email"
-                    placeholder="aventurero@email.com"
-                    required
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField
-                    fullWidth
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    label="Teléfono"
-                    placeholder="+54 9 381 123 4567"
-                    required
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField
-                    fullWidth
-                    name="dni"
-                    value={formData.dni}
-                    onChange={handleInputChange}
-                    label="DNI / CUIL"
-                    placeholder="12345678"
                     required
                   />
                 </Grid>
@@ -867,12 +828,7 @@ const Checkout: React.FC = () => {
                     my: 1,
                   }}
                 />
-                <Stack
-                  direction="row"
-                  justifyContent="space-between"
-                  alignItems="center"
-                  sx={{ pt: 1 }}
-                >
+                <Stack spacing={0.5} alignItems="flex-end" sx={{ pt: 2 }}>
                   <Typography
                     variant="h5"
                     sx={{
@@ -880,6 +836,8 @@ const Checkout: React.FC = () => {
                       color: "secondary.main",
                       textTransform: "uppercase",
                       letterSpacing: 2,
+                      width: "100%",
+                      textAlign: "right",
                     }}
                   >
                     Total
@@ -890,6 +848,7 @@ const Checkout: React.FC = () => {
                       fontWeight: 900,
                       color: "secondary.main",
                       textAlign: "right",
+                      whiteSpace: "nowrap",
                     }}
                   >
                     {formatCurrencyDecimal(grandTotal)}

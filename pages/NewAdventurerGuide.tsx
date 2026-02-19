@@ -42,7 +42,7 @@ const NewAdventurerGuide: React.FC<NewAdventurerGuideProps> = ({ setView }) => {
           height: { xs: 350, md: 1000 },
           position: "relative",
           backgroundImage:
-            "url(https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/banners/adventurer_guide_banner.jpg)", // PLACEHOLDER: Replace with user provided image
+            "url(https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/banners/adventurer_guide_banner.webp)", // PLACEHOLDER: Replace with user provided image
           backgroundSize: "cover",
           backgroundPosition: "center",
           display: "flex",

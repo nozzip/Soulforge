@@ -1,6 +1,7 @@
 /// <reference lib="dom" />
 import React, { useState, useEffect, Suspense, useMemo } from "react";
 import { CartProvider } from "./context/CartContext";
+import { ToastProvider } from "./context/ToastContext";
 import Layout from "./components/Layout";
 import Home from "./pages/Home";
 import Catalog from "./pages/Catalog";
@@ -22,7 +23,8 @@ import {
   CreateThread,
   LFGBoard,
 } from "@/src/features/forum";
-import { useProducts } from "@/src/hooks/useProducts";
+import { useCatalogMetadata } from "./src/hooks/useCatalogMetadata";
+import { useQueryClient } from "@tanstack/react-query";
 import Profile from "./pages/Profile";
 import EditorTest from "./pages/EditorTest";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -34,6 +36,9 @@ import { supabase } from "./src/supabase";
 import { User } from "@supabase/supabase-js";
 import { updatePageMeta, getSEOForView } from "./utils/seo";
 import { DEFAULT_AVATAR_URL } from "./constants";
+import { HelmetProvider } from "react-helmet-async";
+import SEO from "./components/SEO";
+import SmoothScroll from "./src/components/SmoothScroll";
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewState>(ViewState.HOME);
@@ -41,6 +46,9 @@ const App: React.FC = () => {
     null,
   );
   const [globalSearchQuery, setGlobalSearchQuery] = useState("");
+  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(
+    null,
+  );
   const [selectedForumCategoryId, setSelectedForumCategoryId] = useState<
     string | null
   >(null);
@@ -76,52 +84,10 @@ const App: React.FC = () => {
   // Loading State - Removed (Migrated to Suspense)
 
   // Dynamic Metadata State
-  const [categories, setCategories] = useState<string[]>(() => {
-    try {
-      const saved = localStorage.getItem("resinforge_categories");
-      return saved
-        ? JSON.parse(saved)
-        : ["D&D", "Warhammer", "Sci-Fi", "Anime", "Cine"];
-    } catch (e) {
-      return ["D&D", "Warhammer", "Sci-Fi", "Anime", "Cine"];
-    }
-  });
-
-  const [sizes, setSizes] = useState<string[]>(() => {
-    try {
-      const saved = localStorage.getItem("resinforge_sizes");
-      return saved
-        ? JSON.parse(saved)
-        : ["Small", "Medium", "Large", "Huge", "Gargantuan"];
-    } catch (e) {
-      return ["Small", "Medium", "Large", "Huge", "Gargantuan"];
-    }
-  });
-
-  // Persistence Effects
-  const { data: products = [] } = useProducts();
-
-  const allCategories = useMemo(() => {
-    const fromProducts = Array.from(
-      new Set(products.map((p) => p.category).filter(Boolean)),
-    );
-    return Array.from(new Set([...categories, ...fromProducts])).sort();
-  }, [products, categories]);
-
-  const allSizes = useMemo(() => {
-    const fromProducts = Array.from(
-      new Set(products.map((p) => p.size).filter(Boolean)),
-    );
-    return Array.from(new Set([...sizes, ...fromProducts])).sort();
-  }, [products, sizes]);
-
-  useEffect(() => {
-    localStorage.setItem("resinforge_categories", JSON.stringify(categories));
-  }, [categories]);
-
-  useEffect(() => {
-    localStorage.setItem("resinforge_sizes", JSON.stringify(sizes));
-  }, [sizes]);
+  const { data: metadata } = useCatalogMetadata();
+  const allCategories = metadata?.categories || [];
+  const allSizes = metadata?.sizes || [];
+  const queryClient = useQueryClient();
 
   // User State
   const [user, setUser] = useState<User | null>(null);
@@ -206,8 +172,12 @@ const App: React.FC = () => {
   // Wishlist State - Syncs with Supabase when user is logged in
   const [wishlist, setWishlist] = useState<string[]>(() => {
     try {
-      const saved = localStorage.getItem("resinforge_wishlist");
-      return saved ? JSON.parse(saved) : [];
+      const saved = localStorage.getItem("wishlist");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+      return [];
     } catch (e) {
       return [];
     }
@@ -362,9 +332,6 @@ const App: React.FC = () => {
         setTimeout(() => {
           const catalogContent = document.getElementById("catalog-content");
           if (catalogContent) {
-            console.log(
-              "[Navigation] Initial Catalog visit. Scrolling to content.",
-            );
             catalogContent.scrollIntoView({ behavior: "smooth" });
           } else {
             window.scrollTo(0, 0);
@@ -418,11 +385,8 @@ const App: React.FC = () => {
   };
 
   // Update SEO metadata when view or product changes
-  // Update SEO metadata when view or product changes
-  useEffect(() => {
-    const seoData = getSEOForView(currentView, null); // Refactor SEO later if needed
-    updatePageMeta(seoData);
-  }, [currentView, selectedProductId]);
+  // Update SEO metadata when view changes
+  const seoData = getSEOForView(currentView, null); // Default SEO for views. Pages can override.
 
   const handleLogin = (newUser: User) => {
     setUser(newUser);
@@ -438,22 +402,22 @@ const App: React.FC = () => {
     setCurrentView(ViewState.HOME);
   };
 
-  // Product Handlers - Removed (Migrated to React Query mutations)
-
+  // Admin Handlers - Now just invalidates queries as data is derived
   const handleAddCategory = (cat: string) => {
-    if (!categories.includes(cat)) setCategories((prev) => [...prev, cat]);
+    // In a real app, Admin would add this to DB. Here we just re-fetch.
+    queryClient.invalidateQueries({ queryKey: ["catalog-metadata"] });
   };
 
   const handleAddSize = (size: string) => {
-    if (!sizes.includes(size)) setSizes((prev) => [...prev, size]);
+    queryClient.invalidateQueries({ queryKey: ["catalog-metadata"] });
   };
 
   const handleDeleteCategory = (cat: string) => {
-    setCategories((prev) => prev.filter((c) => c !== cat));
+    queryClient.invalidateQueries({ queryKey: ["catalog-metadata"] });
   };
 
   const handleDeleteSize = (size: string) => {
-    setSizes((prev) => prev.filter((s) => s !== size));
+    queryClient.invalidateQueries({ queryKey: ["catalog-metadata"] });
   };
 
   // Forum Handlers
@@ -482,6 +446,11 @@ const App: React.FC = () => {
     setCurrentView(ViewState.FORUM_LFG);
   };
 
+  const handleProfileClick = (userId: string) => {
+    setSelectedProfileId(userId);
+    navigateTo(ViewState.PROFILE);
+  };
+
   const renderView = () => {
     return (
       <ErrorBoundary>
@@ -492,13 +461,18 @@ const App: React.FC = () => {
                 <Home
                   setView={handleSetView}
                   onFilterNavigate={handleNavigateWithFilters}
+                  user={user}
+                  isAdmin={isAdmin}
                 />
               );
             case ViewState.CATALOG:
               return (
                 <Catalog
-                  categories={allCategories}
-                  sizes={allSizes}
+                  categories={metadata?.categories || []}
+                  sizes={metadata?.sizes || []}
+                  designers={metadata?.designers || []}
+                  creatureTypes={metadata?.creatureTypes || []}
+                  weapons={metadata?.weapons || []}
                   onProductClick={handleProductClick}
                   initialSearchQuery={globalSearchQuery}
                   wishlist={wishlist}
@@ -582,6 +556,7 @@ const App: React.FC = () => {
                   onThreadSelect={handleForumThreadSelect}
                   onProductSelect={handleProductClick}
                   onLFGClick={handleLFGClick}
+                  onProfileClick={handleProfileClick}
                   user={user}
                   isAdmin={isAdmin}
                 />
@@ -597,12 +572,14 @@ const App: React.FC = () => {
                   }
                   user={user}
                   isAdmin={isAdmin}
+                  onProfileClick={handleProfileClick}
                 />
               ) : (
                 <ForumHome
                   onCategorySelect={handleForumCategorySelect}
                   user={user}
                   isAdmin={isAdmin}
+                  onProfileClick={handleProfileClick}
                 />
               );
             case ViewState.FORUM_CREATE_THREAD:
@@ -620,6 +597,7 @@ const App: React.FC = () => {
                   onCategorySelect={handleForumCategorySelect}
                   user={user}
                   isAdmin={isAdmin}
+                  onProfileClick={handleProfileClick}
                 />
               );
             case ViewState.FORUM_LFG:
@@ -631,6 +609,8 @@ const App: React.FC = () => {
                   onBack={handleForumBackToCategory}
                   user={user}
                   isAdmin={isAdmin}
+                  onGoHome={handleForumBackToHome}
+                  onProfileClick={handleProfileClick}
                 />
               ) : selectedForumCategoryId ? (
                 <Category
@@ -642,16 +622,24 @@ const App: React.FC = () => {
                   }
                   user={user}
                   isAdmin={isAdmin}
+                  onProfileClick={handleProfileClick}
                 />
               ) : (
                 <ForumHome
                   onCategorySelect={handleForumCategorySelect}
                   user={user}
                   isAdmin={isAdmin}
+                  onProfileClick={handleProfileClick}
                 />
               );
             case ViewState.PROFILE:
-              return <Profile user={user} onProfileUpdate={fetchProfile} />;
+              return (
+                <Profile
+                  user={user}
+                  viewedUserId={selectedProfileId || user?.id}
+                  onProfileUpdate={fetchProfile}
+                />
+              );
             case ViewState.EDITOR_TEST:
               return <EditorTest />;
             default:
@@ -696,27 +684,37 @@ const App: React.FC = () => {
   // I will use multi_replace to insert imports and wrap the return.
 
   return (
-    <ThemeProvider theme={isWarhammer ? warhammerTheme : fantasyTheme}>
-      <CssBaseline />
-      <CartProvider>
-        <Suspense fallback={<ForgeLoader />}>
-          <Layout
-            setView={handleSetView}
-            currentView={currentView}
-            onSearch={handleSearch}
-            onProductSelect={handleProductClick}
-            user={user ? user.user_metadata?.full_name || user.email : null}
-            userProfile={userProfile}
-            isAdmin={isAdmin}
-            onLogout={handleLogout}
-            isWarhammer={isWarhammer}
-            onToggleTheme={toggleTheme}
-          >
-            {renderView()}
-          </Layout>
-        </Suspense>
-      </CartProvider>
-    </ThemeProvider>
+    <HelmetProvider>
+      <ThemeProvider theme={isWarhammer ? warhammerTheme : fantasyTheme}>
+        <CssBaseline />
+        <SmoothScroll>
+          <SEO {...seoData} />
+
+          <CartProvider>
+            <ToastProvider>
+              <Suspense fallback={<ForgeLoader />}>
+                <Layout
+                  setView={handleSetView}
+                  currentView={currentView}
+                  onSearch={handleSearch}
+                  onProductSelect={handleProductClick}
+                  user={
+                    user ? user.user_metadata?.full_name || user.email : null
+                  }
+                  userProfile={userProfile}
+                  isAdmin={isAdmin}
+                  onLogout={handleLogout}
+                  isWarhammer={isWarhammer}
+                  onToggleTheme={toggleTheme}
+                >
+                  {renderView()}
+                </Layout>
+              </Suspense>
+            </ToastProvider>
+          </CartProvider>
+        </SmoothScroll>
+      </ThemeProvider>
+    </HelmetProvider>
   );
 };
 

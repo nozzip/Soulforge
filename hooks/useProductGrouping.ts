@@ -87,14 +87,6 @@ export const useProductGrouping = (
       }
 
       try {
-        console.log("[Grouping] Starting update:", {
-          draggedId: activeId,
-          draggedName: draggedProduct.name,
-          targetId: targetId,
-          targetName: targetProduct.name,
-          newSetName,
-        });
-
         // Update both products in Supabase and SELECT to verify the update happened
         const updates = await Promise.all([
           supabase
@@ -108,16 +100,6 @@ export const useProductGrouping = (
             .eq("id", targetId)
             .select(),
         ]);
-
-        console.log(
-          "[Grouping] Supabase results:",
-          updates.map((u) => ({
-            error: u.error,
-            count: u.count,
-            status: u.status,
-            dataLength: u.data?.length,
-          })),
-        );
 
         // Check for errors or empty updates (RLS silent failure)
         const errors = updates.filter((r) => r.error);
@@ -139,11 +121,8 @@ export const useProductGrouping = (
 
         // Refresh products from database to ensure consistency
         if (onRefreshProducts) {
-          console.log("[Grouping] Calling onRefreshProducts...");
           await onRefreshProducts();
-          console.log("[Grouping] Products refreshed");
         } else {
-          console.log("[Grouping] No refresh function, updating local state");
           // Fallback: Update local state
           onUpdateProduct({ ...draggedProduct, set_name: newSetName });
           onUpdateProduct({ ...targetProduct, set_name: newSetName });

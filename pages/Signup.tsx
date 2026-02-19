@@ -16,7 +16,7 @@ import {
   alpha,
   useTheme,
 } from "@mui/material";
-import { HistoryEdu, Error as ErrorIcon } from "@mui/icons-material";
+import { HistoryEdu, Error as ErrorIcon, Google } from "@mui/icons-material";
 import { DecorativeCorners, FancyPaper } from "../components/StyledComponents";
 import { supabase } from "../src/supabase";
 import { User } from "@supabase/supabase-js";
@@ -42,6 +42,7 @@ const Signup: React.FC<SignupProps> = ({ setView, onLogin }) => {
     e.preventDefault();
     setError(null);
 
+    // Simplified validation
     if (!name.trim()) {
       setError("Por favor, inscribe tu nombre para continuar.");
       return;
@@ -49,7 +50,7 @@ const Signup: React.FC<SignupProps> = ({ setView, onLogin }) => {
 
     if (!validNameRegex.test(name)) {
       setError(
-        "El nombre solo puede contener letras, números y guiones bajos. Sin espacios ni símbolos especiales.",
+        "El nombre solo puede contener letras, números y guiones bajos (sin espacios).",
       );
       return;
     }
@@ -65,21 +66,8 @@ const Signup: React.FC<SignupProps> = ({ setView, onLogin }) => {
       return;
     }
 
-    // Validate password strength
-    if (password.length < 8) {
-      setError("Tu runa secreta debe tener al menos 8 caracteres.");
-      return;
-    }
-
-    const hasUpperCase = /[A-Z]/.test(password);
-    const hasLowerCase = /[a-z]/.test(password);
-    const hasNumber = /[0-9]/.test(password);
-    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-
-    if (!hasUpperCase || !hasLowerCase || !hasNumber || !hasSpecialChar) {
-      setError(
-        "Tu runa secreta debe contener mayúsculas, minúsculas, números y caracteres especiales.",
-      );
+    if (!password) {
+      setError("Debes inscribir una runa secreta.");
       return;
     }
 
@@ -101,31 +89,33 @@ const Signup: React.FC<SignupProps> = ({ setView, onLogin }) => {
       setError(signupError.message);
       setIsLoading(false);
     } else if (data.user) {
-      // If session is null, email confirmation is likely required
-      if (!data.session) {
-        setError(
-          "Cuenta creada. Por favor verifica tu correo electrónico para confirmar.",
-        );
-        setIsLoading(false);
+      // If we have a session, it's an auto-login (email confirmation disabled in Supabase)
+      if (data.session) {
+        onLogin(data.user);
         return;
       }
 
-      // Metadata should be handled by trigger, but we ensure consistency here if logged in
-      const { error: profileError } = await supabase.from("profiles").upsert({
-        id: data.user.id,
-        username: name,
-        full_name: name,
-        avatar_url: DEFAULT_AVATAR_URL,
-      });
-
-      if (profileError) {
-        console.error("Error updating profile:", profileError);
-        // Non-critical if trigger worked
-      }
-
-      onLogin(data.user);
+      // If no session, wait for confirmation, but show a SUCCESS message, not an error
+      setSignupSuccess(true);
+      setIsLoading(false);
     }
   };
+
+  const handleGoogleSignup = async () => {
+    setError(null);
+    const { error: authError } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: window.location.origin,
+      },
+    });
+
+    if (authError) {
+      setError(authError.message);
+    }
+  };
+
+  const [signupSuccess, setSignupSuccess] = useState(false);
 
   return (
     <Container
@@ -193,6 +183,42 @@ const Signup: React.FC<SignupProps> = ({ setView, onLogin }) => {
           </Alert>
         </Collapse>
 
+        <Collapse in={signupSuccess}>
+          <Paper
+            sx={{
+              mb: 3,
+              p: 2,
+              bgcolor: (t) => alpha(t.palette.secondary.main, 0.1),
+              border: 2,
+              borderColor: "secondary.main",
+              borderRadius: 2,
+              textAlign: "center",
+              boxShadow: (t) =>
+                `0 0 20px ${alpha(t.palette.secondary.main, 0.2)}`,
+            }}
+          >
+            <Typography
+              variant="subtitle1"
+              sx={{
+                color: "secondary.main",
+                fontWeight: "bold",
+                textTransform: "uppercase",
+                letterSpacing: 1,
+                mb: 0.5,
+              }}
+            >
+              ¡Nombre Inscripto con Éxito!
+            </Typography>
+            <Typography
+              variant="body2"
+              sx={{ color: "grey.300", fontStyle: "italic" }}
+            >
+              Por favor, verifica tu correo electrónico para confirmar tu
+              entrada al reino.
+            </Typography>
+          </Paper>
+        </Collapse>
+
         <Box component="form" onSubmit={handleSubmit}>
           <Stack spacing={3}>
             <TextField
@@ -257,9 +283,42 @@ const Signup: React.FC<SignupProps> = ({ setView, onLogin }) => {
           </Stack>
         </Box>
 
-        <Divider sx={{ my: 4 }} />
+        <Divider sx={{ my: 4 }}>
+          <Typography
+            variant="caption"
+            sx={{
+              color: "grey.600",
+              px: 1,
+              textTransform: "uppercase",
+              letterSpacing: 1,
+            }}
+          >
+            o utiliza magia externa
+          </Typography>
+        </Divider>
 
-        <Box sx={{ textAlign: "center" }}>
+        <Button
+          fullWidth
+          variant="outlined"
+          onClick={handleGoogleSignup}
+          disabled={isLoading}
+          startIcon={<Google />}
+          sx={{
+            py: 1.5,
+            borderColor: (t) => alpha(t.palette.secondary.main, 0.3),
+            color: "common.white",
+            fontWeight: "bold",
+            letterSpacing: 1,
+            "&:hover": {
+              borderColor: "secondary.main",
+              bgcolor: (t) => alpha(t.palette.secondary.main, 0.05),
+            },
+          }}
+        >
+          Continuar con Google
+        </Button>
+
+        <Box sx={{ textAlign: "center", mt: 4 }}>
           <Typography
             variant="body2"
             sx={{ color: "grey.500", fontStyle: "italic", mb: 1 }}

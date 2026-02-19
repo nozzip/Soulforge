@@ -8,6 +8,7 @@ import {
   ListItem,
   ListItemText,
   ListItemIcon,
+  ListItemAvatar,
   Paper,
   Chip,
   Avatar,
@@ -27,11 +28,14 @@ import {
   Comment as CommentIcon,
   Visibility as VisibilityIcon,
   Delete as DeleteIcon,
+  Search as SearchIcon,
 } from "@mui/icons-material";
+import { TextField, Pagination, InputAdornment } from "@mui/material";
 import { supabase } from "@/src/supabase";
 import { ForumThread, ForumCategory, Profile } from "@/types";
 import { DEFAULT_AVATAR_URL } from "@/constants";
 import RichTextDisplay from "@/components/Editor/RichTextDisplay";
+import { useToast } from "@/context/ToastContext";
 
 interface CategoryProps {
   categoryId: string;
@@ -40,6 +44,7 @@ interface CategoryProps {
   onCreateThread: () => void;
   user: any; // Using any for now to avoid strict type issues, but should match User type
   isAdmin?: boolean;
+  onProfileClick: (userId: string) => void;
 }
 
 const Category: React.FC<CategoryProps> = ({
@@ -49,15 +54,19 @@ const Category: React.FC<CategoryProps> = ({
   onCreateThread,
   user,
   isAdmin = false,
+  onProfileClick,
 }) => {
   const theme = useTheme();
+  const { showToast } = useToast();
   const [category, setCategory] = useState<ForumCategory | null>(null);
   const [threads, setThreads] = useState<ForumThread[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const ITEMS_PER_PAGE = 20;
 
   useEffect(() => {
-    fetchCategoryAndThreads();
-
     const channel = supabase
       .channel(`category_threads:${categoryId}`)
       .on(
@@ -92,24 +101,58 @@ const Category: React.FC<CategoryProps> = ({
       if (catError) throw catError;
       setCategory(catData);
 
-      // Fetch Threads
-      // Note: We need to join with profiles to get author details.
-      // Supabase-js can do this if foreign keys are set up.
-      const { data: threadData, error: threadError } = await supabase
+      // Fetch Threads with Pagination and Search
+      let query = supabase
         .from("forum_threads")
-        .select("*, author:profiles(username, avatar_url, title, faction)")
-        .eq("category_id", categoryId)
+        .select("*, author:profiles(username, avatar_url, title, faction)", {
+          count: "exact",
+        })
+        .eq("category_id", categoryId);
+
+      if (searchQuery.trim()) {
+        query = query.ilike("title", `%${searchQuery.trim()}%`);
+      }
+
+      const from = (page - 1) * ITEMS_PER_PAGE;
+      const to = from + ITEMS_PER_PAGE - 1;
+
+      const {
+        data: threadData,
+        error: threadError,
+        count,
+      } = await query
         .order("is_pinned", { ascending: false })
-        .order("updated_at", { ascending: false });
+        .order("updated_at", { ascending: false })
+        .range(from, to);
 
       if (threadError) throw threadError;
       setThreads(threadData || []);
+      if (count) {
+        setTotalPages(Math.ceil(count / ITEMS_PER_PAGE));
+      }
     } catch (error) {
       console.error("Error fetching forum data:", error);
     } finally {
       setLoading(false);
     }
   };
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPage(1); // Reset to page 1 on search
+      fetchCategoryAndThreads();
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Fetch on page change
+  useEffect(() => {
+    fetchCategoryAndThreads();
+  }, [page, categoryId]); // categoryId triggers reset via parent effect? No, let's keep it simple.
+
+  // Remove the original useEffect which only depended on categoryId
+  // We will replace it with one that depends on just the realtime subscription setup
 
   const handleDeleteThread = async (threadId: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -133,7 +176,7 @@ const Category: React.FC<CategoryProps> = ({
       setThreads((prev) => prev.filter((t) => t.id !== threadId));
     } catch (error) {
       console.error("Error deleting thread:", error);
-      alert("Error al borrar el hilo.");
+      showToast("Error al borrar el hilo.", "error");
     }
   };
 
@@ -167,7 +210,7 @@ const Category: React.FC<CategoryProps> = ({
       );
     } catch (error) {
       console.error("Error pinning thread:", error);
-      alert("Error al fijar el hilo.");
+      showToast("Error al fijar el hilo.", "error");
     }
   };
 
@@ -235,20 +278,43 @@ const Category: React.FC<CategoryProps> = ({
               }}
             />
           </Box>
-          {user && (
-            <Button
-              variant="contained"
-              color="secondary"
-              startIcon={<AddIcon />}
-              sx={{
-                fontFamily: "Cinzel, serif",
-                fontWeight: "bold",
+          <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+            <TextField
+              placeholder="Buscar pergaminos..."
+              variant="outlined"
+              size="small"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon color="action" />
+                  </InputAdornment>
+                ),
               }}
-              onClick={onCreateThread}
-            >
-              Nuevo Pergamino
-            </Button>
-          )}
+              sx={{
+                bgcolor: alpha(theme.palette.background.paper, 0.6),
+                width: { xs: "100%", sm: 300 },
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: 2,
+                },
+              }}
+            />
+            {user && (
+              <Button
+                variant="contained"
+                color="secondary"
+                startIcon={<AddIcon />}
+                sx={{
+                  fontFamily: "Cinzel, serif",
+                  fontWeight: "bold",
+                }}
+                onClick={onCreateThread}
+              >
+                Nuevo Pergamino
+              </Button>
+            )}
+          </Box>
         </Box>
       </Box>
 
@@ -286,7 +352,14 @@ const Category: React.FC<CategoryProps> = ({
                   disablePadding
                   secondaryAction={
                     isAdmin && (
-                      <Box>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 0.5,
+                          mr: 1, // Margin from the edge of the paper
+                        }}
+                      >
                         <IconButton
                           edge="end"
                           aria-label="pin"
@@ -297,18 +370,19 @@ const Category: React.FC<CategoryProps> = ({
                             color: thread.is_pinned
                               ? "secondary.main"
                               : "text.disabled",
-                            mr: 1,
                           }}
+                          size="small"
                         >
-                          <PushPinIcon />
+                          <PushPinIcon fontSize="small" />
                         </IconButton>
                         <IconButton
                           edge="end"
                           aria-label="delete"
                           onClick={(e) => handleDeleteThread(thread.id, e)}
                           color="error"
+                          size="small"
                         >
-                          <DeleteIcon />
+                          <DeleteIcon fontSize="small" />
                         </IconButton>
                       </Box>
                     )
@@ -320,7 +394,7 @@ const Category: React.FC<CategoryProps> = ({
                     sx={{
                       py: 3,
                       px: 3,
-                      pr: isAdmin ? 8 : 3, // Add padding for delete button
+                      pr: isAdmin ? 14 : 3, // Increased padding to avoid overlap with admin icons
                       transition: "all 0.2s",
                       bgcolor: thread.is_pinned
                         ? alpha(theme.palette.secondary.main, 0.08)
@@ -348,85 +422,77 @@ const Category: React.FC<CategoryProps> = ({
                     </ListItemIcon>
 
                     {/* Content */}
+                    <ListItemAvatar>
+                      <Avatar
+                        src={thread.author?.avatar_url || DEFAULT_AVATAR_URL}
+                        alt={thread.author?.username}
+                        sx={{
+                          cursor: "pointer",
+                          "&:hover": { opacity: 0.8 },
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (thread.author?.id)
+                            onProfileClick(thread.author.id);
+                        }}
+                      />
+                    </ListItemAvatar>
                     <ListItemText
-                      secondaryTypographyProps={{ component: "div" }}
                       primary={
                         <Typography
                           variant="h6"
                           component="span"
                           sx={{
-                            fontFamily: '"Newsreader", serif',
-                            fontWeight: 600,
+                            fontFamily: "Cinzel, serif",
+                            fontWeight: 700,
                             color: "text.primary",
-                            fontSize: "1.1rem",
                           }}
                         >
+                          {thread.is_pinned && (
+                            <PushPinIcon
+                              fontSize="small"
+                              sx={{
+                                mr: 1,
+                                verticalAlign: "middle",
+                                color: "secondary.main",
+                              }}
+                            />
+                          )}
                           {thread.title}
                         </Typography>
                       }
                       secondary={
-                        <Box
-                          component="span"
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            mt: 1,
-                            gap: 2,
-                            color: "text.secondary",
-                            fontSize: "0.875rem",
-                            flexWrap: "wrap",
-                          }}
-                        >
-                          <Box
+                        <React.Fragment>
+                          <Typography
                             component="span"
+                            variant="body2"
+                            color="secondary.main"
                             sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1,
+                              cursor: "pointer",
+                              "&:hover": { textDecoration: "underline" },
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (thread.author?.id)
+                                onProfileClick(thread.author.id);
                             }}
                           >
-                            <Avatar
-                              src={
-                                thread.author?.avatar_url?.includes(
-                                  "images/avatars/",
-                                )
-                                  ? DEFAULT_AVATAR_URL
-                                  : thread.author?.avatar_url
-                              }
-                              alt={thread.author?.username}
-                              sx={{ width: 24, height: 24 }}
-                            />
-                            <Typography
-                              variant="caption"
-                              sx={{
-                                fontWeight: "bold",
-                                color: "secondary.main",
-                              }}
-                            >
-                              {thread.author?.username ||
-                                thread.author?.full_name ||
-                                "Desconocido"}
-                            </Typography>
-                            {thread.author?.title && (
-                              <Chip
-                                label={thread.author.title}
-                                size="small"
-                                variant="outlined"
-                                sx={{
-                                  height: 20,
-                                  fontSize: "0.65rem",
-                                  borderColor: alpha(
-                                    theme.palette.secondary.main,
-                                    0.3,
-                                  ),
-                                }}
-                              />
-                            )}
-                          </Box>
-                          <Typography variant="caption">
-                            • {formatDate(thread.created_at)}
+                            {thread.author?.username ||
+                              thread.author?.full_name ||
+                              "Desconocido"}
                           </Typography>
-                        </Box>
+                          {" • "}
+                          {new Date(thread.created_at).toLocaleDateString(
+                            "es-ES",
+                            {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            },
+                          )}
+                          {thread.replies_count !== undefined &&
+                            ` • ${thread.replies_count} respuestas`}
+                        </React.Fragment>
                       }
                     />
 
@@ -464,6 +530,24 @@ const Category: React.FC<CategoryProps> = ({
           </List>
         )}
       </Paper>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Box sx={{ mt: 4, display: "flex", justifyContent: "center" }}>
+          <Pagination
+            count={totalPages}
+            page={page}
+            onChange={(e, value) => {
+              setPage(value);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            color="secondary"
+            size="large"
+            showFirstButton
+            showLastButton
+          />
+        </Box>
+      )}
     </Container>
   );
 };

@@ -41,6 +41,8 @@ import {
   Map as MapIcon,
   ArrowForward as ArrowForwardIcon,
   HelpOutline as HelpIcon,
+  Forum as ForumIcon,
+  Category as CategoryIcon,
 } from "@mui/icons-material";
 import SvgIcon, { SvgIconProps } from "@mui/material/SvgIcon";
 import { useProducts } from "@/src/hooks/useProducts";
@@ -328,6 +330,9 @@ const Navbar: React.FC<NavbarProps> = ({
         </ListItem>
         <ListItem disablePadding>
           <ListItemButton onClick={() => setView(ViewState.CATALOG)}>
+            <ListItemIcon>
+              <CategoryIcon sx={{ color: "secondary.main" }} />
+            </ListItemIcon>
             <ListItemText
               primary="CATÁLOGO"
               primaryTypographyProps={{
@@ -389,6 +394,28 @@ const Navbar: React.FC<NavbarProps> = ({
             />
           </ListItemButton>
         </ListItem>
+        <ListItem disablePadding>
+          <ListItemButton onClick={() => setView(ViewState.FORUM_HOME)}>
+            <ListItemIcon>
+              <ForumIcon sx={{ color: "secondary.main" }} />
+            </ListItemIcon>
+            <ListItemText
+              primary="LA TABERNA"
+              primaryTypographyProps={{
+                fontFamily: '"Newsreader", serif',
+                fontSize: "1.05rem",
+                color:
+                  currentView === ViewState.FORUM_HOME
+                    ? isWarhammer
+                      ? "#d32f2f"
+                      : "#2e7fc3"
+                    : "inherit",
+                fontWeight:
+                  currentView === ViewState.FORUM_HOME ? "bold" : "normal",
+              }}
+            />
+          </ListItemButton>
+        </ListItem>
         {isAdmin && (
           <ListItem disablePadding>
             <ListItemButton onClick={() => setView(ViewState.ADMIN)}>
@@ -421,7 +448,12 @@ const Navbar: React.FC<NavbarProps> = ({
                   {userProfile?.avatar_url ? (
                     <Avatar
                       src={userProfile.avatar_url}
-                      sx={{ width: 24, height: 24, border: 1, borderColor: 'secondary.main' }}
+                      sx={{
+                        width: 24,
+                        height: 24,
+                        border: 1,
+                        borderColor: "secondary.main",
+                      }}
                     />
                   ) : (
                     <PersonIcon sx={{ color: "secondary.main" }} />
@@ -776,20 +808,20 @@ const Navbar: React.FC<NavbarProps> = ({
                       },
                       ...(isAdmin
                         ? [
-                          {
-                            label: "Admin",
-                            view: ViewState.ADMIN,
-                            icon: (
-                              <ConstructionIcon
-                                sx={{
-                                  fontSize: 16,
-                                  mb: 0.5,
-                                  color: isWarhammer ? "inherit" : "#e65100",
-                                }}
-                              />
-                            ),
-                          },
-                        ]
+                            {
+                              label: "Admin",
+                              view: ViewState.ADMIN,
+                              icon: (
+                                <ConstructionIcon
+                                  sx={{
+                                    fontSize: 16,
+                                    mb: 0.5,
+                                    color: isWarhammer ? "inherit" : "#e65100",
+                                  }}
+                                />
+                              ),
+                            },
+                          ]
                         : []),
                     ].map((item) => (
                       <Button
@@ -874,7 +906,7 @@ const Navbar: React.FC<NavbarProps> = ({
                             border: user ? 1 : 0,
                             borderColor: "secondary.main",
                             borderRadius: "50%",
-                            overflow: "hidden"
+                            overflow: "hidden",
                           }}
                         >
                           {userProfile?.avatar_url ? (
@@ -883,9 +915,11 @@ const Navbar: React.FC<NavbarProps> = ({
                               sx={{ width: 32, height: 32 }}
                             />
                           ) : (
-                            <Box sx={{ p: 0.5, display: 'flex' }}>
+                            <Box sx={{ p: 0.5, display: "flex" }}>
                               <PersonIcon
-                                sx={{ color: user ? "secondary.main" : "inherit" }}
+                                sx={{
+                                  color: user ? "secondary.main" : "inherit",
+                                }}
                               />
                             </Box>
                           )}
@@ -915,7 +949,9 @@ const Navbar: React.FC<NavbarProps> = ({
                           <Typography variant="caption" color="text.secondary">
                             Sesión iniciada como
                           </Typography>
-                          <Typography variant="subtitle2">{userProfile?.username || user}</Typography>
+                          <Typography variant="subtitle2">
+                            {userProfile?.username || user}
+                          </Typography>
                         </Box>
                         <MenuItem
                           onClick={() => {

@@ -15,17 +15,24 @@ interface HomeProps {
     categories?: string[];
     creatureTypes?: string[];
   }) => void;
+  user?: any;
+  isAdmin?: boolean;
 }
 
-const Home: React.FC<HomeProps> = ({ setView, onFilterNavigate }) => {
+const Home: React.FC<HomeProps> = ({
+  setView,
+  onFilterNavigate,
+  user,
+  isAdmin,
+}) => {
   const { data: products } = useProducts();
-  // Optimization: Sort products once here if needed for all children, 
+  // Optimization: Sort products once here if needed for all children,
   // or pass raw products and let children handle their specific filtering.
-  // Since multiple children need "Hero" products (most recent), 
+  // Since multiple children need "Hero" products (most recent),
   // we can sort once here to avoid sorting repeatedly in children if we passed filtered lists.
   // However, the children need specific category filtering.
-  // Ideally, we might pass a lookup map or just the list. 
-  // Given the previous implementation sorted repeatedly, passing the list 
+  // Ideally, we might pass a lookup map or just the list.
+  // Given the previous implementation sorted repeatedly, passing the list
   // and letting components find their specific items is cleaner separation,
   // but we can optimize by sorting once by ID descending (newest first).
 
@@ -35,7 +42,7 @@ const Home: React.FC<HomeProps> = ({ setView, onFilterNavigate }) => {
 
   return (
     <Box sx={{ pb: 8 }}>
-      <HeroSection setView={setView} />
+      <HeroSection setView={setView} isAdmin={isAdmin} />
 
       <FeaturedCollections
         products={sortedProducts}

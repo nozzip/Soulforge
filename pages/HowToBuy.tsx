@@ -43,7 +43,7 @@ const HowToBuy: React.FC<HowToBuyProps> = ({ setView }) => {
           height: { xs: 350, md: 900 },
           position: "relative",
           backgroundImage:
-            "url(https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/guide/dragon_banner.jpg)",
+            "url(https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/guide/dragon_banner.webp)",
           backgroundSize: "cover",
           backgroundPosition: "center",
           display: "flex",
@@ -173,11 +173,7 @@ const HowToBuy: React.FC<HowToBuyProps> = ({ setView }) => {
           <Grid size={{ xs: 12, md: 6 }}>
             <Stack spacing={8}>
               {howToBuySteps.slice(0, 5).map((step, index) => (
-                <GuideTimelineItem
-                  key={index}
-                  step={step}
-                  index={index}
-                />
+                <GuideTimelineItem key={index} step={step} index={index} />
               ))}
             </Stack>
           </Grid>
@@ -248,6 +244,7 @@ const HowToBuy: React.FC<HowToBuyProps> = ({ setView }) => {
               sx={{
                 mt: { xs: 10, md: 15 },
                 textAlign: "center",
+                Justi: "center",
                 position: "relative",
               }}
             >

@@ -4,45 +4,65 @@
  * @param maxSizeMB - Maximum file size in megabytes (default: 5MB)
  * @returns Object with isValid boolean and error message if invalid
  */
-export function validateImageFile(file: File, maxSizeMB: number = 5): { isValid: boolean; error?: string } {
+export function validateImageFile(
+  file: File,
+  maxSizeMB: number = 5,
+): { isValid: boolean; error?: string } {
   // Check if file exists
   if (!file) {
-    return { isValid: false, error: 'No se seleccionó ningún archivo' };
+    return { isValid: false, error: "No se seleccionó ningún archivo" };
   }
 
   // Validate file size
   const maxSizeBytes = maxSizeMB * 1024 * 1024;
   if (file.size > maxSizeBytes) {
-    return { isValid: false, error: `El archivo es muy grande. Máximo permitido: ${maxSizeMB}MB` };
+    return {
+      isValid: false,
+      error: `El archivo es muy grande. Máximo permitido: ${maxSizeMB}MB`,
+    };
   }
 
   // Validate MIME type
-  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+  const allowedTypes = [
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+  ];
   if (!allowedTypes.includes(file.type)) {
-    return { isValid: false, error: 'Formato de archivo no permitido. Usa: JPG, PNG, WEBP o GIF' };
+    return {
+      isValid: false,
+      error: "Formato de archivo no permitido. Usa: JPG, PNG, WEBP o GIF",
+    };
   }
 
   // Validate file extension (defense in depth)
-  const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
+  const allowedExtensions = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
   const fileName = file.name.toLowerCase();
-  const hasValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
-  
+  const hasValidExtension = allowedExtensions.some((ext) =>
+    fileName.endsWith(ext),
+  );
+
   if (!hasValidExtension) {
-    return { isValid: false, error: 'Extensión de archivo no válida' };
+    return { isValid: false, error: "Extensión de archivo no válida" };
   }
 
   // Additional check: ensure extension matches MIME type
-  const extension = fileName.substring(fileName.lastIndexOf('.'));
+  const extension = fileName.substring(fileName.lastIndexOf("."));
   const mimeToExtension: { [key: string]: string[] } = {
-    'image/jpeg': ['.jpg', '.jpeg'],
-    'image/png': ['.png'],
-    'image/webp': ['.webp'],
-    'image/gif': ['.gif']
+    "image/jpeg": [".jpg", ".jpeg"],
+    "image/png": [".png"],
+    "image/webp": [".webp"],
+    "image/gif": [".gif"],
   };
 
   const expectedExtensions = mimeToExtension[file.type] || [];
   if (!expectedExtensions.includes(extension)) {
-    return { isValid: false, error: 'El tipo de archivo no coincide con su extensión' };
+    return {
+      isValid: false,
+      error: "El tipo de archivo no coincide con su extensión",
+    };
   }
 
   return { isValid: true };
@@ -54,7 +74,10 @@ export function validateImageFile(file: File, maxSizeMB: number = 5): { isValid:
  * @param maxSizeMB - Maximum file size in MB
  * @returns Promise with base64 string or rejects with error
  */
-export function safeReadImageAsDataURL(file: File, maxSizeMB: number = 5): Promise<string> {
+export function safeReadImageAsDataURL(
+  file: File,
+  maxSizeMB: number = 5,
+): Promise<string> {
   return new Promise((resolve, reject) => {
     // Validate first
     const validation = validateImageFile(file, maxSizeMB);
@@ -66,17 +89,43 @@ export function safeReadImageAsDataURL(file: File, maxSizeMB: number = 5): Promi
     const reader = new FileReader();
 
     reader.onload = () => {
-      if (typeof reader.result === 'string') {
+      if (typeof reader.result === "string") {
         resolve(reader.result);
       } else {
-        reject(new Error('Error al procesar la imagen'));
+        reject(new Error("Error al procesar la imagen"));
       }
     };
 
     reader.onerror = () => {
-      reject(new Error('Error al leer el archivo'));
+      reject(new Error("Error al leer el archivo"));
     };
 
     reader.readAsDataURL(file);
   });
 }
+
+/**
+ * Optimizes Supabase Storage image URLs using the Image Transformation service.
+ * Replaces /object/public/ with /render/image/public/ and adds resize parameters.
+ * @param url - The original image URL
+ * @param width - The desired width
+ * @returns Optimized URL or original URL if not a Supabase Storage URL
+ */
+export const getOptimizedImageUrl = (
+  url: string | null | undefined,
+  width: number,
+): string => {
+  if (!url) return "/placeholder.jpg"; // Default placeholder
+
+  // Check if it's a Supabase Storage URL
+  if (url.includes("/storage/v1/object/public/")) {
+    // Replace /object/ with /render/image/
+    const optimizedUrl = url.replace(
+      "/storage/v1/object/public/",
+      "/storage/v1/render/image/public/",
+    );
+    return `${optimizedUrl}?width=${width}&resize=contain&quality=80`;
+  }
+
+  return url;
+};

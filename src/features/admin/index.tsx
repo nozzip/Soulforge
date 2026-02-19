@@ -16,12 +16,16 @@ import {
   Inventory,
   ReceiptLong,
   RateReview,
+  Shield as ShieldIcon,
+  Flag as FlagIcon,
 } from "@mui/icons-material";
 import { SectionHeader } from "@/components/StyledComponents";
 import { ViewState, Product } from "@/types";
 import { AdminProducts } from "./components/AdminProducts";
 import { AdminOrders } from "./components/AdminOrders";
 import { AdminReviews } from "./components/AdminReviews";
+import { AdminGuilds } from "./components/AdminGuilds";
+import { AdminReports } from "./components/AdminReports";
 
 interface AdminProps {
   setView: (view: ViewState) => void;
@@ -157,12 +161,30 @@ const Admin: React.FC<AdminProps> = ({
                 label="Crónicas de Aventureros"
                 sx={{ fontWeight: "bold", letterSpacing: 1 }}
               />
+              <Tab
+                icon={<ShieldIcon sx={{ mb: 0, mr: 2 }} />}
+                iconPosition="start"
+                label="Gremios y Facciones"
+                sx={{ fontWeight: "bold", letterSpacing: 1 }}
+              />
+              <Tab
+                icon={<FlagIcon sx={{ mb: 0, mr: 2 }} />}
+                iconPosition="start"
+                label="Reportes del Foro"
+                sx={{ fontWeight: "bold", letterSpacing: 1 }}
+              />
             </Tabs>
           </Paper>
         </Grid>
         <Grid size={{ xs: 12, md: 9, lg: 10 }}>
           {currentTab === 0 && (
-            <Suspense fallback={<Box display="flex" justifyContent="center" p={4}><CircularProgress /></Box>}>
+            <Suspense
+              fallback={
+                <Box display="flex" justifyContent="center" p={4}>
+                  <CircularProgress />
+                </Box>
+              }
+            >
               <AdminProducts
                 categories={categories}
                 sizes={sizes}
@@ -177,6 +199,10 @@ const Admin: React.FC<AdminProps> = ({
           {currentTab === 1 && <AdminOrders />}
 
           {currentTab === 2 && <AdminReviews />}
+
+          {currentTab === 3 && <AdminGuilds />}
+
+          {currentTab === 4 && <AdminReports />}
         </Grid>
       </Grid>
     </Container>

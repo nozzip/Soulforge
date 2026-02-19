@@ -9,139 +9,281 @@ import {
   Button,
   Avatar,
   CircularProgress,
-  MenuItem,
   useTheme,
   alpha,
   Divider,
   LinearProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Chip,
+  List,
+  ListItem,
+  ListItemAvatar,
+  ListItemText,
+  IconButton,
+  Tooltip,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import {
   Save as SaveIcon,
   Edit as EditIcon,
   Shield as ShieldIcon,
-  EmojiEvents as TrophyIcon,
+  Add as AddIcon,
+  Check as CheckIcon,
+  Close as CloseIcon,
+  Group as GroupIcon,
 } from "@mui/icons-material";
 import { supabase } from "../src/supabase";
 import { DEFAULT_AVATAR_URL } from "../constants";
-import { Profile as ProfileType } from "../types";
+import { Profile as ProfileType, Guild, GuildMember } from "../types";
 import AvatarSelectionModal from "../components/AvatarSelectionModal";
 
 interface ProfileProps {
-  user: any; // Using any to avoid strict type issues with Auth User vs Profile
+  user: any;
+  viewedUserId?: string;
   onProfileUpdate?: () => void;
 }
 
-const FACTIONS = [
-  "Harpers",
-  "Order of the Gauntlet",
-  "Emerald Enclave",
-  "Lords' Alliance",
-  "Zhentarim",
-];
-
-// Titles based on level (read-only)
-const getTitle = (level: number) => {
-  if (level >= 20) return "Epic Legend";
-  if (level >= 15) return "Master of the Realm";
-  if (level >= 10) return "Veteran Hero";
-  if (level >= 5) return "Dungeon Explorer";
-  return "Novice Adventurer";
+// XP Calculation Helpers
+const getXpThresholds = (level: number) => {
+  const currentLevelXp = 500 * level * (level - 1);
+  const nextLevelXp = 500 * (level + 1) * level;
+  return { currentLevelXp, nextLevelXp, needed: nextLevelXp - currentLevelXp };
 };
 
-const Profile: React.FC<ProfileProps> = ({ user, onProfileUpdate }) => {
+const Profile: React.FC<ProfileProps> = ({
+  user,
+  viewedUserId,
+  onProfileUpdate,
+}) => {
   const theme = useTheme();
   const [profile, setProfile] = useState<ProfileType | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [startLoading, setStartLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [avatarModalOpen, setAvatarModalOpen] = useState(false);
 
+  // Guild State
+  const [guildMember, setGuildMember] = useState<GuildMember | null>(null);
+  const [myGuild, setMyGuild] = useState<Guild | null>(null);
+  const [guildApps, setGuildApps] = useState<GuildMember[]>([]);
+  const [createGuildOpen, setCreateGuildOpen] = useState(false);
+  const [newGuildName, setNewGuildName] = useState("");
+  const [creatingGuild, setCreatingGuild] = useState(false);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "info" as "success" | "info" | "error",
+  });
+
   // Form State
   const [formData, setFormData] = useState({
-    faction: "",
     avatar_url: "",
   });
 
-  useEffect(() => {
-    if (user) {
-      fetchProfile();
-    }
-  }, [user]);
+  const targetUserId = viewedUserId || user?.id;
+  const isOwnProfile = user?.id === targetUserId;
 
-  const fetchProfile = async () => {
+  useEffect(() => {
+    if (targetUserId) {
+      fetchProfileAndGuild();
+    }
+  }, [targetUserId]);
+
+  const fetchProfileAndGuild = async () => {
     try {
-      setLoading(true);
-      const { data, error } = await supabase
+      setStartLoading(true);
+
+      // 1. Fetch Profile
+      const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("*")
-        .eq("id", user.id)
+        .eq("id", targetUserId)
         .single();
 
-      if (error) {
-        // If profile doesn't exist, use user metadata
-        if (error.code === "PGRST116") {
-          const initialProfile = {
-            id: user.id,
-            username:
-              user.user_metadata?.full_name ||
-              user.email?.split("@")[0] ||
-              "Aventurero",
-            full_name: user.user_metadata?.full_name || "",
-            avatar_url: user.user_metadata?.avatar_url || "",
-            faction: "Harpers", // Default
-            title: "Novice Adventurer",
-            xp: 0,
-            level: 1,
-          };
-          setProfile(initialProfile);
-          setFormData({
-            faction: initialProfile.faction,
-            avatar_url: initialProfile.avatar_url,
-          });
+      if (profileError) {
+        if (profileError.code === "PGRST116") {
+          if (isOwnProfile) {
+            // Create default profile if missing (only for self)
+            const initialProfile = {
+              id: user.id,
+              username: user.user_metadata?.full_name || "Aventurero",
+              full_name: user.user_metadata?.full_name || "",
+              avatar_url: user.user_metadata?.avatar_url || "",
+              xp: 0,
+              level: 1,
+              title: "Novice Adventurer",
+            };
+            setProfile(initialProfile as ProfileType);
+            setFormData({ avatar_url: initialProfile.avatar_url });
+          } else {
+            // If viewing other profile and missing, show error or empty
+            setProfile(null);
+          }
         } else {
-          throw error;
+          throw profileError;
         }
       } else {
-        setProfile(data);
-        setFormData({
-          faction: data.faction || "Harpers",
-          avatar_url: data.avatar_url || "",
-        });
+        setProfile(profileData);
+        setFormData({ avatar_url: profileData.avatar_url || "" });
+      }
+
+      // 2. Fetch Guild Membership
+      const { data: memberData, error: memberError } = await supabase
+        .from("guild_members")
+        .select("*, guild:guilds(*)")
+        .eq("user_id", targetUserId)
+        .maybeSingle();
+
+      if (!memberError && memberData) {
+        setGuildMember(memberData);
+        setMyGuild(memberData.guild as Guild);
+
+        // 3. If Leader, fetch applications (ONLY IF OWN PROFILE)
+        if (memberData.role === "leader" && memberData.guild && isOwnProfile) {
+          const { data: appsData } = await supabase
+            .from("guild_members")
+            .select("*, profile:profiles(*)")
+            .eq("guild_id", memberData.guild.id)
+            .eq("status", "pending");
+          setGuildApps(appsData || []);
+        }
+      } else {
+        // Fallback: Check if they are a leader of a guild even if membership row is missing
+        const { data: leaderGuild } = await supabase
+          .from("guilds")
+          .select("*")
+          .eq("leader_id", targetUserId)
+          .maybeSingle();
+
+        if (leaderGuild) {
+          setMyGuild(leaderGuild as Guild);
+          setGuildMember({
+            role: "leader",
+            status: "accepted",
+          } as any);
+        } else {
+          setGuildMember(null);
+          setMyGuild(null);
+        }
       }
     } catch (error) {
-      console.error("Error fetching profile:", error);
+      console.error("Error fetching data:", error);
     } finally {
-      setLoading(false);
+      setStartLoading(false);
     }
   };
 
-  const handleSave = async () => {
+  const handleSaveProfile = async () => {
     setSaving(true);
     try {
       const updates = {
         id: user.id,
-        ...formData,
-        // Ensure username and title are NOT updated from form data, but kept from profile or calculated
-        username: profile?.username,
-        title: getTitle(profile?.level || 1),
+        avatar_url: formData.avatar_url,
         updated_at: new Date().toISOString(),
       };
 
       const { error } = await supabase.from("profiles").upsert(updates);
-
       if (error) throw error;
 
       setProfile({ ...profile, ...updates } as ProfileType);
       setEditMode(false);
+      setSnackbar({
+        open: true,
+        message: "Perfil actualizado con éxito.",
+        severity: "success",
+      });
       if (onProfileUpdate) onProfileUpdate();
     } catch (error: any) {
-      alert("Error saving profile: " + error.message);
+      setSnackbar({
+        open: true,
+        message: "Error al guardar perfil: " + error.message,
+        severity: "error",
+      });
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading) {
+  const handleCreateGuild = async () => {
+    if (!newGuildName.trim()) return;
+    setCreatingGuild(true);
+    try {
+      // 1. Create Guild
+      const { data: guildData, error: guildError } = await supabase
+        .from("guilds")
+        .insert({
+          name: newGuildName,
+          leader_id: user.id,
+        })
+        .select()
+        .single();
+
+      if (guildError) throw guildError;
+
+      // 2. Add Leader as Member
+      const { error: memberError } = await supabase
+        .from("guild_members")
+        .insert({
+          guild_id: guildData.id,
+          user_id: user.id,
+          role: "leader",
+          status: "accepted",
+        });
+
+      if (memberError) {
+        // Rollback guild creation if member insert fails?
+        // Ideally yes, but for now just alert.
+        console.error("Error adding leader to guild:", memberError);
+      }
+
+      setCreateGuildOpen(false);
+      setNewGuildName("");
+      // Refresh
+      fetchProfileAndGuild();
+    } catch (error: any) {
+      console.error("Error creating guild:", error);
+      if (error.code === "23505") {
+        alert("Ya eres líder de un gremio o el nombre elegido ya está en uso.");
+      } else {
+        alert("Error al crear el gremio: " + error.message);
+      }
+    } finally {
+      setCreatingGuild(false);
+    }
+  };
+
+  const handleApplication = async (memberId: string, accept: boolean) => {
+    try {
+      if (accept) {
+        await supabase
+          .from("guild_members")
+          .update({ status: "accepted" })
+          .eq("id", memberId);
+      } else {
+        await supabase.from("guild_members").delete().eq("id", memberId);
+      }
+      // Remove from list
+      setGuildApps((prev) => prev.filter((a) => a.id !== memberId));
+      setSnackbar({
+        open: true,
+        message: accept ? "Solicitud aprobada." : "Solicitud rechazada.",
+        severity: "info",
+      });
+    } catch (error) {
+      console.error("Error managing application:", error);
+      setSnackbar({
+        open: true,
+        message: "Error al gestionar solicitud.",
+        severity: "error",
+      });
+    }
+  };
+
+  if (startLoading) {
     return (
       <Box
         sx={{
@@ -156,7 +298,13 @@ const Profile: React.FC<ProfileProps> = ({ user, onProfileUpdate }) => {
     );
   }
 
-  const currentTitle = getTitle(profile?.level || 1);
+  const { currentLevelXp, nextLevelXp } = getXpThresholds(profile?.level || 1);
+  const currentXpProgress = Math.max(0, (profile?.xp || 0) - currentLevelXp);
+  const xpNeededForLevel = nextLevelXp - currentLevelXp;
+  const progressPercent = Math.min(
+    (currentXpProgress / xpNeededForLevel) * 100,
+    100,
+  );
 
   return (
     <Container maxWidth="md" sx={{ mt: 14, mb: 10 }}>
@@ -200,9 +348,7 @@ const Profile: React.FC<ProfileProps> = ({ user, onProfileUpdate }) => {
         >
           <Box sx={{ position: "relative" }}>
             <Avatar
-              src={
-                formData.avatar_url || DEFAULT_AVATAR_URL
-              }
+              src={formData.avatar_url || DEFAULT_AVATAR_URL}
               sx={{
                 width: 140,
                 height: 140,
@@ -210,7 +356,7 @@ const Profile: React.FC<ProfileProps> = ({ user, onProfileUpdate }) => {
                 boxShadow: `0 8px 16px ${alpha(theme.palette.common.black, 0.3)}`,
               }}
             />
-            {editMode && (
+            {editMode && isOwnProfile && (
               <Button
                 variant="contained"
                 size="small"
@@ -242,43 +388,64 @@ const Profile: React.FC<ProfileProps> = ({ user, onProfileUpdate }) => {
               {profile?.username}
             </Typography>
             <Typography variant="h6" color="text.secondary">
-              {currentTitle}
+              {profile?.title || "Novice Adventurer"}
             </Typography>
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 1,
-                mt: 1,
-                justifyContent: { xs: "center", sm: "flex-start" },
-                color: "warning.main",
+
+            {/* Guild Display in Header */}
+            {myGuild && (
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                  mt: 1,
+                  color: "warning.main",
+                }}
+              >
+                <ShieldIcon fontSize="small" />
+                <Typography
+                  variant="body1"
+                  sx={{ fontWeight: "bold", fontFamily: "Cinzel, serif" }}
+                >
+                  {myGuild.name}
+                </Typography>
+                {guildMember?.role === "leader" && (
+                  <Chip
+                    label="Líder"
+                    size="small"
+                    color="secondary"
+                    sx={{ height: 20 }}
+                  />
+                )}
+              </Box>
+            )}
+            {!myGuild && (
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ mt: 1, fontStyle: "italic" }}
+              >
+                Sin Guild
+              </Typography>
+            )}
+          </Box>
+          {isOwnProfile && (
+            <Button
+              variant={editMode ? "outlined" : "contained"}
+              color="secondary"
+              startIcon={editMode ? null : <EditIcon />}
+              onClick={() => {
+                if (editMode) {
+                  setEditMode(false);
+                  setFormData({ avatar_url: profile?.avatar_url || "" });
+                } else {
+                  setEditMode(true);
+                }
               }}
             >
-              <ShieldIcon fontSize="small" />
-              <Typography variant="body2" sx={{ fontWeight: "bold" }}>
-                {profile?.faction || "Sin Facción"}
-              </Typography>
-            </Box>
-          </Box>
-          <Button
-            variant={editMode ? "outlined" : "contained"}
-            color="secondary"
-            startIcon={editMode ? null : <EditIcon />}
-            onClick={() => {
-              if (editMode) {
-                setEditMode(false);
-                // Reset form data to profile state
-                setFormData({
-                  faction: profile?.faction || "",
-                  avatar_url: profile?.avatar_url || "",
-                });
-              } else {
-                setEditMode(true);
-              }
-            }}
-          >
-            {editMode ? "Cancelar" : "Editar"}
-          </Button>
+              {editMode ? "Cancelar" : "Editar"}
+            </Button>
+          )}
         </Box>
 
         <Divider sx={{ mb: 4 }} />
@@ -297,44 +464,203 @@ const Profile: React.FC<ProfileProps> = ({ user, onProfileUpdate }) => {
               Nivel {profile?.level}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              {profile?.xp} XP / {(profile?.level || 1) * 1000} XP
+              {currentXpProgress} / {xpNeededForLevel} XP (Total: {profile?.xp})
             </Typography>
           </Box>
           <LinearProgress
             variant="determinate"
-            value={Math.min(
-              ((profile?.xp || 0) / ((profile?.level || 1) * 1000)) * 100,
-              100,
-            )}
+            value={progressPercent}
             color="secondary"
             sx={{ height: 10, borderRadius: 5 }}
           />
         </Box>
 
-        {/* Form Fields */}
-        <Grid container spacing={4} justifyContent="center">
-          <Grid size={{ xs: 12, md: 8 }}>
-            <TextField
-              select
-              label="Faction"
-              fullWidth
-              variant="outlined"
-              value={formData.faction}
-              onChange={(e) =>
-                setFormData({ ...formData, faction: e.target.value })
-              }
-              disabled={!editMode}
-              sx={{ mb: 3 }}
+        {/* GUILD SECTION */}
+        <Paper
+          elevation={3}
+          sx={{
+            p: 4,
+            bgcolor: alpha(theme.palette.background.default, 0.4),
+            border: `1px dashed ${alpha(theme.palette.text.primary, 0.2)}`,
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 3,
+            }}
+          >
+            <Typography
+              variant="h5"
+              fontFamily="Cinzel, serif"
+              color="primary.main"
             >
-              {FACTIONS.map((option) => (
-                <MenuItem key={option} value={option}>
-                  {option}
-                </MenuItem>
-              ))}
-            </TextField>
-          </Grid>
-        </Grid>
+              Guild & Alianzas
+            </Typography>
+          </Box>
 
+          {!myGuild ? (
+            <Box sx={{ textAlign: "center", py: 2 }}>
+              <ShieldIcon
+                sx={{ fontSize: 60, color: "text.disabled", mb: 2 }}
+              />
+              <Typography variant="body1" color="text.secondary" gutterBottom>
+                No perteneces a ninguna guild.
+              </Typography>
+
+              {(profile?.level || 0) >= 5 ? (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={<AddIcon />}
+                  onClick={() => setCreateGuildOpen(true)}
+                  sx={{ mt: 2 }}
+                >
+                  Fundar una Guild
+                </Button>
+              ) : (
+                <Typography variant="caption" color="text.disabled">
+                  Alcanza el nivel 5 para fundar tu propia guild.
+                </Typography>
+              )}
+            </Box>
+          ) : (
+            <Box>
+              <Grid container spacing={4}>
+                <Grid
+                  size={{ xs: 12, md: guildMember?.role === "leader" ? 6 : 12 }}
+                >
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems:
+                        guildMember?.role === "leader"
+                          ? "flex-start"
+                          : "center",
+                      textAlign:
+                        guildMember?.role === "leader" ? "left" : "center",
+                    }}
+                  >
+                    <Typography
+                      variant="subtitle2"
+                      color="text.secondary"
+                      gutterBottom
+                    >
+                      INFORMACIÓN DE LA GUILD
+                    </Typography>
+                    <Box
+                      sx={{
+                        p: 2,
+                        bgcolor: alpha(theme.palette.background.paper, 0.5),
+                        borderRadius: 2,
+                        width: guildMember?.role === "leader" ? "100%" : "80%",
+                        maxWidth: 600,
+                      }}
+                    >
+                      <Typography variant="h6" fontFamily="Cinzel, serif">
+                        {myGuild.name}
+                      </Typography>
+                      <Typography variant="body2">
+                        Miembro desde:{" "}
+                        {new Date(
+                          guildMember?.joined_at || "",
+                        ).toLocaleDateString()}
+                      </Typography>
+                      <Chip
+                        label={
+                          guildMember?.role === "leader"
+                            ? "Maestro de Guild"
+                            : "Miembro"
+                        }
+                        color={
+                          guildMember?.role === "leader"
+                            ? "secondary"
+                            : "default"
+                        }
+                        sx={{ mt: 1 }}
+                      />
+                    </Box>
+                  </Box>
+                </Grid>
+
+                {/* Leader Actions / Applications */}
+                {guildMember?.role === "leader" && (
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <Typography
+                      variant="subtitle2"
+                      color="text.secondary"
+                      gutterBottom
+                    >
+                      SOLICITUDES DE INGRESO ({guildApps.length})
+                    </Typography>
+                    {guildApps.length === 0 ? (
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        fontStyle="italic"
+                      >
+                        No hay solicitudes pendientes.
+                      </Typography>
+                    ) : (
+                      <List
+                        dense
+                        sx={{
+                          bgcolor: alpha(theme.palette.background.paper, 0.5),
+                          borderRadius: 2,
+                        }}
+                      >
+                        {guildApps.map((app) => (
+                          <ListItem
+                            key={app.id}
+                            secondaryAction={
+                              <Box>
+                                <IconButton
+                                  edge="end"
+                                  color="success"
+                                  onClick={() =>
+                                    handleApplication(app.id, true)
+                                  }
+                                >
+                                  <CheckIcon />
+                                </IconButton>
+                                <IconButton
+                                  edge="end"
+                                  color="error"
+                                  onClick={() =>
+                                    handleApplication(app.id, false)
+                                  }
+                                >
+                                  <CloseIcon />
+                                </IconButton>
+                              </Box>
+                            }
+                          >
+                            <ListItemAvatar>
+                              <Avatar
+                                src={
+                                  app.profile?.avatar_url || DEFAULT_AVATAR_URL
+                                }
+                              />
+                            </ListItemAvatar>
+                            <ListItemText
+                              primary={app.profile?.username || "Desconocido"}
+                              secondary={`Lvl ${app.profile?.level || "?"}`}
+                            />
+                          </ListItem>
+                        ))}
+                      </List>
+                    )}
+                  </Grid>
+                )}
+              </Grid>
+            </Box>
+          )}
+        </Paper>
+
+        {/* Save Button for Edit Mode */}
         {editMode && (
           <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 4 }}>
             <Button
@@ -347,7 +673,7 @@ const Profile: React.FC<ProfileProps> = ({ user, onProfileUpdate }) => {
                   <SaveIcon />
                 )
               }
-              onClick={handleSave}
+              onClick={handleSaveProfile}
               disabled={saving}
               size="large"
             >
@@ -356,6 +682,8 @@ const Profile: React.FC<ProfileProps> = ({ user, onProfileUpdate }) => {
           </Box>
         )}
       </Paper>
+
+      {/* Avatar Modal */}
       <AvatarSelectionModal
         open={avatarModalOpen}
         onClose={() => setAvatarModalOpen(false)}
@@ -364,6 +692,67 @@ const Profile: React.FC<ProfileProps> = ({ user, onProfileUpdate }) => {
           setAvatarModalOpen(false);
         }}
       />
+
+      {/* Create Guild Dialog */}
+      <Dialog open={createGuildOpen} onClose={() => setCreateGuildOpen(false)}>
+        <DialogTitle sx={{ fontFamily: "Cinzel, serif" }}>
+          Fundar Nueva Guild
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            Como aventurero experimentado (Nivel 5+), tienes el derecho de
+            reunir a otros bajo tu estandarte.
+          </Typography>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Nombre de la Guild"
+            fullWidth
+            variant="outlined"
+            value={newGuildName}
+            onChange={(e) => setNewGuildName(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCreateGuildOpen(false)}>Cancelar</Button>
+          <Button
+            onClick={handleCreateGuild}
+            variant="contained"
+            color="secondary"
+            disabled={!newGuildName.trim() || creatingGuild}
+          >
+            {creatingGuild ? <CircularProgress size={20} /> : "Crear Guild"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{
+            width: "100%",
+            fontFamily: "Newsreader, serif",
+            bgcolor: "rgba(20, 20, 20, 0.95)",
+            color: "#fff",
+            border: `1px solid ${snackbar.severity === "success" ? "#4caf50" : snackbar.severity === "error" ? "#f44336" : "#d4af37"}`,
+            "& .MuiAlert-icon": {
+              color:
+                snackbar.severity === "success"
+                  ? "#4caf50"
+                  : snackbar.severity === "error"
+                    ? "#f44336"
+                    : "#d4af37",
+            },
+          }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };

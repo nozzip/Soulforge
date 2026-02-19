@@ -425,7 +425,7 @@ const ForumSidebar: React.FC<ForumSidebarProps> = ({
               letterSpacing: 1,
             }}
           >
-            GREMIO DE AVENTUREROS
+            GUILD DE AVENTUREROS
           </Typography>
         </Box>
         <CardContent>
@@ -445,7 +445,11 @@ const ForumSidebar: React.FC<ForumSidebarProps> = ({
                 <Avatar
                   key={profile.id}
                   alt={profile.username || "Hero"}
-                  src={profile.avatar_url?.includes('images/avatars/') ? DEFAULT_AVATAR_URL : profile.avatar_url}
+                  src={
+                    profile.avatar_url?.includes("images/avatars/")
+                      ? DEFAULT_AVATAR_URL
+                      : profile.avatar_url
+                  }
                 />
               ))}
             </AvatarGroup>

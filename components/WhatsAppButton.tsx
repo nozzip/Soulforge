@@ -1,19 +1,22 @@
-import React from 'react';
-import { Fab, Tooltip, useTheme, alpha } from '@mui/material';
-import { WhatsApp as WhatsAppIcon } from '@mui/icons-material';
+import React from "react";
+import { Fab, Tooltip, useTheme, alpha } from "@mui/material";
+import { WhatsApp as WhatsAppIcon } from "@mui/icons-material";
 
 interface WhatsAppButtonProps {
   phoneNumber: string;
   message?: string;
 }
 
-const WhatsAppButton: React.FC<WhatsAppButtonProps> = ({ phoneNumber, message = '' }) => {
+const WhatsAppButton: React.FC<WhatsAppButtonProps> = ({
+  phoneNumber,
+  message = "",
+}) => {
   const theme = useTheme();
 
   const handleClick = () => {
     const encodedMessage = encodeURIComponent(message);
-    const whatsappUrl = `https://wa.me/${phoneNumber}${message ? `?text=${encodedMessage}` : ''}`;
-    window.open(whatsappUrl, '_blank');
+    const whatsappUrl = `https://wa.me/${phoneNumber}${message ? `?text=${encodedMessage}` : ""}`;
+    window.open(whatsappUrl, "_blank");
   };
 
   return (
@@ -23,31 +26,35 @@ const WhatsAppButton: React.FC<WhatsAppButtonProps> = ({ phoneNumber, message = 
         aria-label="whatsapp"
         onClick={handleClick}
         sx={{
-          position: 'fixed',
+          position: "fixed",
           bottom: 24,
           right: 24,
-          bgcolor: '#25D366',
-          color: 'white',
-          boxShadow: `0 4px 20px ${alpha('#25D366', 0.4)}`,
+          bgcolor: "secondary.main",
+          color: "background.default",
+          boxShadow: (theme) =>
+            `0 4px 20px ${alpha(theme.palette.secondary.main, 0.4)}`,
           border: 2,
-          borderColor: theme.palette.secondary.main,
-          transition: 'all 0.3s ease',
-          '&:hover': {
-            bgcolor: '#128C7E',
-            transform: 'scale(1.1) translateY(-4px)',
-            boxShadow: `0 8px 30px ${alpha('#25D366', 0.6)}, 0 0 20px ${alpha(theme.palette.secondary.main, 0.3)}`,
+          borderColor: (theme) => theme.palette.primary.main,
+          transition: "all 0.3s ease",
+          "&:hover": {
+            bgcolor: "common.white",
+            color: "background.default",
+            transform: "scale(1.1) translateY(-4px)",
+            boxShadow: (theme) =>
+              `0 8px 30px ${alpha(theme.palette.secondary.main, 0.6)}, 0 0 20px ${alpha(theme.palette.primary.main, 0.3)}`,
           },
-          '&::before': {
+          "&::before": {
             content: '""',
-            position: 'absolute',
+            position: "absolute",
             inset: -4,
-            borderRadius: '50%',
-            background: `linear-gradient(135deg, ${alpha(theme.palette.secondary.main, 0.3)}, transparent)`,
+            borderRadius: "50%",
+            background: (theme) =>
+              `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.3)}, transparent)`,
             opacity: 0,
-            transition: 'opacity 0.3s ease',
+            transition: "opacity 0.3s ease",
             zIndex: -1,
           },
-          '&:hover::before': {
+          "&:hover::before": {
             opacity: 1,
           },
         }}

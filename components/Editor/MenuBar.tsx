@@ -19,6 +19,7 @@ import {
   FormatAlignCenter,
   FormatAlignRight,
   FormatAlignJustify,
+  YouTube as YouTubeIcon,
 } from "@mui/icons-material";
 import { IconButton, Tooltip, Divider, Box } from "@mui/material";
 
@@ -272,6 +273,24 @@ const MenuBar = ({ editor, addImage }: MenuBarProps) => {
         </>
       )}
 
+      <Tooltip title="Insertar Video YouTube">
+        <IconButton
+          onClick={() => {
+            const url = window.prompt("Introduce la URL de YouTube:");
+            if (url) {
+              (editor as any).commands.setYoutubeVideo({
+                src: url,
+                width: 640,
+                height: 360,
+              });
+            }
+          }}
+          sx={ButtonStyle}
+          size="small"
+        >
+          <YouTubeIcon fontSize="small" />
+        </IconButton>
+      </Tooltip>
 
       <Tooltip title="Spoiler">
         <IconButton

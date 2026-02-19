@@ -15,6 +15,7 @@ import {
 } from "@mui/material";
 import { supabase } from "@/src/supabase";
 import { ForumCategory } from "@/types";
+import { useToast } from "@/context/ToastContext";
 import {
   Groups as GroupsIcon, // Used for 'buscador' check? No, string check.
   ReportProblem as HorrorIcon, // Used?
@@ -23,24 +24,30 @@ import {
   Pets as BeastIcon, // Header icon
   Add as AddIcon,
   Category as CategoryIcon,
+  AutoAwesome as SoulIcon,
+  Public as WorldIcon,
+  Casino as DiceIcon,
 } from "@mui/icons-material";
 
-import {
-  Fab,
-  Zoom,
-} from "@mui/material";
+import { Fab, Zoom } from "@mui/material";
 import ForumSidebar from "../components/ForumSidebar";
 import { ForumCategoryCard } from "../components/ForumCategoryCard";
 import { NewCategoryDialog } from "../components/NewCategoryDialog";
 
-
 // Helper to group categories (mock logic until DB schema supports groups)
 const getCategoryGroup = (name: string) => {
   const n = name.toLowerCase();
-  if (n.includes("reglas") || n.includes("builds")) return "MANUAL DEL JUGADOR";
-  if (n.includes("master") || n.includes("lore") || n.includes("mundo"))
-    return "GUÍA DEL DUNGEON MASTER";
-  return "DISCUSIÓN GENERAL";
+
+  // Group 1: La forja de Almas
+  if (n.includes("soulforge") || n.includes("mesa de ayuda"))
+    return "LA FORJA DE ALMAS";
+
+  // Group 3: Mundos más allá del Void
+  if (n.includes("otros ttrpg") || n.includes("void"))
+    return "MUNDOS MÁS ALLÁ DEL VOID";
+
+  // Group 2: Dungeons and Dragons (Default)
+  return "DUNGEONS AND DRAGONS";
 };
 
 interface ForumHomeProps {
@@ -50,6 +57,7 @@ interface ForumHomeProps {
   onLFGClick?: () => void;
   user?: any;
   isAdmin?: boolean;
+  onProfileClick: (userId: string) => void;
 }
 
 const ForumHome: React.FC<ForumHomeProps> = ({
@@ -61,6 +69,7 @@ const ForumHome: React.FC<ForumHomeProps> = ({
   isAdmin = false,
 }) => {
   const theme = useTheme();
+  const { showToast } = useToast();
   const [categories, setCategories] = useState<ForumCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [categoryStats, setCategoryStats] = useState<
@@ -142,7 +151,11 @@ const ForumHome: React.FC<ForumHomeProps> = ({
     setCategoryStats(stats);
   };
 
-  const handleCreateCategory = async (name: string, description: string, sortOrder: number) => {
+  const handleCreateCategory = async (
+    name: string,
+    description: string,
+    sortOrder: number,
+  ) => {
     try {
       const { data, error } = await supabase
         .from("forum_categories")
@@ -164,7 +177,7 @@ const ForumHome: React.FC<ForumHomeProps> = ({
       }
     } catch (error) {
       console.error("Error creating category:", error);
-      alert("Error al crear la categoría");
+      showToast("Error al crear la categoría", "error");
     }
   };
 
@@ -180,9 +193,9 @@ const ForumHome: React.FC<ForumHomeProps> = ({
 
   // Define group order
   const groupOrder = [
-    "MANUAL DEL JUGADOR",
-    "GUÍA DEL DUNGEON MASTER",
-    "DISCUSIÓN GENERAL",
+    "LA FORJA DE ALMAS",
+    "DUNGEONS AND DRAGONS",
+    "MUNDOS MÁS ALLÁ DEL VOID",
   ];
 
   if (loading) {
@@ -252,9 +265,10 @@ const ForumHome: React.FC<ForumHomeProps> = ({
             const groupCats = groupedCategories[groupName];
             if (!groupCats || groupCats.length === 0) return null;
 
-            let HeaderIcon = BookIcon;
-            if (groupName.includes("MASTER")) HeaderIcon = DmIcon;
-            if (groupName.includes("MONSTER")) HeaderIcon = BeastIcon;
+            let HeaderIcon = DiceIcon;
+            if (groupName === "LA FORJA DE ALMAS") HeaderIcon = SoulIcon;
+            if (groupName === "MUNDOS MÁS ALLÁ DEL VOID")
+              HeaderIcon = WorldIcon;
 
             return (
               <Box key={groupName} sx={{ mb: 5 }}>

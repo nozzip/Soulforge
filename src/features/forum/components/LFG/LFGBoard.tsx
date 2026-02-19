@@ -40,6 +40,7 @@ import { supabase } from "@/src/supabase";
 import { LFGPost, Profile } from "@/types";
 import RichTextEditor from "@/components/Editor/RichTextEditor";
 import RichTextDisplay from "@/components/Editor/RichTextDisplay";
+import DOMPurify from "isomorphic-dompurify";
 import LFGPostDetails from "./LFGPostDetails";
 import LFGApplicationManagement from "./LFGApplicationManagement";
 import { useAdmin } from "@/src/hooks/useAdmin";
@@ -223,15 +224,39 @@ const LFGBoard: React.FC<LFGBoardProps> = ({ onBack }) => {
       return;
     }
 
+    // Sanitize
+    const sanitizedGameName = DOMPurify.sanitize(formData.gameName.trim());
+    const sanitizedSynopsis = DOMPurify.sanitize(formData.synopsis.trim());
+
+    // Validate lengths
+    if (sanitizedGameName.length < 5) {
+      setSnackbar({
+        open: true,
+        message: "El título de la misión debe tener al menos 5 caracteres.",
+        severity: "error",
+      });
+      return;
+    }
+
+    const textOnly = sanitizedSynopsis.replace(/<[^>]*>/g, "").trim();
+    if (textOnly.length < 10) {
+      setSnackbar({
+        open: true,
+        message: "La sinopsis debe tener al menos 10 caracteres.",
+        severity: "error",
+      });
+      return;
+    }
+
     const { error } = await supabase.from("lfg_posts").insert([
       {
         gm_id: user.id,
-        game_name: formData.gameName,
+        game_name: sanitizedGameName,
         system: formData.system,
         modality: formData.modality,
         date: formData.date,
         time: formData.time,
-        synopsis: formData.synopsis,
+        synopsis: sanitizedSynopsis,
         tags: selectedTags,
         slots_total: formData.slots,
         slots_taken: 0,

@@ -9,6 +9,7 @@ import Placeholder from "@tiptap/extension-placeholder";
 import TextAlign from "@tiptap/extension-text-align";
 import Mention from "@tiptap/extension-mention";
 import { Spoiler } from "./extensions/SpoilerExtension";
+import Youtube from "@tiptap/extension-youtube";
 import { Box, Paper, GlobalStyles } from "@mui/material";
 import MenuBar from "./MenuBar";
 import { suggestion } from "./extensions/suggestion"; // We'll create this later
@@ -59,6 +60,13 @@ const RichTextEditor = ({
         placeholder,
       }),
       Spoiler,
+      Youtube.configure({
+        controls: true,
+        nocookie: true,
+        allowFullscreen: true,
+        width: 640,
+        height: 360,
+      }),
       // We'll enable Mention when we have the suggestion logic ready
       // Mention.configure({
       //   HTMLAttributes: {

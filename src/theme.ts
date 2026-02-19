@@ -102,6 +102,9 @@ export const fantasyTheme = createTheme({
             "url('https://www.transparenttextures.com/patterns/dark-leather.png')",
           backgroundBlendMode: "overlay",
         },
+        html: {
+          scrollBehavior: "auto",
+        },
         "::selection": {
           backgroundColor: "#c5a059",
           color: "#ffffff",

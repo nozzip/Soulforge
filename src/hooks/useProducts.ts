@@ -3,7 +3,7 @@ import { supabase } from "../supabase";
 import { Product } from "@/types";
 
 export const useProducts = () => {
-  return useQuery({
+  const query = useQuery({
     queryKey: ["products"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -12,7 +12,12 @@ export const useProducts = () => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data as Product[];
+      return (data || []) as Product[];
     },
   });
+
+  return {
+    ...query,
+    data: query.data ?? ([] as Product[]),
+  };
 };
