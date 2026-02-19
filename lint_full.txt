@@ -1,0 +1,6 @@
+﻿components/Editor/extensions/ResizableImageExtension.ts(34,34): error TS2345: Argument of type 'FC<ResizableImageComponentProps>' is not assignable to parameter of type 'ComponentType<ReactNodeViewProps<HTMLElement>>'.
+  Type 'FunctionComponent<ResizableImageComponentProps>' is not assignable to type 'FunctionComponent<ReactNodeViewProps<HTMLElement>>'.
+    Type 'ResizableImageComponentProps' is not assignable to type 'ReactNodeViewProps<HTMLElement>'.
+      Property 'ref' is missing in type 'ResizableImageComponentProps' but required in type '{ ref: RefObject<HTMLElement>; }'.
+pages/EditorTest.tsx(31,7): error TS2322: Type '{ children: Element; setView: () => void; currentView: ViewState.EDITOR_TEST; onSearch: () => void; onProductSelect: () => void; user: null; isAdmin: true; onLogout: () => Promise<void>; isWarhammer: false; onToggleTheme: () => void; products: undefined[]; }' is not assignable to type 'IntrinsicAttributes & LayoutProps'.
+  Property 'products' does not exist on type 'IntrinsicAttributes & LayoutProps'.

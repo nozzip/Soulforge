@@ -8,6 +8,7 @@ import {
 } from "../utils/currency.tsx";
 import { supabase } from "../src/supabase";
 import { User } from "@supabase/supabase-js";
+import { ViewState } from "../types";
 import {
   Box,
   Container,
@@ -76,7 +77,11 @@ const ARGENTINA_PROVINCES = [
   "Tucumán",
 ];
 
-const Checkout: React.FC = () => {
+interface CheckoutProps {
+  setView: (view: ViewState) => void;
+}
+
+const Checkout: React.FC<CheckoutProps> = ({ setView }) => {
   const { items, totalPrice, clearCart, discount, couponCode, removeCoupon } =
     useCart();
   const [loading, setLoading] = useState(false);
@@ -302,7 +307,7 @@ const Checkout: React.FC = () => {
             {/* Back Button */}
             <Button
               startIcon={<ArrowBack />}
-              onClick={() => window.history.back()}
+              onClick={() => setView(ViewState.CATALOG)}
               sx={{
                 alignSelf: "flex-start",
                 color: "grey.500",

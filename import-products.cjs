@@ -1,289 +1,296 @@
-const fs = require('fs');
-const csv = require('csv-parser');
-const { createClient } = require('@supabase/supabase-js');
-const axios = require('axios');
-const path = require('path');
+require("dotenv").config({ path: ".env.local" });
+const fs = require("fs");
+const path = require("path");
+const csv = require("csv-parser");
+const axios = require("axios");
+const { createClient } = require("@supabase/supabase-js");
 
 // Configuración de Supabase
-require('dotenv').config({ path: '.env.local' });
-
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Necesitarás esta key
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseServiceKey) {
-  console.error('Missing Supabase credentials in .env.local');
-  console.log('Add to .env.local:');
-  console.log('SUPABASE_SERVICE_ROLE_KEY=your_service_role_key');
+  console.error("❌ Error: Faltan variables de entorno en .env.local");
   process.exit(1);
 }
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-// Función para calcular precio basado en grade y size
+// Mapeo de tamaños
+const sizeMapping = {
+  S: "Small",
+  M: "Medium",
+  L: "Large",
+  H: "Huge",
+  G: "Gargantuan",
+};
+
+/**
+ * Calcula el precio basado en grado y tamaño
+ */
 function calculatePrice(grade, size) {
-  // Valores base por tamaño (costo de resina)
-  const baseCost = {
-    'Small': 1000,
-    'Medium': 1400,
-    'Large': 2400,
-    'Huge': 7000,
-    'Gargantuan': 12000
+  const baseCosts = {
+    Small: 4,
+    Medium: 4.5,
+    Large: 7.5,
+    Huge: 22.5,
+    Gargantuan: 50,
   };
 
-  // Gastos operativos (50% del valor base)
-  const overheadCost = baseCost[size] * 0.5;
-
-  // Costo total antes del multiplicador de grade
-  const totalCost = baseCost[size] + overheadCost;
-
-  // Multiplicadores por grade (rareza)
-  const gradeMultiplier = {
-    'C': 1.1,   // Common
-    'R': 2.0,   // Rare
-    'L': 4.0    // Legendary
+  const gradeMultipliers = {
+    C: 1, // Común
+    R: 2, // Raro
+    L: 4, // Legendario
   };
 
-  const finalPrice = totalCost * (gradeMultiplier[grade] || 1.0);
+  const overhead = 1.25;
+  const earnings = 1.35;
+  const vat = 1.21;
+  const currencyRate = 1000;
 
-  // Convertir a GP (1 GP = 1000 ARS)
-  return Math.round(finalPrice / 1000);
+  const baseCost = baseCosts[size] || 0;
+  const gradeMult = gradeMultipliers[grade] || 1;
+
+  if (baseCost === 0) return 0;
+
+  const finalPrice = Math.round(
+    baseCost * gradeMult * overhead * earnings * vat,
+  );
+  return finalPrice; // Retorna en GP
 }
 
-// Función para descargar imagen
-async function downloadImage(url, filename) {
-  try {
-    const response = await axios({
-      method: 'get',
-      url: url,
-      responseType: 'stream'
-    });
+/**
+ * Descarga una imagen desde una URL
+ */
+async function downloadImage(url, dest) {
+  const response = await axios({
+    url,
+    method: "GET",
+    responseType: "stream",
+  });
 
-    const writer = fs.createWriteStream(filename);
+  return new Promise((resolve, reject) => {
+    const writer = fs.createWriteStream(dest);
     response.data.pipe(writer);
-
-    return new Promise((resolve, reject) => {
-      writer.on('finish', resolve);
-      writer.on('error', reject);
-    });
-  } catch (error) {
-    console.error(`Error downloading ${url}:`, error.message);
-    throw error;
-  }
+    writer.on("finish", resolve);
+    writer.on("error", reject);
+  });
 }
 
-// Función para subir imagen a Supabase Storage
+/**
+ * Sube una imagen a Supabase Storage
+ */
 async function uploadToSupabase(filePath, fileName, mimeType) {
-  try {
-    const fileBuffer = fs.readFileSync(filePath);
+  const fileBuffer = fs.readFileSync(filePath);
 
-    const { data, error } = await supabase.storage
-      .from('products')
-      .upload(fileName, fileBuffer, {
-        contentType: mimeType,
-        upsert: true
-      });
+  const { data, error } = await supabase.storage
+    .from("products")
+    .upload(`imports/${fileName}`, fileBuffer, {
+      contentType: mimeType,
+      upsert: true,
+    });
 
-    if (error) throw error;
+  if (error) throw error;
 
-    // Obtener URL pública
-    const { data: { publicUrl } } = supabase.storage
-      .from('products')
-      .getPublicUrl(fileName);
+  const { data: publicUrlData } = supabase.storage
+    .from("products")
+    .getPublicUrl(`imports/${fileName}`);
 
-    return publicUrl;
-  } catch (error) {
-    console.error(`Error uploading ${fileName}:`, error.message);
-    throw error;
-  }
+  return publicUrlData.publicUrl;
 }
 
-// Función principal de importación
+/**
+ * Función principal de importación
+ */
 async function importProducts() {
   const results = [];
-  const tempDir = './temp_images';
+  const tempDir = "./temp_images";
 
-  // Crear directorio temporal
   if (!fs.existsSync(tempDir)) {
     fs.mkdirSync(tempDir);
   }
 
-  console.log('🚀 Iniciando importación de productos...');
+  const csvFile = process.argv[2] || "products2.csv";
+  console.log(`🚀 Iniciando importación desde: ${csvFile}`);
 
-  // Leer CSV
+  if (!fs.existsSync(csvFile)) {
+    console.error(`❌ No se encontró el archivo: ${csvFile}`);
+    process.exit(1);
+  }
+
   return new Promise((resolve, reject) => {
-    fs.createReadStream('./products.csv')
-      .pipe(csv({
-        separator: ';',
-        headers: ['id', 'link', 'image_label', 'name', 'designer', 'set_name', 'mime_type', 'size', 'creature_type', 'weapon', 'title', 'grade', 'approved']
-      }))
-      .on('data', async (row) => {
-        results.push(row);
-      })
-      .on('end', async () => {
+    fs.createReadStream(csvFile)
+      .pipe(
+        csv({
+          separator: ";",
+          headers: [
+            "id",
+            "imageSrc",
+            "name",
+            "category",
+            "designer",
+            "set_name",
+            "mime_type",
+            "size",
+            "creature_type",
+            "weapon",
+            "title",
+            "grade",
+            "approved",
+          ],
+        }),
+      )
+      .on("data", (row) => results.push(row))
+      .on("end", async () => {
         try {
-          // Filtrar productos que tienen approved = "Si"
-          const approvedProducts = results.filter(row => row.approved && row.approved.toLowerCase() === 'si');
-          const skippedProducts = results.length - approvedProducts.length;
+          // Filtrar por aprobado. Detectar si hay columna extra en _13 (14 cols vs 13 cols)
+          const approvedProducts = results.filter((row) => {
+            const isApproved =
+              (row.approved && row.approved.trim().toLowerCase() === "si") ||
+              (row._13 && row._13.trim().toLowerCase() === "si");
+            return isApproved;
+          });
 
-          console.log(`📊 Se encontraron ${results.length} productos en el CSV`);
-          if (skippedProducts > 0) {
-            console.log(`⏭️  ${skippedProducts} productos serán omitidos (sin approved = "Si")`);
-          }
-          console.log(`✅ Se procesarán ${approvedProducts.length} productos aprobados`);
+          console.log(
+            `📊 Se encontraron ${results.length} productos en el CSV`,
+          );
+          console.log(
+            `✅ Se procesarán ${approvedProducts.length} productos aprobados`,
+          );
 
-          // 0. Obtener productos existentes para evitar redundancia
-          console.log('\n🔍 Verificando estado actual en la base de datos...');
-          const { data: existingProducts, error: fetchError } = await supabase
-            .from('products')
-            .select('name');
+          const { data: existingProducts } = await supabase
+            .from("products")
+            .select("name");
 
-          if (fetchError) {
-            console.error('   ❌ Error al consultar productos existentes:', fetchError.message);
-            // No detenemos el proceso, pero asumimos que no hay nada
-          }
+          const existingNames = new Set(
+            (existingProducts || []).map((p) => p.name),
+          );
 
-          const existingNames = new Set((existingProducts || []).map(p => p.name));
-          console.log(`   💡 Ya existen ${existingNames.size} productos en la base de datos.`);
-
-          // Mapeo de tamaños del CSV a nombres completos para calculatePrice
-          const sizeMapping = {
-            'S': 'Small',
-            'M': 'Medium',
-            'L': 'Large',
-            'H': 'Huge',
-            'G': 'Gargantuan'
-          };
-
-          // Array para guardar los nombres de los productos procesados en este lote para limpieza de huérfanos
-          const processedNames = [];
+          let addedCount = 0;
+          let skippedExisting = 0;
 
           for (let i = 0; i < approvedProducts.length; i++) {
-            const row = approvedProducts[i];
-            processedNames.push(row.name);
+            const rawRow = approvedProducts[i];
 
-            // 1. Saltar si ya existe
-            if (existingNames.has(row.name)) {
-              console.log(`⏭️  Saltando ${i + 1}/${approvedProducts.length}: ${row.name} (Ya existe)`);
+            // Detectar desplazamiento si hay 14 columnas (vía _13)
+            const isShifted = !!rawRow._13;
+
+            const row = {
+              id: rawRow.id,
+              imageSrc: rawRow.imageSrc,
+              name: isShifted ? rawRow.category : rawRow.name,
+              category: isShifted ? rawRow.designer : rawRow.category,
+              designer: isShifted ? rawRow.set_name : rawRow.designer,
+              set_name: isShifted ? rawRow.mime_type : rawRow.set_name,
+              mime_type: isShifted ? rawRow.size : rawRow.mime_type,
+              size: isShifted ? rawRow.creature_type : rawRow.size,
+              creature_type: isShifted ? rawRow.weapon : rawRow.creature_type,
+              weapon: isShifted ? rawRow.title : rawRow.weapon,
+              title: isShifted ? rawRow.grade : rawRow.title,
+              grade: isShifted ? rawRow.approved : rawRow.grade,
+              approved: isShifted ? rawRow._13 : rawRow.approved,
+            };
+
+            if (!row.name || existingNames.has(row.name)) {
+              skippedExisting++;
               continue;
             }
 
-            console.log(`\n📦 Procesando ${i + 1}/${approvedProducts.length}: ${row.name}`);
+            console.log(
+              `\n📦 Procesando ${i + 1}/${approvedProducts.length}: ${row.name}`,
+            );
 
             try {
-              // 1. Descargar imagen
-              const fileName = `${Date.now()}_${path.basename(row.name).replace(/[^a-zA-Z0-9]/g, '_')}.${(row.mime_type || 'image/jpeg').split('/')[1]}`;
+              const fileName = `${Date.now()}_${row.name.replace(/[^a-zA-Z0-9]/g, "_")}.${(row.mime_type || "image/jpeg").split("/")[1] || "jpg"}`;
               const tempPath = path.join(tempDir, fileName);
 
-              console.log(`   📥 Descargando imagen...`);
-              await downloadImage(row.link, tempPath);
+              await downloadImage(row.imageSrc, tempPath);
+              const imageUrl = await uploadToSupabase(
+                tempPath,
+                fileName,
+                row.mime_type || "image/jpeg",
+              );
 
-              // 2. Subir a Supabase Storage
-              console.log(`   ☁️ Subiendo a Supabase...`);
-              const imageUrl = await uploadToSupabase(tempPath, fileName, row.mime_type || 'image/jpeg');
+              const rawGrade = (row.grade || "").trim().toUpperCase();
+              const rawSize = (row.size || "").trim().toUpperCase();
+              const rawCreatureType = (row.creature_type || "").trim();
 
-              // 3. Calcular precio
-              const rawGrade = (row.grade || '').trim().toUpperCase();
-              const rawSize = (row.size || '').trim().toUpperCase();
-
-              const validGrades = ['C', 'R', 'L'];
+              const validGrades = ["C", "R", "L"];
               const hasValidGrade = validGrades.includes(rawGrade);
 
-              let size = '';
+              let size = "";
               let price = 0;
+              let minPrice = 0;
+              let maxPrice = 0;
 
-              // Lógica de tamaño: si tiene '/' es Medium, si no mapear S/M/L/H/G
-              if (rawSize.includes('/')) {
-                size = 'Medium';
-              } else if (rawSize) {
-                size = sizeMapping[rawSize] || 'Medium';
-              }
+              if (rawCreatureType.toLowerCase() === "statue") {
+                price = 69;
+                minPrice = 69;
+                maxPrice = 69;
+                size = rawSize
+                  ? rawSize
+                      .split("/")
+                      .map((s) => sizeMapping[s.trim()] || s.trim())
+                      .join(" - ")
+                  : null;
+              } else if (rawSize.includes("/") && hasValidGrade) {
+                const sizeParts = rawSize.split("/").map((s) => s.trim());
+                const mappedSizes = sizeParts
+                  .map((s) => sizeMapping[s] || s)
+                  .filter(Boolean);
+                const prices = mappedSizes.map((s) =>
+                  calculatePrice(rawGrade, s),
+                );
 
-              const hasValidSize = size !== '';
-
-              if (hasValidGrade && hasValidSize && !rawSize.includes('/')) {
-                // calculatePrice(grade, size)
-                price = calculatePrice(rawGrade, size);
-                console.log(`   💰 Precio calculado: ${price} GP (${rawGrade} - ${size})`);
+                minPrice = Math.min(...prices);
+                maxPrice = Math.max(...prices);
+                price = minPrice;
+                size = `${mappedSizes[0]} - ${mappedSizes[mappedSizes.length - 1]}`;
               } else {
-                price = 0;
-                console.log(`   💰 Producto manual: $0 (Grade: ${rawGrade || 'faltante'}, Size: ${rawSize || 'faltante'}${rawSize.includes('/') ? ' - Ambiguo' : ''})`);
+                size = sizeMapping[rawSize] || rawSize;
+                price = hasValidGrade ? calculatePrice(rawGrade, size) : 0;
+                minPrice = price;
+                maxPrice = price;
               }
 
-              // 4. Insertar en base de datos
-              console.log(`   💾 Guardando en base de datos...`);
-              const { data, error } = await supabase
-                .from('products')
+              const { error: insertError } = await supabase
+                .from("products")
                 .insert({
                   name: row.name,
-                  category: 'D&D',
+                  category: row.category || "D&D",
                   price: price,
-                  image: imageUrl,
+                  min_price: minPrice,
+                  max_price: maxPrice,
+                  image: imageUrl, // Columna obligatoria
+                  image_url: imageUrl,
                   designer: row.designer,
                   set_name: row.set_name,
                   mime_type: row.mime_type,
-                  size: size || null, // Guardar NULL si está vacío
+                  size: size,
                   creature_type: row.creature_type,
-                  weapon: row.weapon || null, // Guardar NULL si está vacío
-                  title: row.title || '',
-                  grade: hasValidGrade ? rawGrade : 'C',
-                  image_url: imageUrl,
-                  description: `${row.title ? `Personaje: ${row.title}. ` : ''}Diseñado por ${row.designer}. Set: ${row.set_name}. Rareza: ${hasValidGrade ? rawGrade : 'C'} (${hasValidGrade ? (rawGrade === 'C' ? 'Common' : rawGrade === 'R' ? 'Rare' : 'Legendary') : 'Common - Estatuilla'})`
-                })
-                .select();
+                  weapon: row.weapon,
+                  title: row.title,
+                  grade: hasValidGrade ? rawGrade : null,
+                  description: `Miniatura de alta calidad de ${row.name}.`,
+                });
 
-              if (error) throw error;
-
-              // 5. Limpiar archivo temporal
+              if (insertError) throw insertError;
               fs.unlinkSync(tempPath);
-
-              console.log(`   ✅ Producto guardado con ID: ${data[0].id}`);
-
-            } catch (error) {
-              console.error(`   ❌ Error procesando ${row.name}:`, error.message);
+              addedCount++;
+            } catch (err) {
+              console.error(`❌ Error procesando ${row.name}:`, err.message);
             }
           }
 
-          // 6. Limpiar productos huérfanos (los que están en DB pero no en el CSV de hoy)
-          // Solo limpiamos si el CSV no está vacío para evitar borrar todo por error
-          if (processedNames.length > 0) {
-            console.log('\n🧹 Iniciando limpieza de productos huérfanos...');
-            // Paginar la limpieza si hay muchos nombres (Supabase IN limit)
-            // Para 84-100 productos funciona directo. Para 10k habría que paginar.
-            const { error: deleteError } = await supabase
-              .from('products')
-              .delete()
-              .not('name', 'in', `(${processedNames.map(n => `"${n.replace(/"/g, '""')}"`).join(',')})`);
-
-            if (deleteError) {
-              console.error('   ❌ Error limpiando huerfanos:', deleteError.message);
-            } else {
-              console.log('   ✅ Archivos sincronizados exitosamente.');
-            }
-          }
-
-          // Limpiar directorio temporal
-          fs.rmSync(tempDir, { recursive: true, force: true });
-
-          console.log('\n🎉 Importación completada!');
-          console.log(`✅ Total productos procesados: ${approvedProducts.length}`);
+          console.log(`\n🎉 Importación completada!`);
+          console.log(`✅ Nuevos agregados: ${addedCount}`);
+          console.log(`⏭️ Existentes omitidos: ${skippedExisting}`);
           resolve();
-
-        } catch (error) {
-          console.error('❌ Error en la importación:', error.message);
-          reject(error);
+        } catch (err) {
+          reject(err);
         }
-      })
-      .on('error', reject);
+      });
   });
 }
 
-// Ejecutar importación
-importProducts()
-  .then(() => {
-    console.log('✅ Proceso finalizado exitosamente');
-    process.exit(0);
-  })
-  .catch((error) => {
-    console.error('❌ Error en el proceso:', error);
-    process.exit(1);
-  });
+importProducts().catch(console.error);

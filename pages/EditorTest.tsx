@@ -28,7 +28,6 @@ const EditorTest = () => {
       onLogout={async () => {}}
       isWarhammer={false}
       onToggleTheme={() => {}}
-      products={[]} // Add products prop
     >
       <Box sx={{ p: 4, maxWidth: "800px", margin: "0 auto" }}>
         <Typography

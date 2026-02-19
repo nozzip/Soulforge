@@ -33,7 +33,7 @@ import {
   FavoriteBorder,
 } from "@mui/icons-material";
 import { Product } from "../../../types";
-import { formatCurrency } from "../../../utils/currency";
+import { formatProductPrice } from "../../../utils/currency";
 import RichTextEditor from "../../../components/Editor/RichTextEditor";
 import RichTextDisplay from "../../../components/Editor/RichTextDisplay";
 import { BattlemapFootprint } from "./BattlemapFootprint";
@@ -92,6 +92,12 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
 }) => {
   const [isAdding, setIsAdding] = useState(false);
   const isWishlisted = wishlist.includes(activeProduct.id);
+
+  const isValidSet = (name?: string | null): boolean => {
+    if (!name) return false;
+    const excluded = ["sin set", "s/d", ""];
+    return !excluded.includes(name.trim().toLowerCase());
+  };
 
   const handleAddToCartClick = async () => {
     setIsAdding(true);
@@ -234,7 +240,7 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
             value={editForm.name}
             onChange={onEditChange}
           />
-          {activeProduct.set_name && activeProduct.set_name !== "Sin set" && (
+          {isValidSet(activeProduct.set_name) && (
             <TextField
               fullWidth
               name="set_name"
@@ -260,7 +266,7 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
           }}
         >
           {/* If part of a set, show Set Name. If not, show Product Name */}
-          {activeProduct.set_name && activeProduct.set_name !== "Sin set"
+          {isValidSet(activeProduct.set_name)
             ? activeProduct.set_name
             : activeProduct.name.replace(/\s*Header\s*/gi, "").trim()}
         </Typography>
@@ -292,7 +298,7 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
             variant="h4"
             sx={{ fontWeight: "bold", color: "secondary.main" }}
           >
-            {formatCurrency(activeProduct.price)}
+            {formatProductPrice(activeProduct)}
           </Typography>
         )}
         <Divider orientation="vertical" flexItem sx={{ bgcolor: "grey.800" }} />

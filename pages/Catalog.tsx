@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useCallback, useRef, memo } from "react";
 import { Product, ViewState } from "../types";
 import { useCart } from "../context/CartContext";
-import { formatCurrency } from "../utils/currency.tsx";
+import { formatProductPrice } from "../utils/currency.tsx";
 import { useCatalogProducts } from "@/src/hooks/useCatalogProducts";
 import {
   useDeleteProduct,

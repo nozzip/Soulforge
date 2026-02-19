@@ -9,7 +9,7 @@ import {
   CardContent,
 } from "@mui/material";
 import { Product } from "../../../types";
-import { formatCurrency } from "../../../utils/currency";
+import { formatProductPrice } from "../../../utils/currency";
 
 interface RelatedProductsProps {
   relatedProducts: Product[];
@@ -73,7 +73,7 @@ export const RelatedProducts: React.FC<RelatedProductsProps> = ({
                   {p.name}
                 </Typography>
                 <Typography variant="body2" color="secondary">
-                  {formatCurrency(p.price)}
+                  {formatProductPrice(p)}
                 </Typography>
               </CardContent>
             </Card>

@@ -1,5 +1,14 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Container, Grid, Box, CircularProgress } from "@mui/material";
+import {
+  Container,
+  Grid,
+  Box,
+  CircularProgress,
+  Button,
+  Typography,
+  Breadcrumbs,
+  Link,
+} from "@mui/material";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../src/supabase";
 import { useCart } from "../context/CartContext";
@@ -8,6 +17,7 @@ import { useProducts } from "../src/hooks/useProducts";
 import { Product, ViewState } from "../types";
 import { safeReadImageAsDataURL } from "../utils/imageValidation";
 import DOMPurify from "isomorphic-dompurify";
+import { ArrowBack, NavigateNext } from "@mui/icons-material";
 
 // Child Components
 import {
@@ -130,21 +140,26 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
   }, [product]);
 
   // Fetch "Set" members if this product belongs to a set
+  const isValidSet = (name?: string | null): boolean => {
+    if (!name) return false;
+    const excluded = ["sin set", "s/d", ""];
+    return !excluded.includes(name.trim().toLowerCase());
+  };
+
   const { data: setMembers } = useQuery({
     queryKey: ["product-set", activeProduct?.set_name],
     queryFn: async () => {
-      if (!activeProduct?.set_name || activeProduct.set_name === "Sin set")
-        return [];
+      if (!isValidSet(activeProduct?.set_name)) return [];
       const { data, error } = await supabase
         .from("products")
         .select("*")
-        .eq("set_name", activeProduct.set_name)
-        .neq("id", activeProduct.id); // Exclude current
+        .eq("set_name", activeProduct!.set_name!)
+        .neq("id", activeProduct!.id);
 
       if (error) throw error;
       return data as Product[];
     },
-    enabled: !!activeProduct?.set_name && activeProduct.set_name !== "Sin set",
+    enabled: isValidSet(activeProduct?.set_name),
   });
 
   // Combine active product with set members for "subItems" context
@@ -274,8 +289,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
 
       // 2. If set_name changed, update others
       if (
-        activeProduct.set_name &&
-        activeProduct.set_name !== "Sin set" &&
+        isValidSet(activeProduct.set_name) &&
         updatedData.set_name &&
         updatedData.set_name !== activeProduct.set_name
       ) {
@@ -481,6 +495,51 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
 
   return (
     <Container maxWidth="xl" sx={{ mt: 4, mb: 10 }}>
+      {/* Breadcrumbs & Back Button */}
+      <Box sx={{ mb: 3, pt: 8 }}>
+        <Button
+          startIcon={<ArrowBack />}
+          onClick={() => setView(ViewState.CATALOG)}
+          sx={{
+            color: "grey.500",
+            textTransform: "none",
+            mb: 1,
+            "&:hover": { color: "secondary.main" },
+          }}
+        >
+          Volver al catálogo
+        </Button>
+        <Breadcrumbs
+          separator={
+            <NavigateNext fontSize="small" sx={{ color: "grey.600" }} />
+          }
+          sx={{ color: "grey.500" }}
+        >
+          <Link
+            component="button"
+            underline="hover"
+            color="inherit"
+            onClick={() => setView(ViewState.CATALOG)}
+            sx={{ cursor: "pointer", fontSize: "0.875rem" }}
+          >
+            Catálogo
+          </Link>
+          {activeProduct.category && (
+            <Typography color="text.secondary" sx={{ fontSize: "0.875rem" }}>
+              {activeProduct.category}
+            </Typography>
+          )}
+          <Typography
+            color="secondary"
+            sx={{ fontSize: "0.875rem", fontWeight: 600 }}
+          >
+            {isValidSet(activeProduct.set_name)
+              ? activeProduct.set_name
+              : activeProduct.name}
+          </Typography>
+        </Breadcrumbs>
+      </Box>
+
       {/* Product Highlight Card */}
       <Grid container spacing={4} sx={{ mb: 6 }}>
         {/* Left Column: Gallery */}

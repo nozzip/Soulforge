@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { NodeViewWrapper } from "@tiptap/react";
-import { NodeViewProps } from "@tiptap/core";
+import { NodeViewWrapper, ReactNodeViewProps } from "@tiptap/react";
 import { Resizable } from "re-resizable";
 import { Box, IconButton, Paper } from "@mui/material";
 import {
@@ -9,10 +8,8 @@ import {
   FormatAlignRight,
 } from "@mui/icons-material";
 
-// ...
-
-interface ResizableImageComponentProps extends NodeViewProps {
-  node: {
+interface ResizableImageComponentProps extends ReactNodeViewProps {
+  node: ReactNodeViewProps["node"] & {
     attrs: {
       src: string;
       alt?: string;
@@ -21,9 +18,7 @@ interface ResizableImageComponentProps extends NodeViewProps {
       height?: string | number;
       align?: "left" | "center" | "right";
     };
-  } & NodeViewProps["node"]; // Ensure node compatibility
-  updateAttributes: (attrs: Record<string, any>) => void;
-  selected: boolean;
+  };
 }
 
 const ResizableImageComponent: React.FC<ResizableImageComponentProps> = (

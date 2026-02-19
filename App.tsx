@@ -485,7 +485,7 @@ const App: React.FC = () => {
             case ViewState.CART:
               return <Cart setView={handleSetView} />;
             case ViewState.CHECKOUT:
-              return <Checkout />;
+              return <Checkout setView={handleSetView} />;
             case ViewState.PRODUCT_DETAIL:
               return (
                 <ProductDetail

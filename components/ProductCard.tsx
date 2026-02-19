@@ -1,6 +1,6 @@
 import React from "react";
 import { Product } from "../types";
-import { formatCurrency } from "../utils/currency.tsx";
+import { formatProductPrice } from "../utils/currency.tsx";
 import { getOptimizedImageUrl } from "../utils/imageValidation";
 import {
   Box,
@@ -261,7 +261,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           color="secondary.main"
           sx={{ fontWeight: "bold" }}
         >
-          {formatCurrency(product.price)}
+          {formatProductPrice(product)}
         </Typography>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           {isAdmin && onDeleteProduct && !isGroupingMode && (
