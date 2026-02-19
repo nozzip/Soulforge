@@ -308,7 +308,11 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
       console.log("Saving product data:", updatedData);
 
       // 1. Update current product
-      const { data: productData, error: productError, status } = await supabase
+      const {
+        data: productData,
+        error: productError,
+        status,
+      } = await supabase
         .from("products")
         .update(updatedData)
         .eq("id", activeProduct.id)
@@ -317,7 +321,9 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
       if (productError) throw productError;
 
       if (!productData || productData.length === 0) {
-        throw new Error("No se pudo actualizar el producto. Verifique los permisos RLS en Supabase.");
+        throw new Error(
+          "No se pudo actualizar el producto. Verifique los permisos RLS en Supabase.",
+        );
       }
 
       // 2. If set_name changed, update others
@@ -335,7 +341,9 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
       }
 
       // Invalidate queries
-      await queryClient.refetchQueries({ queryKey: ["product", activeProduct.id] });
+      await queryClient.refetchQueries({
+        queryKey: ["product", activeProduct.id],
+      });
       await queryClient.invalidateQueries({ queryKey: ["products"] });
 
       if (activeProduct.set_name) {
@@ -447,6 +455,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
       .from("product_reviews")
       .insert({
         product_id: activeProduct.id,
+        user_id: user.id,
         user_name: user.name,
         user_avatar: user.avatar,
         rating: reviewData.rating,

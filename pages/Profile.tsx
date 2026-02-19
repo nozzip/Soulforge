@@ -102,7 +102,7 @@ const Profile: React.FC<ProfileProps> = ({
 
     return {
       canChange: diffDays >= NICKNAME_CHANGE_COOLDOWN_DAYS,
-      daysLeft: NICKNAME_CHANGE_COOLDOWN_DAYS - diffDays
+      daysLeft: NICKNAME_CHANGE_COOLDOWN_DAYS - diffDays,
     };
   };
 
@@ -141,7 +141,7 @@ const Profile: React.FC<ProfileProps> = ({
             setProfile(initialProfile as ProfileType);
             setFormData({
               avatar_url: initialProfile.avatar_url,
-              username: initialProfile.username
+              username: initialProfile.username,
             });
           } else {
             // If viewing other profile and missing, show error or empty
@@ -154,7 +154,7 @@ const Profile: React.FC<ProfileProps> = ({
         setProfile(profileData);
         setFormData({
           avatar_url: profileData.avatar_url || "",
-          username: profileData.username || ""
+          username: profileData.username || "",
         });
       }
 
@@ -221,7 +221,9 @@ const Profile: React.FC<ProfileProps> = ({
       // Letras, números y espacios (pero no solo espacios)
       const validNicknameRegex = /^[a-zA-Z0-9\s]+$/;
       if (!validNicknameRegex.test(nickname)) {
-        throw new Error("El nickname solo puede contener letras, números y espacios (sin símbolos).");
+        throw new Error(
+          "El nickname solo puede contener letras, números y espacios (sin símbolos).",
+        );
       }
 
       const updates: any = {
@@ -234,7 +236,9 @@ const Profile: React.FC<ProfileProps> = ({
 
       if (isNicknameChanging) {
         if (!canChangeNickname) {
-          throw new Error(`Debes esperar ${daysLeft} días más para cambiar tu nickname.`);
+          throw new Error(
+            `Debes esperar ${daysLeft} días más para cambiar tu nickname.`,
+          );
         }
 
         // Verificar si el nickname ya existe (Case Insensitive)
@@ -245,10 +249,13 @@ const Profile: React.FC<ProfileProps> = ({
           .neq("id", user.id)
           .maybeSingle();
 
-        if (checkError) console.error("Error checking username uniqueness:", checkError);
+        if (checkError)
+          console.error("Error checking username uniqueness:", checkError);
 
         if (existingUser) {
-          throw new Error("Este nickname ya está siendo usado por otro aventurero.");
+          throw new Error(
+            "Este nickname ya está siendo usado por otro aventurero.",
+          );
         }
 
         updates.last_nickname_change = new Date().toISOString();
@@ -257,7 +264,7 @@ const Profile: React.FC<ProfileProps> = ({
       const { error } = await supabase.from("profiles").upsert(updates);
       if (error) throw error;
 
-      setProfile((prev) => prev ? ({ ...prev, ...updates }) : null);
+      setProfile((prev) => (prev ? { ...prev, ...updates } : null));
       setEditMode(false);
       setSnackbar({
         open: true,
@@ -453,11 +460,17 @@ const Profile: React.FC<ProfileProps> = ({
                   size="small"
                   fullWidth
                   value={formData.username}
-                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                  error={!canChangeNickname && formData.username !== profile?.username}
+                  onChange={(e) =>
+                    setFormData({ ...formData, username: e.target.value })
+                  }
+                  error={
+                    !canChangeNickname &&
+                    formData.username !== profile?.username
+                  }
                   inputProps={{ maxLength: 20 }}
                   helperText={
-                    !canChangeNickname && formData.username !== profile?.username
+                    !canChangeNickname &&
+                    formData.username !== profile?.username
                       ? `Podrás cambiarlo en ${daysLeft} días.`
                       : "Máx. 20 caracteres, letras, números y espacios."
                   }
@@ -466,7 +479,7 @@ const Profile: React.FC<ProfileProps> = ({
                     "& .MuiInputBase-input": {
                       fontFamily: "Cinzel, serif",
                       fontWeight: "bold",
-                    }
+                    },
                   }}
                 />
               </Box>
@@ -520,7 +533,7 @@ const Profile: React.FC<ProfileProps> = ({
                 color="text.secondary"
                 sx={{ mt: 1, fontStyle: "italic" }}
               >
-                Sin Guild
+                Sin Gremio
               </Typography>
             )}
           </Box>
@@ -534,7 +547,7 @@ const Profile: React.FC<ProfileProps> = ({
                   setEditMode(false);
                   setFormData({
                     avatar_url: profile?.avatar_url || "",
-                    username: profile?.username || ""
+                    username: profile?.username || "",
                   });
                 } else {
                   setEditMode(true);
@@ -595,7 +608,7 @@ const Profile: React.FC<ProfileProps> = ({
               fontFamily="Cinzel, serif"
               color="primary.main"
             >
-              Guild & Alianzas
+              Gremio & Alianzas
             </Typography>
           </Box>
 

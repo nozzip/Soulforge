@@ -10,7 +10,7 @@ export interface Profile {
   username: string;
   full_name: string;
   avatar_url: string;
-  faction?: string;
+  guild_id?: string;
   title?: string;
   frame_id?: string;
   xp: number;

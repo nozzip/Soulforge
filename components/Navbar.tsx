@@ -543,13 +543,22 @@ const Navbar: React.FC<NavbarProps> = ({
         <AppBar
           position="fixed"
           sx={{
-            bgcolor: "transparent", // Keep transparent background
-            backdropFilter: "blur(4px)", // Maintain blur
-            borderBottom: "none",
+            bgcolor: alpha(theme.palette.background.default, 0.4),
+            backdropFilter: "blur(12px)",
+            borderBottom: `1px solid ${alpha(theme.palette.secondary.main, 0.1)}`,
             boxShadow: "none",
             transition: "all 0.5s ease",
             zIndex: theme.zIndex.drawer + 1,
-            mt: 0, // Removed top margin to allow full hiding
+            mt: 0,
+            "&::after": {
+              content: '""',
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: "1px",
+              background: `linear-gradient(90deg, transparent, ${alpha(theme.palette.secondary.main, 0.4)}, transparent)`,
+            },
           }}
           elevation={0}
         >
