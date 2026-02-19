@@ -30,16 +30,16 @@ const sizeMapping = {
  */
 function calculatePrice(grade, size) {
   const baseCosts = {
-    Small: 4,
-    Medium: 4.5,
-    Large: 7.5,
-    Huge: 22.5,
-    Gargantuan: 50,
+    Small: 1,
+    Medium: 1.25,
+    Large: 1.5,
+    Huge: 2,
+    Gargantuan: 4,
   };
 
   const gradeMultipliers = {
-    C: 1, // Común
-    R: 2, // Raro
+    C: 1.5, // Común
+    R: 2.5, // Raro
     L: 4, // Legendario
   };
 
@@ -85,7 +85,7 @@ async function uploadToSupabase(filePath, fileName, mimeType) {
 
   const { data, error } = await supabase.storage
     .from("products")
-    .upload(`imports/${fileName}`, fileBuffer, {
+    .upload(fileName, fileBuffer, {
       contentType: mimeType,
       upsert: true,
     });
@@ -94,7 +94,7 @@ async function uploadToSupabase(filePath, fileName, mimeType) {
 
   const { data: publicUrlData } = supabase.storage
     .from("products")
-    .getPublicUrl(`imports/${fileName}`);
+    .getPublicUrl(fileName);
 
   return publicUrlData.publicUrl;
 }
@@ -126,6 +126,7 @@ async function importProducts() {
           headers: [
             "id",
             "imageSrc",
+            "imagen_label", // Columna literal "Imagen"
             "name",
             "category",
             "designer",
@@ -134,7 +135,7 @@ async function importProducts() {
             "size",
             "creature_type",
             "weapon",
-            "title",
+            "universe",
             "grade",
             "approved",
           ],
@@ -143,12 +144,9 @@ async function importProducts() {
       .on("data", (row) => results.push(row))
       .on("end", async () => {
         try {
-          // Filtrar por aprobado. Detectar si hay columna extra en _13 (14 cols vs 13 cols)
+          // Filtrar por aprobado.
           const approvedProducts = results.filter((row) => {
-            const isApproved =
-              (row.approved && row.approved.trim().toLowerCase() === "si") ||
-              (row._13 && row._13.trim().toLowerCase() === "si");
-            return isApproved;
+            return row.approved && row.approved.trim().toLowerCase() === "si";
           });
 
           console.log(
@@ -160,57 +158,40 @@ async function importProducts() {
 
           const { data: existingProducts } = await supabase
             .from("products")
-            .select("name");
+            .select("name, image");
 
-          const existingNames = new Set(
-            (existingProducts || []).map((p) => p.name),
+          const existingMap = new Map(
+            (existingProducts || []).map((p) => [p.name, p.image]),
           );
 
+          // List all files currently in Storage to check existence
+          let storageFiles = new Set();
+          let offset = 0;
+          while (true) {
+            const { data: files } = await supabase.storage
+              .from("products")
+              .list("", { limit: 1000, offset });
+            if (!files || files.length === 0) break;
+            files.filter((f) => f.id).forEach((f) => storageFiles.add(f.name));
+            if (files.length < 1000) break;
+            offset += 1000;
+          }
+          console.log(`📦 Archivos en Storage: ${storageFiles.size}`);
+
           let addedCount = 0;
-          let skippedExisting = 0;
+          let updatedCount = 0;
+          let reimagedCount = 0;
+          let errorCount = 0;
 
           for (let i = 0; i < approvedProducts.length; i++) {
-            const rawRow = approvedProducts[i];
+            const row = approvedProducts[i];
 
-            // Detectar desplazamiento si hay 14 columnas (vía _13)
-            const isShifted = !!rawRow._13;
+            if (!row.name) continue;
 
-            const row = {
-              id: rawRow.id,
-              imageSrc: rawRow.imageSrc,
-              name: isShifted ? rawRow.category : rawRow.name,
-              category: isShifted ? rawRow.designer : rawRow.category,
-              designer: isShifted ? rawRow.set_name : rawRow.designer,
-              set_name: isShifted ? rawRow.mime_type : rawRow.set_name,
-              mime_type: isShifted ? rawRow.size : rawRow.mime_type,
-              size: isShifted ? rawRow.creature_type : rawRow.size,
-              creature_type: isShifted ? rawRow.weapon : rawRow.creature_type,
-              weapon: isShifted ? rawRow.title : rawRow.weapon,
-              title: isShifted ? rawRow.grade : rawRow.title,
-              grade: isShifted ? rawRow.approved : rawRow.grade,
-              approved: isShifted ? rawRow._13 : rawRow.approved,
-            };
-
-            if (!row.name || existingNames.has(row.name)) {
-              skippedExisting++;
-              continue;
-            }
-
-            console.log(
-              `\n📦 Procesando ${i + 1}/${approvedProducts.length}: ${row.name}`,
-            );
+            const isExisting = existingMap.has(row.name);
 
             try {
-              const fileName = `${Date.now()}_${row.name.replace(/[^a-zA-Z0-9]/g, "_")}.${(row.mime_type || "image/jpeg").split("/")[1] || "jpg"}`;
-              const tempPath = path.join(tempDir, fileName);
-
-              await downloadImage(row.imageSrc, tempPath);
-              const imageUrl = await uploadToSupabase(
-                tempPath,
-                fileName,
-                row.mime_type || "image/jpeg",
-              );
-
+              // 1. Calcular precio (común para nuevos y existentes)
               const rawGrade = (row.grade || "").trim().toUpperCase();
               const rawSize = (row.size || "").trim().toUpperCase();
               const rawCreatureType = (row.creature_type || "").trim();
@@ -229,9 +210,9 @@ async function importProducts() {
                 maxPrice = 69;
                 size = rawSize
                   ? rawSize
-                      .split("/")
-                      .map((s) => sizeMapping[s.trim()] || s.trim())
-                      .join(" - ")
+                    .split("/")
+                    .map((s) => sizeMapping[s.trim()] || s.trim())
+                    .join(" - ")
                   : null;
               } else if (rawSize.includes("/") && hasValidGrade) {
                 const sizeParts = rawSize.split("/").map((s) => s.trim());
@@ -253,38 +234,100 @@ async function importProducts() {
                 maxPrice = price;
               }
 
-              const { error: insertError } = await supabase
-                .from("products")
-                .insert({
-                  name: row.name,
-                  category: row.category || "D&D",
+              // Statues siempre individuales (no agrupar en set)
+              const finalSetName = rawCreatureType.toLowerCase() === "statue"
+                ? null
+                : (row.set_name || null);
+
+              if (isExisting) {
+                // Verificar si la imagen existe en Storage
+                const currentUrl = existingMap.get(row.name) || "";
+                const match = currentUrl.match(/\/storage\/v1\/object\/public\/products\/(.+)/);
+                const storagePath = match ? decodeURIComponent(match[1]) : "";
+                // Extraer solo el filename (sin carpetas)
+                const fileName = storagePath.split("/").pop() || "";
+                const imageExists = fileName && storageFiles.has(fileName);
+
+                const updateData = {
                   price: price,
                   min_price: minPrice,
                   max_price: maxPrice,
-                  image: imageUrl, // Columna obligatoria
-                  image_url: imageUrl,
-                  designer: row.designer,
-                  set_name: row.set_name,
-                  mime_type: row.mime_type,
-                  size: size,
-                  creature_type: row.creature_type,
-                  weapon: row.weapon,
-                  title: row.title,
-                  grade: hasValidGrade ? rawGrade : null,
-                  description: `Miniatura de alta calidad de ${row.name}.`,
-                });
+                  set_name: finalSetName,
+                };
 
-              if (insertError) throw insertError;
-              fs.unlinkSync(tempPath);
-              addedCount++;
+                // Si la imagen no existe, re-subirla
+                if (!imageExists && row.imageSrc) {
+                  const newFileName = `${row.name.replace(/[^a-zA-Z0-9]/g, "_")}.${(row.mime_type || "image/jpeg").split("/")[1] || "jpg"}`;
+                  const tempPath = path.join(tempDir, newFileName);
+                  await downloadImage(row.imageSrc, tempPath);
+                  const imageUrl = await uploadToSupabase(
+                    tempPath,
+                    newFileName,
+                    row.mime_type || "image/jpeg",
+                  );
+                  updateData.image = imageUrl;
+                  updateData.image_url = imageUrl;
+                  fs.unlinkSync(tempPath);
+                  reimagedCount++;
+                }
+
+                const { error: updateError } = await supabase
+                  .from("products")
+                  .update(updateData)
+                  .eq("name", row.name);
+
+                if (updateError) throw updateError;
+                updatedCount++;
+                process.stdout.write(`\r🔄 Actualizados: ${updatedCount} | Re-imágenes: ${reimagedCount} | Nuevos: ${addedCount}`);
+              } else {
+                // INSERTAR NUEVO (requiere imagen)
+                console.log(`\n📦 Agregando nuevo: ${row.name}`);
+                const fileName = `${row.name.replace(/[^a-zA-Z0-9]/g, "_")}.${(row.mime_type || "image/jpeg").split("/")[1] || "jpg"}`;
+                const tempPath = path.join(tempDir, fileName);
+
+                await downloadImage(row.imageSrc, tempPath);
+                const imageUrl = await uploadToSupabase(
+                  tempPath,
+                  fileName,
+                  row.mime_type || "image/jpeg",
+                );
+
+                const { error: insertError } = await supabase
+                  .from("products")
+                  .insert({
+                    name: row.name,
+                    category: row.category || "D&D",
+                    price: price,
+                    min_price: minPrice,
+                    max_price: maxPrice,
+                    image: imageUrl,
+                    image_url: imageUrl,
+                    designer: row.designer,
+                    set_name: finalSetName,
+                    mime_type: row.mime_type,
+                    size: size,
+                    creature_type: row.creature_type,
+                    weapon: row.weapon,
+                    universe: row.universe,
+                    grade: hasValidGrade ? rawGrade : null,
+                    description: `Miniatura de alta calidad de ${row.name}.`,
+                  });
+
+                if (insertError) throw insertError;
+                fs.unlinkSync(tempPath);
+                addedCount++;
+              }
             } catch (err) {
-              console.error(`❌ Error procesando ${row.name}:`, err.message);
+              errorCount++;
+              console.error(`\n❌ Error en ${row.name}:`, err.message);
             }
           }
 
-          console.log(`\n🎉 Importación completada!`);
+          console.log(`\n\n🎉 Proceso completado!`);
           console.log(`✅ Nuevos agregados: ${addedCount}`);
-          console.log(`⏭️ Existentes omitidos: ${skippedExisting}`);
+          console.log(`🔄 Precios actualizados: ${updatedCount}`);
+          console.log(`🖼️  Re-imágenes subidas: ${reimagedCount}`);
+          console.log(`❌ Errores: ${errorCount}`);
           resolve();
         } catch (err) {
           reject(err);

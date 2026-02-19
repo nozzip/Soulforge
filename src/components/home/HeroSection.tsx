@@ -393,7 +393,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ setView, isAdmin }) => {
                   transform: "translate(-50%, -50%)",
                   zIndex: 0,
                   pointerEvents: "none",
-                  opacity: 0.4,
+                  opacity: 1,
                   animation: `${logoFade} 4s ease-in-out infinite`,
                   display: { xs: "none", md: "block" },
                 }}
@@ -403,9 +403,9 @@ const HeroSection: React.FC<HeroSectionProps> = ({ setView, isAdmin }) => {
                   src={`https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/guide/YunqueSolo.svg`}
                   alt="SoulForge Logo"
                   sx={{
-                    width: 200,
-                    height: 200,
-                    opacity: 0.4,
+                    width: 250,
+                    height: 250,
+                    opacity: 1,
                     filter:
                       "brightness(100%) saturate(100%) invert(88%) sepia(0%) saturate(1217%) hue-rotate(359deg) brightness(88%) contrast(92%)",
                     animation: `${logoFade} 3s ease-in-out infinite`,

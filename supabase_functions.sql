@@ -1,23 +1,30 @@
 -- 1. Function to get distinct filter values (for Sidebar)
+DROP FUNCTION IF EXISTS get_catalog_filter_values();
+
 CREATE OR REPLACE FUNCTION get_catalog_filter_values()
 RETURNS TABLE (
   categories text[],
   sizes text[],
   designers text[],
   creature_types text[],
-  weapons text[]
+  weapons text[],
+  universes text[]
 ) LANGUAGE plpgsql AS $$
 BEGIN
   RETURN QUERY SELECT
-    ARRAY(SELECT DISTINCT category FROM products WHERE category IS NOT NULL AND category != '' ORDER BY category),
-    ARRAY(SELECT DISTINCT size FROM products WHERE size IS NOT NULL AND size != '' ORDER BY size),
-    ARRAY(SELECT DISTINCT designer FROM products WHERE designer IS NOT NULL AND designer != '' ORDER BY designer),
-    ARRAY(SELECT DISTINCT creature_type FROM products WHERE creature_type IS NOT NULL AND creature_type != '' ORDER BY creature_type),
-    ARRAY(SELECT DISTINCT weapon FROM products WHERE weapon IS NOT NULL AND weapon != '' ORDER BY weapon);
+    ARRAY(SELECT DISTINCT trim(category) FROM products WHERE category IS NOT NULL AND category != '' ORDER BY 1),
+    ARRAY(SELECT DISTINCT trim(s) FROM products, unnest(string_to_array(size, '/')) AS s WHERE size IS NOT NULL AND trim(s) != '' ORDER BY 1),
+    ARRAY(SELECT DISTINCT trim(designer) FROM products WHERE designer IS NOT NULL AND designer != '' ORDER BY 1),
+    ARRAY(SELECT DISTINCT trim(creature_type) FROM products WHERE creature_type IS NOT NULL AND creature_type != '' ORDER BY 1),
+    ARRAY(SELECT DISTINCT trim(w) FROM products, unnest(string_to_array(weapon, '/')) AS w WHERE weapon IS NOT NULL AND trim(w) != '' ORDER BY 1),
+    ARRAY(SELECT DISTINCT trim(universe) FROM products WHERE universe IS NOT NULL AND universe != '' ORDER BY 1);
 END;
 $$;
 
 -- 2. Function to get catalog items (Grouped by Set + Search inside Sets)
+DROP FUNCTION IF EXISTS get_catalog_items(integer,integer,text,text[],text[],text[],text[],text[],text);
+DROP FUNCTION IF EXISTS get_catalog_items(integer,integer,text,text[],text[],text[],text[],text[],text[],text);
+
 CREATE OR REPLACE FUNCTION get_catalog_items(
   page_number int,
   page_size int,
@@ -27,6 +34,7 @@ CREATE OR REPLACE FUNCTION get_catalog_items(
   filter_designers text[] DEFAULT '{}',
   filter_creature_types text[] DEFAULT '{}',
   filter_weapons text[] DEFAULT '{}',
+  filter_universes text[] DEFAULT '{}',
   sort_option text DEFAULT 'newest'
 )
 RETURNS TABLE (
@@ -41,6 +49,8 @@ RETURNS TABLE (
   creature_type text,
   weapon text,
   set_name text,
+  universe text,
+  mime_type text,
   created_at timestamptz,
   rating numeric,
   reviews_count bigint,
@@ -71,23 +81,28 @@ BEGIN
        p.designer ILIKE '%' || search_query || '%' OR
        p.creature_type ILIKE '%' || search_query || '%' OR
        p.weapon ILIKE '%' || search_query || '%' OR
-       p.set_name ILIKE '%' || search_query || '%')
+       p.set_name ILIKE '%' || search_query || '%' OR
+       p.universe ILIKE '%' || search_query || '%')
       AND
       -- Categories
-      (array_length(filter_categories, 1) IS NULL OR p.category = ANY(filter_categories))
+      (array_length(filter_categories, 1) IS NULL OR trim(p.category) = ANY(filter_categories))
       AND
       -- Sizes
-      (array_length(filter_sizes, 1) IS NULL OR p.size = ANY(filter_sizes))
+      (array_length(filter_sizes, 1) IS NULL OR 
+       EXISTS (SELECT 1 FROM unnest(filter_sizes) s WHERE p.size ILIKE '%' || s || '%'))
       AND
       -- Designers
-      (array_length(filter_designers, 1) IS NULL OR p.designer = ANY(filter_designers))
+      (array_length(filter_designers, 1) IS NULL OR trim(p.designer) = ANY(filter_designers))
       AND
       -- Creature Types
-      (array_length(filter_creature_types, 1) IS NULL OR p.creature_type = ANY(filter_creature_types))
+      (array_length(filter_creature_types, 1) IS NULL OR trim(p.creature_type) = ANY(filter_creature_types))
       AND
       -- Weapons
       (array_length(filter_weapons, 1) IS NULL OR 
        EXISTS (SELECT 1 FROM unnest(filter_weapons) w WHERE p.weapon ILIKE '%' || w || '%'))
+      AND
+      -- Universes
+      (array_length(filter_universes, 1) IS NULL OR trim(p.universe) = ANY(filter_universes))
   ),
   grouped_items AS (
     SELECT
@@ -133,6 +148,8 @@ BEGIN
     p.creature_type,
     p.weapon,
     p.set_name,
+    p.universe,
+    p.mime_type,
     p.created_at,
     COALESCE(AVG(pr.rating), 0) as rating,
     COUNT(pr.id) as reviews_count,
@@ -152,13 +169,17 @@ END;
 $$;
 
 -- 3. Function to get COUNT (for pagination)
+DROP FUNCTION IF EXISTS get_catalog_items_count(text,text[],text[],text[],text[],text[]);
+DROP FUNCTION IF EXISTS get_catalog_items_count(text,text[],text[],text[],text[],text[],text[]);
+
 CREATE OR REPLACE FUNCTION get_catalog_items_count(
   search_query text DEFAULT '',
   filter_categories text[] DEFAULT '{}',
   filter_sizes text[] DEFAULT '{}',
   filter_designers text[] DEFAULT '{}',
   filter_creature_types text[] DEFAULT '{}',
-  filter_weapons text[] DEFAULT '{}'
+  filter_weapons text[] DEFAULT '{}',
+  filter_universes text[] DEFAULT '{}'
 )
 RETURNS bigint LANGUAGE plpgsql AS $$
 BEGIN
@@ -173,18 +194,22 @@ BEGIN
          p.designer ILIKE '%' || search_query || '%' OR
          p.creature_type ILIKE '%' || search_query || '%' OR
          p.weapon ILIKE '%' || search_query || '%' OR
-         p.set_name ILIKE '%' || search_query || '%')
+         p.set_name ILIKE '%' || search_query || '%' OR
+         p.universe ILIKE '%' || search_query || '%')
         AND
-        (array_length(filter_categories, 1) IS NULL OR p.category = ANY(filter_categories))
+        (array_length(filter_categories, 1) IS NULL OR trim(p.category) = ANY(filter_categories))
         AND
-        (array_length(filter_sizes, 1) IS NULL OR p.size = ANY(filter_sizes))
+        (array_length(filter_sizes, 1) IS NULL OR 
+         EXISTS (SELECT 1 FROM unnest(filter_sizes) s WHERE p.size ILIKE '%' || s || '%'))
         AND
-        (array_length(filter_designers, 1) IS NULL OR p.designer = ANY(filter_designers))
+        (array_length(filter_designers, 1) IS NULL OR trim(p.designer) = ANY(filter_designers))
         AND
-        (array_length(filter_creature_types, 1) IS NULL OR p.creature_type = ANY(filter_creature_types))
+        (array_length(filter_creature_types, 1) IS NULL OR trim(p.creature_type) = ANY(filter_creature_types))
         AND
         (array_length(filter_weapons, 1) IS NULL OR 
          EXISTS (SELECT 1 FROM unnest(filter_weapons) w WHERE p.weapon ILIKE '%' || w || '%'))
+        AND
+        (array_length(filter_universes, 1) IS NULL OR trim(p.universe) = ANY(filter_universes))
     ),
     grouped_items AS (
       SELECT
@@ -209,3 +234,4 @@ BEGIN
   );
 END;
 $$;
+

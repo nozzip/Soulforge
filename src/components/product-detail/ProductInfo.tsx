@@ -240,36 +240,45 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
             value={editForm.name}
             onChange={onEditChange}
           />
-          {isValidSet(activeProduct.set_name) && (
-            <TextField
-              fullWidth
-              name="set_name"
-              label="Nombre del Set (Grupo)"
-              value={editForm.set_name || ""}
-              onChange={onEditChange}
-              helperText="Cambiar esto actualizará el nombre del grupo para todos los miembros."
-            />
-          )}
+          <TextField
+            fullWidth
+            name="set_name"
+            label="Nombre del Set (Grupo)"
+            value={editForm.set_name || ""}
+            onChange={onEditChange}
+            placeholder="Ej: Warriors of the North"
+            helperText="Si asignas un nombre aquí, este producto se agrupará con otros que tengan el mismo nombre de set."
+          />
         </Stack>
       ) : (
-        <Typography
-          variant="h3"
-          sx={{
-            fontWeight: "bold",
-            fontStyle: "italic",
-            mb: 2,
-            color: "common.white",
-            minHeight: "6rem",
-            display: "flex",
-            alignItems: "flex-start",
-            lineHeight: 1.2,
-          }}
-        >
-          {/* If part of a set, show Set Name. If not, show Product Name */}
-          {isValidSet(activeProduct.set_name)
-            ? activeProduct.set_name
-            : activeProduct.name.replace(/\s*Header\s*/gi, "").trim()}
-        </Typography>
+        <Box sx={{ mb: 2, minHeight: "6rem" }}>
+          <Typography
+            variant="h3"
+            sx={{
+              fontWeight: "bold",
+              fontStyle: "italic",
+              color: "common.white",
+              lineHeight: 1.2,
+            }}
+          >
+            {activeProduct.name.replace(/\s*Header\s*/gi, "").trim()}
+          </Typography>
+          {isValidSet(activeProduct.set_name) && (
+            <Typography
+              variant="subtitle1"
+              sx={{
+                color: "secondary.main",
+                fontWeight: 600,
+                letterSpacing: 2,
+                textTransform: "uppercase",
+                mt: 1,
+                opacity: 0.8,
+              }}
+            >
+              Explorando el Set: {activeProduct.set_name}
+            </Typography>
+          )}
+        </Box>
       )}
 
       <Box
@@ -445,7 +454,7 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
               boxShadow:
                 activeProduct.id === product.id
                   ? (theme) =>
-                      `0 0 15px ${alpha(theme.palette.secondary.main, 0.3)}`
+                    `0 0 15px ${alpha(theme.palette.secondary.main, 0.3)}`
                   : "none",
             }}
           />
@@ -463,7 +472,7 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
                 boxShadow:
                   activeProduct.id === item.id
                     ? (theme) =>
-                        `0 0 15px ${alpha(theme.palette.secondary.main, 0.3)}`
+                      `0 0 15px ${alpha(theme.palette.secondary.main, 0.3)}`
                     : "none",
               }}
             />
@@ -535,6 +544,12 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
               value: activeProduct.weapon,
               icon: <Gavel fontSize="small" />,
               editableField: "weapon",
+            },
+            {
+              label: "Universo",
+              value: activeProduct.universe,
+              icon: <Collections fontSize="small" />,
+              editableField: "universe",
             },
             {
               label: "Escala Comandante",

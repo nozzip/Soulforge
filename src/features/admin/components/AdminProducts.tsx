@@ -65,6 +65,13 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
     price: "",
     image: "",
     description: "",
+    designer: "",
+    set_name: "",
+    creature_type: "",
+    weapon: "",
+    universe: "",
+    grade: "",
+    mime_type: "image/png",
   });
 
   const [subItems, setSubItems] = useState<SubItem[]>([]);
@@ -157,6 +164,13 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
       price: parseFloat(formData.price) || 0,
       image: formData.image || "https://via.placeholder.com/400?text=No+Image",
       description: formData.description,
+      designer: formData.designer,
+      set_name: formData.set_name,
+      creature_type: formData.creature_type,
+      weapon: formData.weapon,
+      universe: formData.universe,
+      grade: formData.grade,
+      mime_type: formData.mime_type,
     };
 
     const { data, error } = await supabase
@@ -183,6 +197,13 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
         price: "",
         image: "",
         description: "",
+        designer: "",
+        set_name: "",
+        creature_type: "",
+        weapon: "",
+        universe: "",
+        grade: "",
+        mime_type: "image/png",
       });
       setSubItems([]);
       setPreviewImage(null);
@@ -571,6 +592,89 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
                       </FormControl>
                     )}
                   </Box>
+                </Grid>
+
+                {/* New CSV Fields */}
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <TextField
+                    fullWidth
+                    label="Diseñador"
+                    name="designer"
+                    value={formData.designer}
+                    onChange={handleInputChange}
+                    placeholder="ej. Archvillain Games"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <TextField
+                    fullWidth
+                    label="Set / Colección"
+                    name="set_name"
+                    value={formData.set_name}
+                    onChange={handleInputChange}
+                    placeholder="ej. Path of the Demon"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <TextField
+                    fullWidth
+                    label="Universo"
+                    name="universe"
+                    value={formData.universe}
+                    onChange={handleInputChange}
+                    placeholder="ej. D&D, Marvel, Warhammer"
+                  />
+                </Grid>
+
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <TextField
+                    fullWidth
+                    label="Tipo de Criatura"
+                    name="creature_type"
+                    value={formData.creature_type}
+                    onChange={handleInputChange}
+                    placeholder="ej. Fiend, Humanoid, Undead"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <TextField
+                    fullWidth
+                    label="Armas / Equipo"
+                    name="weapon"
+                    value={formData.weapon}
+                    onChange={handleInputChange}
+                    placeholder="ej. Sword, Staff, Claws"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <FormControl fullWidth>
+                    <Select
+                      name="grade"
+                      value={formData.grade}
+                      onChange={handleInputChange as any}
+                      displayEmpty
+                      sx={{
+                        bgcolor: "background.default",
+                        color: "white",
+                      }}
+                    >
+                      <MenuItem value=""><em>Grado (Opcional)</em></MenuItem>
+                      <MenuItem value="C">Common (C)</MenuItem>
+                      <MenuItem value="R">Rare (R)</MenuItem>
+                      <MenuItem value="L">Legendary (L)</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+
+                <Grid size={{ xs: 12 }}>
+                  <TextField
+                    fullWidth
+                    label="Mime Type (ej. image/png)"
+                    name="mime_type"
+                    value={formData.mime_type}
+                    onChange={handleInputChange}
+                    sx={{ mb: 2 }}
+                  />
                 </Grid>
 
                 {/* Image */}

@@ -33,13 +33,15 @@ interface CatalogFiltersProps {
   designers: string[];
   creatureTypes: string[];
   weapons: string[];
+  universes: string[];
   selectedCategories: string[];
   selectedSizes: string[];
   selectedDesigners: string[];
   selectedCreatureTypes: string[];
   selectedWeapons: string[];
+  selectedUniverses: string[];
   onToggleFilter: (
-    type: "category" | "size" | "designer" | "creature_type" | "weapon",
+    type: "category" | "size" | "designer" | "creature_type" | "weapon" | "universe",
     value: string,
   ) => void;
   onReset: () => void;
@@ -55,11 +57,13 @@ export const CatalogFilters: React.FC<CatalogFiltersProps> = ({
   designers,
   creatureTypes,
   weapons,
+  universes,
   selectedCategories,
   selectedSizes,
   selectedDesigners,
   selectedCreatureTypes,
   selectedWeapons,
+  selectedUniverses,
   onToggleFilter,
   onReset,
   isMobile,
@@ -75,9 +79,15 @@ export const CatalogFilters: React.FC<CatalogFiltersProps> = ({
   const FILTER_GROUPS = [
     {
       id: "category",
-      title: "Origen del Mundo",
+      title: "Categoría",
       icon: <Public fontSize="small" />,
       options: sortedOptions(categories),
+    },
+    {
+      id: "universe",
+      title: "Universo",
+      icon: <Public fontSize="small" />,
+      options: sortedOptions(universes),
     },
     {
       id: "size",
@@ -206,6 +216,8 @@ export const CatalogFilters: React.FC<CatalogFiltersProps> = ({
                 let isSelected = false;
                 if (group.id === "category")
                   isSelected = selectedCategories.includes(opt);
+                else if (group.id === "universe")
+                  isSelected = selectedUniverses.includes(opt);
                 else if (group.id === "size")
                   isSelected = selectedSizes.includes(opt);
                 else if (group.id === "designer")
@@ -223,11 +235,12 @@ export const CatalogFilters: React.FC<CatalogFiltersProps> = ({
                     onClick={() =>
                       onToggleFilter(
                         group.id as
-                          | "category"
-                          | "size"
-                          | "designer"
-                          | "creature_type"
-                          | "weapon",
+                        | "category"
+                        | "size"
+                        | "designer"
+                        | "creature_type"
+                        | "weapon"
+                        | "universe",
                         opt,
                       )
                     }
@@ -270,78 +283,88 @@ export const CatalogFilters: React.FC<CatalogFiltersProps> = ({
         selectedSizes.length > 0 ||
         selectedDesigners.length > 0 ||
         selectedCreatureTypes.length > 0 ||
-        selectedWeapons.length > 0) && (
-        <Box sx={{ mt: 4, mb: 2 }}>
-          <Typography
-            variant="caption"
-            color="grey.500"
-            sx={{
-              mb: 1,
-              display: "block",
-              textTransform: "uppercase",
-              letterSpacing: 1,
-            }}
-          >
-            Filtros Activos
-          </Typography>
-          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-            {selectedCategories.map((cat) => (
-              <Chip
-                key={`cat-${cat}`}
-                label={cat}
-                onDelete={() => onToggleFilter("category", cat)}
-                size="small"
-                color="primary"
-              />
-            ))}
-            {selectedSizes.map((size) => (
-              <Chip
-                key={`size-${size}`}
-                label={size}
-                onDelete={() => onToggleFilter("size", size)}
-                size="small"
-                color="primary"
-              />
-            ))}
-            {selectedDesigners.map((designer) => (
-              <Chip
-                key={`des-${designer}`}
-                label={designer}
-                onDelete={() => onToggleFilter("designer", designer)}
-                size="small"
-                color="primary"
-              />
-            ))}
-            {selectedCreatureTypes.map((type) => (
-              <Chip
-                key={`type-${type}`}
-                label={type}
-                onDelete={() => onToggleFilter("creature_type", type)}
-                size="small"
-                color="primary"
-              />
-            ))}
-            {selectedWeapons.map((weapon) => (
-              <Chip
-                key={`weap-${weapon}`}
-                label={weapon}
-                onDelete={() => onToggleFilter("weapon", weapon)}
-                size="small"
-                color="primary"
-              />
-            ))}
+        selectedWeapons.length > 0 ||
+        selectedUniverses.length > 0) && (
+          <Box sx={{ mt: 4, mb: 2 }}>
+            <Typography
+              variant="caption"
+              color="grey.500"
+              sx={{
+                mb: 1,
+                display: "block",
+                textTransform: "uppercase",
+                letterSpacing: 1,
+              }}
+            >
+              Filtros Activos
+            </Typography>
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+              {selectedCategories.map((cat) => (
+                <Chip
+                  key={`cat-${cat}`}
+                  label={cat}
+                  onDelete={() => onToggleFilter("category", cat)}
+                  size="small"
+                  color="primary"
+                />
+              ))}
+              {selectedSizes.map((size) => (
+                <Chip
+                  key={`size-${size}`}
+                  label={size}
+                  onDelete={() => onToggleFilter("size", size)}
+                  size="small"
+                  color="primary"
+                />
+              ))}
+              {selectedDesigners.map((designer) => (
+                <Chip
+                  key={`des-${designer}`}
+                  label={designer}
+                  onDelete={() => onToggleFilter("designer", designer)}
+                  size="small"
+                  color="primary"
+                />
+              ))}
+              {selectedCreatureTypes.map((type) => (
+                <Chip
+                  key={`type-${type}`}
+                  label={type}
+                  onDelete={() => onToggleFilter("creature_type", type)}
+                  size="small"
+                  color="primary"
+                />
+              ))}
+              {selectedWeapons.map((weapon) => (
+                <Chip
+                  key={`weap-${weapon}`}
+                  label={weapon}
+                  onDelete={() => onToggleFilter("weapon", weapon)}
+                  size="small"
+                  color="primary"
+                />
+              ))}
+              {selectedUniverses.map((universe) => (
+                <Chip
+                  key={`uni-${universe}`}
+                  label={universe}
+                  onDelete={() => onToggleFilter("universe", universe)}
+                  size="small"
+                  color="primary"
+                />
+              ))}
 
-            <Chip
-              label="Limpiar todo"
-              onClick={onReset}
-              size="small"
-              variant="outlined"
-              color="secondary"
-              sx={{ borderColor: "secondary.main", color: "secondary.main" }}
-            />
+              <Chip
+                label="Limpiar todo"
+                onClick={onReset}
+                size="small"
+                variant="outlined"
+                color="secondary"
+                sx={{ borderColor: "secondary.main", color: "secondary.main" }}
+              />
+            </Box>
           </Box>
-        </Box>
-      )}
+        )}
 
       <Button
         fullWidth

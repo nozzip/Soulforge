@@ -11,6 +11,7 @@ interface UseCatalogProductsParams {
   selectedDesigners: string[];
   selectedCreatureTypes: string[];
   selectedWeapons: string[];
+  selectedUniverses: string[];
   sortOption: string;
   isAdmin?: boolean;
 }
@@ -29,6 +30,7 @@ export const useCatalogProducts = ({
   selectedDesigners,
   selectedCreatureTypes,
   selectedWeapons,
+  selectedUniverses,
   sortOption,
   isAdmin = false,
 }: UseCatalogProductsParams) => {
@@ -43,6 +45,7 @@ export const useCatalogProducts = ({
       selectedDesigners,
       selectedCreatureTypes,
       selectedWeapons,
+      selectedUniverses,
       sortOption,
       isAdmin,
     ],
@@ -58,6 +61,7 @@ export const useCatalogProducts = ({
         filter_designers: selectedDesigners || [],
         filter_creature_types: selectedCreatureTypes || [],
         filter_weapons: selectedWeapons || [],
+        filter_universes: selectedUniverses || [],
         sort_option: sortOption || "newest",
       });
 
@@ -76,6 +80,7 @@ export const useCatalogProducts = ({
           filter_designers: selectedDesigners || [],
           filter_creature_types: selectedCreatureTypes || [],
           filter_weapons: selectedWeapons || [],
+          filter_universes: selectedUniverses || [],
         },
       );
 

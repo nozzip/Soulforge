@@ -77,6 +77,7 @@ const App: React.FC = () => {
     selectedDesigners: [] as string[],
     selectedCreatureTypes: [] as string[],
     selectedWeapons: [] as string[],
+    selectedUniverses: [] as string[],
     sortOption: "newest",
   });
 
@@ -369,6 +370,7 @@ const App: React.FC = () => {
       selectedSizes: [],
       selectedDesigners: [],
       selectedWeapons: [],
+      selectedUniverses: [],
     }));
     // Al navegar desde Home, siempre vamos al top
     setViewScrollPositions((prev) => ({ ...prev, [ViewState.CATALOG]: 0 }));
@@ -473,6 +475,7 @@ const App: React.FC = () => {
                   designers={metadata?.designers || []}
                   creatureTypes={metadata?.creatureTypes || []}
                   weapons={metadata?.weapons || []}
+                  universes={metadata?.universes || []}
                   onProductClick={handleProductClick}
                   initialSearchQuery={globalSearchQuery}
                   wishlist={wishlist}
@@ -485,7 +488,7 @@ const App: React.FC = () => {
             case ViewState.CART:
               return <Cart setView={handleSetView} />;
             case ViewState.CHECKOUT:
-              return <Checkout setView={handleSetView} />;
+              return <Checkout setView={handleSetView} userProfile={userProfile} />;
             case ViewState.PRODUCT_DETAIL:
               return (
                 <ProductDetail
@@ -497,13 +500,14 @@ const App: React.FC = () => {
                   user={
                     user
                       ? {
-                          name:
-                            user.user_metadata?.full_name ||
-                            user.email ||
-                            "Usuario",
-                          id: user.id,
-                          avatar: userProfile?.avatar_url || DEFAULT_AVATAR_URL,
-                        }
+                        name:
+                          userProfile?.username ||
+                          user.user_metadata?.full_name ||
+                          user.email ||
+                          "Usuario",
+                        id: user.id,
+                        avatar: userProfile?.avatar_url || DEFAULT_AVATAR_URL,
+                      }
                       : null
                   }
                   onProductClick={handleProductClick}
@@ -529,6 +533,7 @@ const App: React.FC = () => {
                 <Feedback
                   setView={handleSetView}
                   user={user}
+                  userProfile={userProfile}
                   onLogin={handleLogin}
                 />
               );
@@ -636,6 +641,7 @@ const App: React.FC = () => {
               return (
                 <Profile
                   user={user}
+                  isAdmin={isAdmin}
                   viewedUserId={selectedProfileId || user?.id}
                   onProfileUpdate={fetchProfile}
                 />

@@ -7,6 +7,7 @@ export interface CatalogMetadata {
   designers: string[];
   creatureTypes: string[];
   weapons: string[];
+  universes: string[];
 }
 
 export const useCatalogMetadata = () => {
@@ -26,12 +27,13 @@ export const useCatalogMetadata = () => {
         rpcData && rpcData[0]
           ? rpcData[0]
           : {
-              categories: [],
-              sizes: [],
-              designers: [],
-              creature_types: [],
-              weapons: [],
-            };
+            categories: [],
+            sizes: [],
+            designers: [],
+            creature_types: [],
+            weapons: [],
+            universes: [],
+          };
 
       // Process Categories (Merge defaults with DB values)
       const defaultCategories = ["D&D", "Warhammer", "Sci-Fi", "Anime", "Cine"];
@@ -51,6 +53,7 @@ export const useCatalogMetadata = () => {
         designers: rpcResult.designers || [],
         creatureTypes: rpcResult.creature_types || [],
         weapons: rpcResult.weapons || [],
+        universes: rpcResult.universes || [],
       };
     },
     staleTime: 1000 * 60 * 60, // 1 hour caching
@@ -60,6 +63,7 @@ export const useCatalogMetadata = () => {
       designers: [],
       creatureTypes: [],
       weapons: [],
+      universes: [],
     },
   });
 };

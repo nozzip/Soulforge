@@ -16,12 +16,14 @@ import { supabase } from "../src/supabase";
 
 interface AvatarSelectionModalProps {
   open: boolean;
+  isAdmin?: boolean;
   onClose: () => void;
   onSelect: (url: string) => void;
 }
 
 const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({
   open,
+  isAdmin = false,
   onClose,
   onSelect,
 }) => {
@@ -48,8 +50,16 @@ const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({
       }
 
       if (data) {
+        // Filter out restricted avatars
+        const filteredFiles = data.filter((file) => {
+          if (file.name.toLowerCase() === "dm profile avatar.webp" && !isAdmin) {
+            return false;
+          }
+          return true;
+        });
+
         // Construct public URLs for each file
-        const urls = data.map((file) => {
+        const urls = filteredFiles.map((file) => {
           const { data: publicUrlData } = supabase.storage
             .from("avatar")
             .getPublicUrl(file.name);

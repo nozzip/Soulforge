@@ -43,6 +43,7 @@ import AvatarSelectionModal from "../components/AvatarSelectionModal";
 
 interface ProfileProps {
   user: any;
+  isAdmin?: boolean;
   viewedUserId?: string;
   onProfileUpdate?: () => void;
 }
@@ -56,6 +57,7 @@ const getXpThresholds = (level: number) => {
 
 const Profile: React.FC<ProfileProps> = ({
   user,
+  isAdmin = false,
   viewedUserId,
   onProfileUpdate,
 }) => {
@@ -82,10 +84,29 @@ const Profile: React.FC<ProfileProps> = ({
   // Form State
   const [formData, setFormData] = useState({
     avatar_url: "",
+    username: "",
   });
 
   const targetUserId = viewedUserId || user?.id;
   const isOwnProfile = user?.id === targetUserId;
+
+  const NICKNAME_CHANGE_COOLDOWN_DAYS = 15;
+
+  const getNicknameCooldownInfo = () => {
+    if (!profile?.last_nickname_change) return { canChange: true, daysLeft: 0 };
+
+    const lastChange = new Date(profile.last_nickname_change);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - lastChange.getTime());
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    return {
+      canChange: diffDays >= NICKNAME_CHANGE_COOLDOWN_DAYS,
+      daysLeft: NICKNAME_CHANGE_COOLDOWN_DAYS - diffDays
+    };
+  };
+
+  const { canChange: canChangeNickname, daysLeft } = getNicknameCooldownInfo();
 
   useEffect(() => {
     if (targetUserId) {
@@ -118,7 +139,10 @@ const Profile: React.FC<ProfileProps> = ({
               title: "Novice Adventurer",
             };
             setProfile(initialProfile as ProfileType);
-            setFormData({ avatar_url: initialProfile.avatar_url });
+            setFormData({
+              avatar_url: initialProfile.avatar_url,
+              username: initialProfile.username
+            });
           } else {
             // If viewing other profile and missing, show error or empty
             setProfile(null);
@@ -128,7 +152,10 @@ const Profile: React.FC<ProfileProps> = ({
         }
       } else {
         setProfile(profileData);
-        setFormData({ avatar_url: profileData.avatar_url || "" });
+        setFormData({
+          avatar_url: profileData.avatar_url || "",
+          username: profileData.username || ""
+        });
       }
 
       // 2. Fetch Guild Membership
@@ -180,16 +207,57 @@ const Profile: React.FC<ProfileProps> = ({
   const handleSaveProfile = async () => {
     setSaving(true);
     try {
-      const updates = {
+      // 1. Validaciones de Nickname
+      const nickname = formData.username.trim();
+
+      if (nickname.length < 3) {
+        throw new Error("El nickname debe tener al menos 3 caracteres.");
+      }
+
+      if (nickname.length > 20) {
+        throw new Error("El nickname no puede superar los 20 caracteres.");
+      }
+
+      // Letras, números y espacios (pero no solo espacios)
+      const validNicknameRegex = /^[a-zA-Z0-9\s]+$/;
+      if (!validNicknameRegex.test(nickname)) {
+        throw new Error("El nickname solo puede contener letras, números y espacios (sin símbolos).");
+      }
+
+      const updates: any = {
         id: user.id,
         avatar_url: formData.avatar_url,
-        updated_at: new Date().toISOString(),
+        username: nickname,
       };
+
+      const isNicknameChanging = nickname !== profile?.username;
+
+      if (isNicknameChanging) {
+        if (!canChangeNickname) {
+          throw new Error(`Debes esperar ${daysLeft} días más para cambiar tu nickname.`);
+        }
+
+        // Verificar si el nickname ya existe (Case Insensitive)
+        const { data: existingUser, error: checkError } = await supabase
+          .from("profiles")
+          .select("id")
+          .ilike("username", nickname)
+          .neq("id", user.id)
+          .maybeSingle();
+
+        if (checkError) console.error("Error checking username uniqueness:", checkError);
+
+        if (existingUser) {
+          throw new Error("Este nickname ya está siendo usado por otro aventurero.");
+        }
+
+        updates.last_nickname_change = new Date().toISOString();
+      }
 
       const { error } = await supabase.from("profiles").upsert(updates);
       if (error) throw error;
 
-      setProfile({ ...profile, ...updates } as ProfileType);
+      setProfile((prev) => prev ? ({ ...prev, ...updates }) : null);
       setEditMode(false);
       setSnackbar({
         open: true,
@@ -200,7 +268,7 @@ const Profile: React.FC<ProfileProps> = ({
     } catch (error: any) {
       setSnackbar({
         open: true,
-        message: "Error al guardar perfil: " + error.message,
+        message: error.message,
         severity: "error",
       });
     } finally {
@@ -377,16 +445,43 @@ const Profile: React.FC<ProfileProps> = ({
             )}
           </Box>
           <Box sx={{ textAlign: { xs: "center", sm: "left" }, flexGrow: 1 }}>
-            <Typography
-              variant="h3"
-              sx={{
-                fontFamily: "Cinzel, serif",
-                fontWeight: "bold",
-                color: "secondary.main",
-              }}
-            >
-              {profile?.username}
-            </Typography>
+            {editMode && isOwnProfile ? (
+              <Box sx={{ mb: 2 }}>
+                <TextField
+                  label="Nickname"
+                  variant="outlined"
+                  size="small"
+                  fullWidth
+                  value={formData.username}
+                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                  error={!canChangeNickname && formData.username !== profile?.username}
+                  inputProps={{ maxLength: 20 }}
+                  helperText={
+                    !canChangeNickname && formData.username !== profile?.username
+                      ? `Podrás cambiarlo en ${daysLeft} días.`
+                      : "Máx. 20 caracteres, letras, números y espacios."
+                  }
+                  sx={{
+                    maxWidth: 300,
+                    "& .MuiInputBase-input": {
+                      fontFamily: "Cinzel, serif",
+                      fontWeight: "bold",
+                    }
+                  }}
+                />
+              </Box>
+            ) : (
+              <Typography
+                variant="h3"
+                sx={{
+                  fontFamily: "Cinzel, serif",
+                  fontWeight: "bold",
+                  color: "secondary.main",
+                }}
+              >
+                {profile?.username}
+              </Typography>
+            )}
             <Typography variant="h6" color="text.secondary">
               {profile?.title || "Novice Adventurer"}
             </Typography>
@@ -437,7 +532,10 @@ const Profile: React.FC<ProfileProps> = ({
               onClick={() => {
                 if (editMode) {
                   setEditMode(false);
-                  setFormData({ avatar_url: profile?.avatar_url || "" });
+                  setFormData({
+                    avatar_url: profile?.avatar_url || "",
+                    username: profile?.username || ""
+                  });
                 } else {
                   setEditMode(true);
                 }
@@ -686,6 +784,7 @@ const Profile: React.FC<ProfileProps> = ({
       {/* Avatar Modal */}
       <AvatarSelectionModal
         open={avatarModalOpen}
+        isAdmin={isAdmin}
         onClose={() => setAvatarModalOpen(false)}
         onSelect={(url) => {
           setFormData({ ...formData, avatar_url: url });

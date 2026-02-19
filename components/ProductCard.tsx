@@ -55,7 +55,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 }) => {
   const theme = useTheme();
   const hasSet = product.set_name && product.set_name !== "Sin set";
-  const isSet = product.subItems && product.subItems.length > 0; // Renamed from hasSubItems to isSet as per user's diff
+  const isSet = product.subItems && product.subItems.length > 0;
+  // member_count comes from the RPC grouping query; fallback to subItems count
+  const memberCount = product.member_count || (isSet ? (product.subItems!.length + 1) : 1);
 
   return (
     <Card
@@ -93,10 +95,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         "&:hover":
           !isGroupingMode && !isUngroupingMode
             ? {
-                borderColor: "secondary.main",
-                transform: "translateY(-4px)",
-                boxShadow: `0 8px 30px ${alpha(theme.palette.common.black, 0.6)}, 0 0 20px ${alpha(theme.palette.secondary.main, 0.2)}`,
-              }
+              borderColor: "secondary.main",
+              transform: "translateY(-4px)",
+              boxShadow: `0 8px 30px ${alpha(theme.palette.common.black, 0.6)}, 0 0 20px ${alpha(theme.palette.secondary.main, 0.2)}`,
+            }
             : {},
       }}
     >
@@ -186,11 +188,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           </Tooltip>
         )}
 
-        {/* Set Badge - Show when product has subItems (is grouped) */}
-        {isSet && (
+        {/* Set Badge - Show item count when product is grouped or has subItems */}
+        {(memberCount > 1) && (
           <Chip
             icon={<Layers sx={{ fontSize: 14 }} />}
-            label={`${(product.subItems?.length || 0) + 1} items`}
+            label={`${memberCount} items`}
             size="small"
             sx={{
               position: "absolute",
@@ -215,11 +217,27 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             fontWeight: "bold",
             fontFamily: "Cinzel",
             color: "common.white",
-            mb: 0,
+            mb: 0.5,
           }}
         >
           {product.name.replace(/\s*Header\s*/gi, "").trim()}
         </Typography>
+        {hasSet && (
+          <Typography
+            variant="caption"
+            sx={{
+              display: "block",
+              color: "secondary.main",
+              fontWeight: 600,
+              textTransform: "uppercase",
+              fontSize: "0.65rem",
+              letterSpacing: 1,
+              mb: 1,
+            }}
+          >
+            Set: {product.set_name}
+          </Typography>
+        )}
         <Typography
           variant="caption"
           color="primary.main"

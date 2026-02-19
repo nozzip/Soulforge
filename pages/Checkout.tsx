@@ -8,7 +8,7 @@ import {
 } from "../utils/currency.tsx";
 import { supabase } from "../src/supabase";
 import { User } from "@supabase/supabase-js";
-import { ViewState } from "../types";
+import { ViewState, Profile } from "../types";
 import {
   Box,
   Container,
@@ -79,9 +79,10 @@ const ARGENTINA_PROVINCES = [
 
 interface CheckoutProps {
   setView: (view: ViewState) => void;
+  userProfile?: Profile | null;
 }
 
-const Checkout: React.FC<CheckoutProps> = ({ setView }) => {
+const Checkout: React.FC<CheckoutProps> = ({ setView, userProfile }) => {
   const { items, totalPrice, clearCart, discount, couponCode, removeCoupon } =
     useCart();
   const [loading, setLoading] = useState(false);
@@ -111,7 +112,10 @@ const Checkout: React.FC<CheckoutProps> = ({ setView }) => {
       if (session?.user) {
         setFormData((prev) => ({
           ...prev,
-          name: session.user.user_metadata.full_name || "",
+          name:
+            userProfile?.username ||
+            session.user.user_metadata.full_name ||
+            "",
         }));
 
         // Load saved addresses

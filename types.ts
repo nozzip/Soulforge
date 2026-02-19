@@ -15,6 +15,7 @@ export interface Profile {
   frame_id?: string;
   xp: number;
   level: number;
+  last_nickname_change?: string;
 }
 
 export interface ForumCategory {
@@ -73,10 +74,15 @@ export interface Product {
   set_name?: string;
   creature_type?: string;
   weapon?: string;
-  title?: string;
+  universe?: string;
   grade?: string;
+  mime_type?: string;
   image_url?: string;
   gallery_images?: string[];
+  created_at?: string;
+  // Fields from catalog RPC (grouping)
+  member_count?: number;
+  is_set_header?: boolean;
 }
 
 export interface CartItem extends Product {

@@ -26,17 +26,23 @@ import {
   PersonAdd,
 } from "@mui/icons-material";
 import { supabase } from "../src/supabase";
-import { ViewState } from "../types";
+import { ViewState, Profile } from "../types";
 import { User } from "@supabase/supabase-js";
 import { FancyPaper, DecorativeCorners } from "../components/StyledComponents";
 
 interface FeedbackProps {
   setView: (view: ViewState) => void;
   user: User | null;
+  userProfile?: Profile | null;
   onLogin: (user: User) => void;
 }
 
-const Feedback: React.FC<FeedbackProps> = ({ setView, user, onLogin }) => {
+const Feedback: React.FC<FeedbackProps> = ({
+  setView,
+  user,
+  userProfile,
+  onLogin,
+}) => {
   const theme = useTheme();
   const [token, setToken] = useState<string | null>(null);
   const [isValidating, setIsValidating] = useState(true);
@@ -81,10 +87,13 @@ const Feedback: React.FC<FeedbackProps> = ({ setView, user, onLogin }) => {
     if (user && !name) {
       // Try to get display name or email prefix
       const displayName =
-        user.user_metadata?.username || user.email?.split("@")[0] || "";
+        userProfile?.username ||
+        user.user_metadata?.username ||
+        user.email?.split("@")[0] ||
+        "";
       setName(displayName);
     }
-  }, [user, name]);
+  }, [user, name, userProfile]);
 
   const validateToken = async (t: string) => {
     try {

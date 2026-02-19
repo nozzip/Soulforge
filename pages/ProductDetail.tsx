@@ -108,6 +108,8 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
       return data as Product;
     },
     enabled: !!currentProductId,
+    placeholderData: (previousData) => previousData,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
   // 2. Fetch Reviews
@@ -125,6 +127,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
       return data as Review[];
     },
     enabled: !!currentProductId,
+    placeholderData: (previousData) => previousData,
   });
 
   // Derived State
@@ -161,6 +164,15 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
     },
     enabled: isValidSet(activeProduct?.set_name),
   });
+
+  // 3. Pre-fetch set members into React Query cache for instant switching
+  useEffect(() => {
+    if (setMembers && setMembers.length > 0) {
+      setMembers.forEach((member) => {
+        queryClient.setQueryData(["product", member.id], member);
+      });
+    }
+  }, [setMembers, queryClient]);
 
   // Combine active product with set members for "subItems" context
   const fullProductContext = useMemo(() => {
@@ -274,18 +286,39 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
     if (!activeProduct) return;
     setIsSaving(true);
     try {
-      const updatedData = { ...editForm };
-      delete updatedData.subItems; // Don't send auxiliary data
+      // Pick only the fields we want to update to avoid conflicts with id, created_at, etc.
+      const updatedData = {
+        name: editForm.name,
+        description: editForm.description,
+        price: Number(editForm.price),
+        min_price: Number(editForm.min_price),
+        max_price: Number(editForm.max_price),
+        category: editForm.category,
+        size: editForm.size,
+        designer: editForm.designer,
+        creature_type: editForm.creature_type,
+        weapon: editForm.weapon,
+        set_name: editForm.set_name,
+        universe: editForm.universe,
+        image: editForm.image,
+        image_url: editForm.image, // Keep both in sync
+        gallery_images: editForm.gallery_images,
+      };
+
+      console.log("Saving product data:", updatedData);
 
       // 1. Update current product
-      const { data: productData, error: productError } = await supabase
+      const { data: productData, error: productError, status } = await supabase
         .from("products")
         .update(updatedData)
         .eq("id", activeProduct.id)
-        .select()
-        .single();
+        .select();
 
       if (productError) throw productError;
+
+      if (!productData || productData.length === 0) {
+        throw new Error("No se pudo actualizar el producto. Verifique los permisos RLS en Supabase.");
+      }
 
       // 2. If set_name changed, update others
       if (
@@ -302,12 +335,11 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
       }
 
       // Invalidate queries
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      queryClient.invalidateQueries({
-        queryKey: ["product", activeProduct.id],
-      });
+      await queryClient.refetchQueries({ queryKey: ["product", activeProduct.id] });
+      await queryClient.invalidateQueries({ queryKey: ["products"] });
+
       if (activeProduct.set_name) {
-        queryClient.invalidateQueries({
+        await queryClient.invalidateQueries({
           queryKey: ["product-set", activeProduct.set_name],
         });
       }

@@ -82,6 +82,7 @@ interface CatalogState {
   selectedDesigners: string[];
   selectedCreatureTypes: string[];
   selectedWeapons: string[];
+  selectedUniverses: string[];
   sortOption: string;
 }
 
@@ -91,6 +92,7 @@ interface CatalogProps {
   designers: string[];
   creatureTypes: string[];
   weapons: string[];
+  universes: string[];
   onProductClick: (id: string) => void;
   initialSearchQuery?: string;
   wishlist: string[];
@@ -109,6 +111,7 @@ const Catalog: React.FC<CatalogProps> = ({
   designers,
   creatureTypes,
   weapons,
+  universes,
   onProductClick,
   initialSearchQuery,
   wishlist,
@@ -137,6 +140,9 @@ const Catalog: React.FC<CatalogProps> = ({
   const [selectedWeapons, setSelectedWeapons] = useState<string[]>(
     catalogState.selectedWeapons || [],
   );
+  const [selectedUniverses, setSelectedUniverses] = useState<string[]>(
+    catalogState.selectedUniverses || [],
+  );
   const [sortOption, setSortOption] = useState(
     catalogState.sortOption || "newest",
   );
@@ -159,6 +165,7 @@ const Catalog: React.FC<CatalogProps> = ({
     selectedDesigners,
     selectedCreatureTypes,
     selectedWeapons,
+    selectedUniverses,
     sortOption,
     // If Admin AND Ungrouping Mode is active, we disable grouping in the hook (logic to be implemented in hook if supported)
     // Actually, based on my hook implementation:
@@ -202,7 +209,7 @@ const Catalog: React.FC<CatalogProps> = ({
   const isMobile = useMediaQuery(theme.breakpoints.down("lg"));
 
   useEffect(() => {
-    return () => {};
+    return () => { };
   }, []);
 
   // Sync state with parent (App.tsx)
@@ -215,6 +222,7 @@ const Catalog: React.FC<CatalogProps> = ({
       selectedDesigners,
       selectedCreatureTypes,
       selectedWeapons,
+      selectedUniverses,
       sortOption,
     });
   }, [
@@ -288,13 +296,13 @@ const Catalog: React.FC<CatalogProps> = ({
   const isProcessing = false;
   const groupingError = null;
   const successMessage = null;
-  const clearMessages = () => {};
+  const clearMessages = () => { };
 
   // Mobile filter visibility state
   const [showFilters, setShowFilters] = useState(false);
 
   const toggleFilter = (
-    type: "category" | "size" | "designer" | "creature_type" | "weapon",
+    type: "category" | "size" | "designer" | "creature_type" | "weapon" | "universe",
     value: string,
   ) => {
     setCurrentPage(1);
@@ -302,6 +310,12 @@ const Catalog: React.FC<CatalogProps> = ({
       setSelectedCategories((prev) =>
         prev.includes(value)
           ? prev.filter((c) => c !== value)
+          : [...prev, value],
+      );
+    } else if (type === "universe") {
+      setSelectedUniverses((prev) =>
+        prev.includes(value)
+          ? prev.filter((u) => u !== value)
           : [...prev, value],
       );
     } else if (type === "size") {
@@ -338,6 +352,7 @@ const Catalog: React.FC<CatalogProps> = ({
     setSelectedDesigners([]);
     setSelectedCreatureTypes([]);
     setSelectedWeapons([]);
+    setSelectedUniverses([]);
     setSortOption("newest");
     setCurrentPage(1);
   };
@@ -482,11 +497,13 @@ const Catalog: React.FC<CatalogProps> = ({
                 designers={designers}
                 creatureTypes={creatureTypes}
                 weapons={weapons}
+                universes={universes}
                 selectedCategories={selectedCategories}
                 selectedSizes={selectedSizes}
                 selectedDesigners={selectedDesigners}
                 selectedCreatureTypes={selectedCreatureTypes}
                 selectedWeapons={selectedWeapons}
+                selectedUniverses={selectedUniverses}
                 onToggleFilter={toggleFilter}
                 onReset={handleReset}
               />
@@ -517,11 +534,13 @@ const Catalog: React.FC<CatalogProps> = ({
                 designers={designers}
                 creatureTypes={creatureTypes}
                 weapons={weapons}
+                universes={universes}
                 selectedCategories={selectedCategories}
                 selectedSizes={selectedSizes}
                 selectedDesigners={selectedDesigners}
                 selectedCreatureTypes={selectedCreatureTypes}
                 selectedWeapons={selectedWeapons}
+                selectedUniverses={selectedUniverses}
                 onToggleFilter={toggleFilter}
                 onReset={handleReset}
                 isMobile

@@ -41,6 +41,19 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
   const mainImageRef = useRef<HTMLDivElement>(null);
   const zoomLayerRef = useRef<HTMLDivElement>(null);
 
+  // Preload all gallery images at once for instant switching
+  useEffect(() => {
+    if (galleryViews.length <= 1) return;
+    galleryViews.forEach((view) => {
+      // Preload normal size
+      const img = new Image();
+      img.src = getOptimizedImageUrl(view.url, 800);
+      // Preload zoom size
+      const imgZoom = new Image();
+      imgZoom.src = getOptimizedImageUrl(view.url, 1200);
+    });
+  }, [galleryViews]);
+
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -101,12 +114,18 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
             cursor: "crosshair",
             border: 1,
             borderColor: "secondary.main",
+            // Background image as placeholder to avoid flickering
+            backgroundImage: `url("${getOptimizedImageUrl(displayImageUrl || "", 800)}")`,
+            backgroundSize: "contain",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
           }}
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
         >
           {/* Actual Image Element (Optimized) */}
           <Box
+            key={displayImageUrl} // Key helps React treat new URLs as separate elements for transitions
             component="img"
             src={getOptimizedImageUrl(displayImageUrl || "", 800)}
             alt={activeProduct?.name}
@@ -116,8 +135,8 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
               width: "100%",
               height: "100%",
               objectFit: "contain",
-              opacity: showZoom ? 0 : 1, // Hide when zooming to show background layer
-              transition: "opacity 0.2s",
+              opacity: showZoom ? 0 : 1,
+              transition: "opacity 0.15s ease-in-out",
             }}
           />
           {/* Zoom Layer */}

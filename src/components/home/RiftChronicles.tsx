@@ -27,8 +27,8 @@ const RiftChronicles: React.FC<RiftChroniclesProps> = ({
     };
 
     const animeHero = getHeroProduct("Anime");
-    const juegosHero = getHeroProduct("Juegos");
-    const cineHero = getHeroProduct("Cine");
+    const juegosHero = getHeroProduct("Games");
+    const cineHero = getHeroProduct("Movies");
 
     // Removed 'any' cast by defining the structure properly if needed,
     // but for now inferred type is fine or we can extend the object
@@ -47,21 +47,21 @@ const RiftChronicles: React.FC<RiftChroniclesProps> = ({
             title: "El Cónclave de los Mandos",
             sub: "De las mazmorras digitales a la palma de tu mano. Héroes que han superado el Game Over.",
             tag: "Senda de Bits",
-            original: "Juegos",
+            original: "Games",
             img:
                 juegosHero?.image ||
                 "https://lh3.googleusercontent.com/aida-public/AB6AXuCOoJ1jIOn4jPLgzNAvKwwkCQE2_iPHMNTRmJnKwTVe1s16Y3IsWqDCLNtw58ig-nCjvDy9n0viSYpTjKSLiE0rVLs2R08qTyRGA9JmI5Jnt1qJYFJFLndBNbemc8FMbL7eNtue4wI5brNfS4WCKcSI55sF40XAguH8xExwk6LL0xnzivEaNUiUCKQgnyl5zuT-bylNbyOoz--wt1re7DbF7JMqODxHf2_ymsFXG8tWfQW1mFrD7L17j3w_G4V3nuEinQqugO-5iSo",
-            filters: { categories: ["Juegos"] },
+            filters: { categories: ["Games"] },
         },
         {
             title: "Titanes del Séptimo Reino",
             sub: "Grandes leyendas que han cruzado el umbral de la pantalla para reclamar su lugar en tu mesa.",
             tag: "Proyección Épica",
-            original: "Series y Cine",
+            original: "Movies",
             img:
                 cineHero?.image ||
                 "https://lh3.googleusercontent.com/aida-public/AB6AXuAk61FuYDjWAsNtu247-7UQnKD10MRF9FJclnImLSqjn4IV_svngmRGCH5VwHKU4F08LykO4cLSTZjd7PuG9JIqbAISQ8nYCiKO-jK3rG3FEzPVpdOES5vtmUXNCm8gvJ8Rgu_FRc_G4TCYlUMy4NcNsDAj_WUMdNcZZMwWi216xu4wMg54xqhfj3aiFvnT6MQGPfVSpQIT2qPrSJc-rcpRtaEmdk7-ZP_6pl9muFYAhogMHTm1eN1z3FgfVSDNejNMKnVe_KwTVGw",
-            filters: { categories: ["Cine"] },
+            filters: { categories: ["Movies"] },
         },
     ];
 
