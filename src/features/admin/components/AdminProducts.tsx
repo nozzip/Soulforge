@@ -1,4 +1,4 @@
-import React, { useState, ChangeEvent, FormEvent } from "react";
+import React, { useState, ChangeEvent, FormEvent, useEffect } from "react";
 import {
   Box,
   Grid,
@@ -37,6 +37,7 @@ import { supabase } from "@/src/supabase";
 import { Product, SubItem } from "@/types";
 import { formatCurrency } from "@/utils/currency";
 import { useQueryClient } from "@tanstack/react-query";
+import { calculateDynamicPrice } from "@/utils/pricing";
 
 interface AdminProductsProps {
   categories: string[];
@@ -85,6 +86,22 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // Dynamic Pricing Logic
+  useEffect(() => {
+    const calculatePrice = () => {
+      const rawSize = formData.size || "";
+      const rawGrade = formData.grade || "";
+      const rawCreatureType = formData.creature_type || "";
+
+      return calculateDynamicPrice(rawSize, rawGrade, rawCreatureType);
+    };
+
+    const newPrice = calculatePrice();
+    if (newPrice > 0 && newPrice.toString() !== formData.price) {
+      setFormData((prev) => ({ ...prev, price: newPrice.toString() }));
+    }
+  }, [formData.size, formData.grade, formData.creature_type]);
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -162,7 +179,9 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
       category: formData.category,
       size: formData.size,
       price: parseFloat(formData.price) || 0,
-      image: formData.image || "https://via.placeholder.com/400?text=No+Image",
+      image:
+        formData.image ||
+        "https://dummyimage.com/400x400/222/fff&text=No+Image",
       description: formData.description,
       designer: formData.designer,
       set_name: formData.set_name,
@@ -171,6 +190,8 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
       universe: formData.universe,
       grade: formData.grade,
       mime_type: formData.mime_type,
+      min_price: parseFloat(formData.price) || 0,
+      max_price: parseFloat(formData.price) || 0,
     };
 
     const { data, error } = await supabase
@@ -658,7 +679,9 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
                         color: "white",
                       }}
                     >
-                      <MenuItem value=""><em>Grado (Opcional)</em></MenuItem>
+                      <MenuItem value="">
+                        <em>Grado (Opcional)</em>
+                      </MenuItem>
                       <MenuItem value="C">Common (C)</MenuItem>
                       <MenuItem value="R">Rare (R)</MenuItem>
                       <MenuItem value="L">Legendary (L)</MenuItem>
@@ -996,7 +1019,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
                   component="img"
                   src={
                     previewImage ||
-                    "https://via.placeholder.com/400?text=Sin+Imagen"
+                    "https://dummyimage.com/400x400/222/fff&text=Sin+Imagen"
                   }
                   alt="Preview"
                   sx={{

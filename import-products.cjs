@@ -191,13 +191,29 @@ async function importProducts() {
             const isExisting = existingMap.has(row.name);
 
             try {
-              // 1. Calcular precio (común para nuevos y existentes)
+              // 1. Preparar datos y reglas especiales
               const rawGrade = (row.grade || "").trim().toUpperCase();
               const rawSize = (row.size || "").trim().toUpperCase();
               const rawCreatureType = (row.creature_type || "").trim();
 
+              const stripeGrade = rawGrade.replace(/[^CRL]/g, ""); // Limpiar posibles caracteres extra
               const validGrades = ["C", "R", "L"];
-              const hasValidGrade = validGrades.includes(rawGrade);
+              const hasValidGrade = validGrades.includes(stripeGrade);
+
+              const isTerrain = rawCreatureType
+                .toLowerCase()
+                .includes("terrain");
+
+              let gradeToUse = hasValidGrade ? stripeGrade : null;
+              let sizeToUse = rawSize;
+              let weaponsToUse = (row.weapon || "").trim();
+
+              if (isTerrain) {
+                // Auto-asignar Grado C y Tamaño M-G si no tiene
+                if (!hasValidGrade) gradeToUse = "C";
+                if (!rawSize || rawSize === "") sizeToUse = "M/G";
+                if (weaponsToUse === "") weaponsToUse = "N/A";
+              }
 
               let size = "";
               let price = 0;
@@ -210,17 +226,17 @@ async function importProducts() {
                 maxPrice = 69;
                 size = rawSize
                   ? rawSize
-                    .split("/")
-                    .map((s) => sizeMapping[s.trim()] || s.trim())
-                    .join(" - ")
+                      .split("/")
+                      .map((s) => sizeMapping[s.trim()] || s.trim())
+                      .join(" - ")
                   : null;
-              } else if (rawSize.includes("/") && hasValidGrade) {
-                const sizeParts = rawSize.split("/").map((s) => s.trim());
+              } else if (sizeToUse.includes("/") && gradeToUse) {
+                const sizeParts = sizeToUse.split("/").map((s) => s.trim());
                 const mappedSizes = sizeParts
                   .map((s) => sizeMapping[s] || s)
                   .filter(Boolean);
                 const prices = mappedSizes.map((s) =>
-                  calculatePrice(rawGrade, s),
+                  calculatePrice(gradeToUse, s),
                 );
 
                 minPrice = Math.min(...prices);
@@ -228,21 +244,24 @@ async function importProducts() {
                 price = minPrice;
                 size = `${mappedSizes[0]} - ${mappedSizes[mappedSizes.length - 1]}`;
               } else {
-                size = sizeMapping[rawSize] || rawSize;
-                price = hasValidGrade ? calculatePrice(rawGrade, size) : 0;
+                size = sizeMapping[sizeToUse] || sizeToUse;
+                price = gradeToUse ? calculatePrice(gradeToUse, size) : 0;
                 minPrice = price;
                 maxPrice = price;
               }
 
               // Statues siempre individuales (no agrupar en set)
-              const finalSetName = rawCreatureType.toLowerCase() === "statue"
-                ? null
-                : (row.set_name || null);
+              const finalSetName =
+                rawCreatureType.toLowerCase() === "statue"
+                  ? null
+                  : row.set_name || null;
 
               if (isExisting) {
                 // Verificar si la imagen existe en Storage
                 const currentUrl = existingMap.get(row.name) || "";
-                const match = currentUrl.match(/\/storage\/v1\/object\/public\/products\/(.+)/);
+                const match = currentUrl.match(
+                  /\/storage\/v1\/object\/public\/products\/(.+)/,
+                );
                 const storagePath = match ? decodeURIComponent(match[1]) : "";
                 // Extraer solo el filename (sin carpetas)
                 const fileName = storagePath.split("/").pop() || "";
@@ -253,6 +272,9 @@ async function importProducts() {
                   min_price: minPrice,
                   max_price: maxPrice,
                   set_name: finalSetName,
+                  grade: gradeToUse,
+                  size: size,
+                  weapon: weaponsToUse,
                 };
 
                 // Si la imagen no existe, re-subirla
@@ -278,7 +300,9 @@ async function importProducts() {
 
                 if (updateError) throw updateError;
                 updatedCount++;
-                process.stdout.write(`\r🔄 Actualizados: ${updatedCount} | Re-imágenes: ${reimagedCount} | Nuevos: ${addedCount}`);
+                process.stdout.write(
+                  `\r🔄 Actualizados: ${updatedCount} | Re-imágenes: ${reimagedCount} | Nuevos: ${addedCount}`,
+                );
               } else {
                 // INSERTAR NUEVO (requiere imagen)
                 console.log(`\n📦 Agregando nuevo: ${row.name}`);
@@ -307,9 +331,9 @@ async function importProducts() {
                     mime_type: row.mime_type,
                     size: size,
                     creature_type: row.creature_type,
-                    weapon: row.weapon,
+                    weapon: weaponsToUse,
                     universe: row.universe,
-                    grade: hasValidGrade ? rawGrade : null,
+                    grade: gradeToUse,
                     description: `Miniatura de alta calidad de ${row.name}.`,
                   });
 

@@ -154,7 +154,7 @@ export const AdminOrders: React.FC = () => {
         (item: OrderItem) => `
       <tr>
         <td style="padding: 8px; border-bottom: 1px solid #ddd;">
-          <img src="${item.image || "https://via.placeholder.com/50"}" style="width: 50px; height: 50px; object-fit: cover;" />
+          <img src="${item.image || "https://dummyimage.com/50x50/222/fff&text=No+Img"}" style="width: 50px; height: 50px; object-fit: cover;" />
         </td>
         <td style="padding: 8px; border-bottom: 1px solid #ddd;">${item.name}</td>
         <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: center;">${item.quantity}</td>
@@ -730,7 +730,7 @@ export const AdminOrders: React.FC = () => {
                                         component="img"
                                         src={
                                           item.image ||
-                                          "https://via.placeholder.com/80?text=No+Img"
+                                          "https://dummyimage.com/80x80/222/fff&text=No+Img"
                                         }
                                         alt={item.name}
                                         sx={{

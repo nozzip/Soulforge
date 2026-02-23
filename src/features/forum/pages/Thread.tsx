@@ -445,7 +445,7 @@ const Thread: React.FC<ThreadProps> = ({
   if (!thread) return null;
 
   return (
-    <Container maxWidth="xl" sx={{ mt: 14, mb: 10 }}>
+    <Container maxWidth="xl" sx={{ mt: 4, mb: 10 }}>
       {thread && (
         <SEO
           title={`${thread.title} | La Taberna`}

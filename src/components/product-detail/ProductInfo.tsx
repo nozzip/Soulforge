@@ -66,6 +66,7 @@ interface ProductInfoProps {
   onToggleWishlist: (id: string) => void;
   // Specific for Autocomplete updates
   onUpdateEditForm: (field: string, value: any) => void;
+  cartCount?: number;
 }
 
 export const ProductInfo: React.FC<ProductInfoProps> = ({
@@ -89,6 +90,7 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
   onAddToCart,
   onToggleWishlist,
   onUpdateEditForm,
+  cartCount = 0,
 }) => {
   const [isAdding, setIsAdding] = useState(false);
   const isWishlisted = wishlist.includes(activeProduct.id);
@@ -106,6 +108,60 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
     onAddToCart(activeProduct);
     setIsAdding(false);
   };
+
+  const specs = [
+    {
+      label: "Identificador",
+      value: `#${activeProduct.id.slice(0, 8)}`,
+      icon: <VpnKey fontSize="small" />,
+      editableField: null,
+    },
+    {
+      label: "Categoría",
+      value: activeProduct.category,
+      icon: <Category fontSize="small" />,
+      editableField: "category",
+    },
+    {
+      label: "Gran Maestro",
+      value: activeProduct.designer,
+      icon: <Person fontSize="small" />,
+      editableField: "designer",
+    },
+    {
+      label: "Especie",
+      value: activeProduct.creature_type,
+      icon: <BugReport fontSize="small" />,
+      editableField: "creature_type",
+    },
+    {
+      label: "Arsenales",
+      value: activeProduct.weapon,
+      icon: <Gavel fontSize="small" />,
+      editableField: "weapon",
+    },
+    {
+      label: "Universo",
+      value: activeProduct.universe,
+      icon: <Collections fontSize="small" />,
+      editableField: "universe",
+    },
+    {
+      label: "Escala Comandante",
+      value: activeProduct.size,
+      icon: <Straighten fontSize="small" />,
+      editableField: "size",
+    },
+  ];
+
+  if (isAdmin) {
+    specs.push({
+      label: "Grado (C/R/L)",
+      value: activeProduct.grade || "C",
+      icon: <Star fontSize="small" />,
+      editableField: "grade",
+    });
+  }
 
   return (
     <Grid size={{ xs: 12, lg: 6 }}>
@@ -454,7 +510,7 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
               boxShadow:
                 activeProduct.id === product.id
                   ? (theme) =>
-                    `0 0 15px ${alpha(theme.palette.secondary.main, 0.3)}`
+                      `0 0 15px ${alpha(theme.palette.secondary.main, 0.3)}`
                   : "none",
             }}
           />
@@ -472,7 +528,7 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
                 boxShadow:
                   activeProduct.id === item.id
                     ? (theme) =>
-                      `0 0 15px ${alpha(theme.palette.secondary.main, 0.3)}`
+                        `0 0 15px ${alpha(theme.palette.secondary.main, 0.3)}`
                     : "none",
               }}
             />
@@ -514,50 +570,7 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
           <Build fontSize="small" color="secondary" /> Especificaciones Técnicas
         </Typography>
         <Grid container spacing={2}>
-          {[
-            {
-              label: "Identificador",
-              value: `#${activeProduct.id.slice(0, 8)}`,
-              icon: <VpnKey fontSize="small" />,
-              editableField: null,
-            },
-            {
-              label: "Categoría",
-              value: activeProduct.category,
-              icon: <Category fontSize="small" />,
-              editableField: "category",
-            },
-            {
-              label: "Gran Maestro",
-              value: activeProduct.designer,
-              icon: <Person fontSize="small" />,
-              editableField: "designer",
-            },
-            {
-              label: "Especie",
-              value: activeProduct.creature_type,
-              icon: <BugReport fontSize="small" />,
-              editableField: "creature_type",
-            },
-            {
-              label: "Arsenales",
-              value: activeProduct.weapon,
-              icon: <Gavel fontSize="small" />,
-              editableField: "weapon",
-            },
-            {
-              label: "Universo",
-              value: activeProduct.universe,
-              icon: <Collections fontSize="small" />,
-              editableField: "universe",
-            },
-            {
-              label: "Escala Comandante",
-              value: activeProduct.size,
-              icon: <Straighten fontSize="small" />,
-              editableField: "size",
-            },
-          ].map((spec, i) => {
+          {specs.map((spec, i) => {
             const isEditable = isEditing && spec.editableField;
 
             // Get unique options for this field if it's editable
@@ -647,7 +660,11 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
           onClick={handleAddToCartClick}
           sx={{ py: 2, fontSize: "1.1rem", mb: 2 }}
         >
-          {isAdding ? "Añadiendo..." : "Añadir al Carrito"}
+          {isAdding
+            ? "Añadiendo..."
+            : cartCount > 0
+              ? `En el botín (x${cartCount})`
+              : "Añadir al Carrito"}
         </Button>
         <Button
           variant="text"

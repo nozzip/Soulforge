@@ -126,7 +126,7 @@ const CreateThread: React.FC<CreateThreadProps> = ({
   };
 
   return (
-    <Container maxWidth="md" sx={{ mt: 14, mb: 10 }}>
+    <Container maxWidth="md" sx={{ mt: 4, mb: 10 }}>
       {/* Header */}
       <Box sx={{ mb: 4 }}>
         <Button

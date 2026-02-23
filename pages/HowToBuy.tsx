@@ -43,7 +43,7 @@ const HowToBuy: React.FC<HowToBuyProps> = ({ setView }) => {
           height: { xs: 350, md: 900 },
           position: "relative",
           backgroundImage:
-            "url(https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/guide/dragon_banner.webp)",
+            "url(https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/guide/dragon_banner.jpg)",
           backgroundSize: "cover",
           backgroundPosition: "center",
           display: "flex",
@@ -239,45 +239,48 @@ const HowToBuy: React.FC<HowToBuyProps> = ({ setView }) => {
                 Volver al Atrio
               </Button>
             </Stack>
-            {/* Footer Final Refinado (Sin línea divisoria) */}
-            <Box
-              sx={{
-                mt: { xs: 10, md: 15 },
-                textAlign: "center",
-                Justi: "center",
-                position: "relative",
-              }}
-            >
-              <Box
-                sx={{
-                  position: "relative",
-                  display: "inline-block",
-                  mb: 2,
-                  mt: -4,
-                  opacity: 0.7,
-                }}
-              >
-                <ThemedLogo width={240} />
-              </Box>
-              <Typography
-                sx={{
-                  fontFamily: '"Newsreader", serif',
-                  fontStyle: "italic",
-                  color: "text.secondary",
-                  maxWidth: 550,
-                  mx: "auto",
-                  fontSize: "1.1rem",
-                  lineHeight: 1.6,
-                  opacity: 0.8,
-                }}
-              >
-                Donde cada alma encuentra su forma en resina pura.
-                <br />
-                Autenticado por el Gremio de Forjadores.
-              </Typography>
-            </Box>
           </Grid>
         </Grid>
+
+        {/* Footer Final Refinado (Centrado en la página) */}
+        <Box
+          sx={{
+            mt: { xs: 10, md: 15 },
+            textAlign: "center",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            position: "relative",
+          }}
+        >
+          <Box
+            sx={{
+              position: "relative",
+              mb: 2,
+              mt: -4,
+              opacity: 0.7,
+            }}
+          >
+            <ThemedLogo width={240} />
+          </Box>
+          <Typography
+            sx={{
+              fontFamily: '"Newsreader", serif',
+              fontStyle: "italic",
+              color: "text.secondary",
+              maxWidth: 550,
+              mx: "auto",
+              fontSize: "1.1rem",
+              lineHeight: 1.6,
+              opacity: 0.8,
+              textAlign: "center",
+            }}
+          >
+            Donde cada alma encuentra su forma en resina pura.
+            <br />
+            Autenticado por el Gremio de Forjadores.
+          </Typography>
+        </Box>
       </Container>
     </Box>
   );

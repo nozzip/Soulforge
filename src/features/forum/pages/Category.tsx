@@ -239,7 +239,7 @@ const Category: React.FC<CategoryProps> = ({
   }
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 14, mb: 10 }}>
+    <Container maxWidth="lg" sx={{ mt: 4, mb: 10 }}>
       {/* Header */}
       <Box sx={{ mb: 4 }}>
         <Button

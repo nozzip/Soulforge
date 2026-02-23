@@ -8,6 +8,7 @@ import {
   useUpdateProduct,
 } from "@/src/hooks/useProductMutations";
 import { useQueryClient } from "@tanstack/react-query";
+import { useToast } from "../context/ToastContext";
 import {
   Box,
   Container,
@@ -204,12 +205,13 @@ const Catalog: React.FC<CatalogProps> = ({
   const queryClient = useQueryClient();
   const handleRefresh = async () =>
     queryClient.invalidateQueries({ queryKey: ["catalog-products"] });
-  const { addToCart } = useCart();
+  const { addToCart, items: cartItems } = useCart();
+  const { showToast } = useToast();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("lg"));
 
   useEffect(() => {
-    return () => { };
+    return () => {};
   }, []);
 
   // Sync state with parent (App.tsx)
@@ -296,13 +298,19 @@ const Catalog: React.FC<CatalogProps> = ({
   const isProcessing = false;
   const groupingError = null;
   const successMessage = null;
-  const clearMessages = () => { };
+  const clearMessages = () => {};
 
   // Mobile filter visibility state
   const [showFilters, setShowFilters] = useState(false);
 
   const toggleFilter = (
-    type: "category" | "size" | "designer" | "creature_type" | "weapon" | "universe",
+    type:
+      | "category"
+      | "size"
+      | "designer"
+      | "creature_type"
+      | "weapon"
+      | "universe",
     value: string,
   ) => {
     setCurrentPage(1);
@@ -647,7 +655,21 @@ const Catalog: React.FC<CatalogProps> = ({
                             isUngroupingMode={false}
                             onProductClick={onProductClick}
                             onToggleWishlist={toggleWishlist}
-                            onAddToCart={addToCart}
+                            onAddToCart={(p) => {
+                              addToCart(p);
+                              const currentItem = cartItems.find(
+                                (item) => item.id === p.id,
+                              );
+                              const newQty = (currentItem?.quantity || 0) + 1;
+                              showToast(
+                                `${p.name} (x${newQty}) añadido al botín`,
+                                "success",
+                              );
+                            }}
+                            cartCount={
+                              cartItems.find((item) => item.id === product.id)
+                                ?.quantity || 0
+                            }
                             onDeleteProduct={deleteProduct}
                             onUngroup={async () => {
                               // Direct ungroup logic via mutation

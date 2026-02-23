@@ -10,6 +10,7 @@ import {
   IconButton,
   Typography,
   Tooltip,
+  Badge,
   alpha,
   Chip,
   useTheme,
@@ -37,6 +38,7 @@ export interface ProductCardProps {
   onAddToCart: (product: Product) => void;
   onDeleteProduct?: (id: string) => void;
   onUngroup?: (id: string) => void;
+  cartCount?: number;
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({
@@ -52,12 +54,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   onAddToCart,
   onDeleteProduct,
   onUngroup,
+  cartCount = 0,
 }) => {
   const theme = useTheme();
   const hasSet = product.set_name && product.set_name !== "Sin set";
   const isSet = product.subItems && product.subItems.length > 0;
   // member_count comes from the RPC grouping query; fallback to subItems count
-  const memberCount = product.member_count || (isSet ? (product.subItems!.length + 1) : 1);
+  const memberCount =
+    product.member_count || (isSet ? product.subItems!.length + 1 : 1);
 
   return (
     <Card
@@ -95,10 +99,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         "&:hover":
           !isGroupingMode && !isUngroupingMode
             ? {
-              borderColor: "secondary.main",
-              transform: "translateY(-4px)",
-              boxShadow: `0 8px 30px ${alpha(theme.palette.common.black, 0.6)}, 0 0 20px ${alpha(theme.palette.secondary.main, 0.2)}`,
-            }
+                borderColor: "secondary.main",
+                transform: "translateY(-4px)",
+                boxShadow: `0 8px 30px ${alpha(theme.palette.common.black, 0.6)}, 0 0 20px ${alpha(theme.palette.secondary.main, 0.2)}`,
+              }
             : {},
       }}
     >
@@ -189,7 +193,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         )}
 
         {/* Set Badge - Show item count when product is grouped or has subItems */}
-        {(memberCount > 1) && (
+        {memberCount > 1 && (
           <Chip
             icon={<Layers sx={{ fontSize: 14 }} />}
             label={`${memberCount} items`}
@@ -325,7 +329,20 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                   },
                 }}
               >
-                <Add />
+                <Badge
+                  badgeContent={cartCount}
+                  color="secondary"
+                  sx={{
+                    "& .MuiBadge-badge": {
+                      fontSize: "0.65rem",
+                      minWidth: 16,
+                      height: 16,
+                      p: 0,
+                    },
+                  }}
+                >
+                  <Add />
+                </Badge>
               </IconButton>
             </Tooltip>
           )}

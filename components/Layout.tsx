@@ -66,7 +66,20 @@ const Layout: React.FC<LayoutProps> = ({
         onToggleTheme={onToggleTheme}
       />
 
-      <Box component="main" sx={{ flexGrow: 1 }}>
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          pt: ![
+            ViewState.HOME,
+            ViewState.CATALOG,
+            ViewState.HOW_TO_BUY,
+            ViewState.NEW_ADVENTURER,
+          ].includes(currentView)
+            ? { xs: "90px" }
+            : 0,
+        }}
+      >
         {children}
       </Box>
 
@@ -190,7 +203,10 @@ const Layout: React.FC<LayoutProps> = ({
                       text: "La Taberna (Mesa de Rol)",
                       view: ViewState.FORUM_HOME,
                     },
-                    { text: "Bestiario LFG", view: ViewState.FORUM_LFG },
+                    {
+                      text: "Looking for Group (LFG)",
+                      view: ViewState.FORUM_LFG,
+                    },
                   ].map((item) => (
                     <ListItem key={item.text} disablePadding sx={{ py: 0.75 }}>
                       <Typography

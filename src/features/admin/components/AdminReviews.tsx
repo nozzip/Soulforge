@@ -400,7 +400,7 @@ export const AdminReviews: React.FC = () => {
                           component="img"
                           src={
                             review.products.image ||
-                            "https://via.placeholder.com/40"
+                            "https://dummyimage.com/40x40/222/fff&text=?"
                           }
                           sx={{
                             width: 30,

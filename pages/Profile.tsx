@@ -382,7 +382,7 @@ const Profile: React.FC<ProfileProps> = ({
   );
 
   return (
-    <Container maxWidth="md" sx={{ mt: 14, mb: 10 }}>
+    <Container maxWidth="md" sx={{ mt: 4, mb: 10 }}>
       <Paper
         elevation={0}
         sx={{

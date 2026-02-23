@@ -18,6 +18,7 @@ import {
   RateReview,
   Shield as ShieldIcon,
   Flag as FlagIcon,
+  Hardware,
 } from "@mui/icons-material";
 import { SectionHeader } from "@/components/StyledComponents";
 import { ViewState, Product } from "@/types";
@@ -26,6 +27,7 @@ import { AdminOrders } from "./components/AdminOrders";
 import { AdminReviews } from "./components/AdminReviews";
 import { AdminGuilds } from "./components/AdminGuilds";
 import { AdminReports } from "./components/AdminReports";
+import { WeaponCataloger } from "./components/WeaponCataloger";
 
 interface AdminProps {
   setView: (view: ViewState) => void;
@@ -173,6 +175,12 @@ const Admin: React.FC<AdminProps> = ({
                 label="Reportes del Foro"
                 sx={{ fontWeight: "bold", letterSpacing: 1 }}
               />
+              <Tab
+                icon={<Hardware sx={{ mb: 0, mr: 2 }} />}
+                iconPosition="start"
+                label="Maestría de Forja"
+                sx={{ fontWeight: "bold", letterSpacing: 1 }}
+              />
             </Tabs>
           </Paper>
         </Grid>
@@ -203,6 +211,18 @@ const Admin: React.FC<AdminProps> = ({
           {currentTab === 3 && <AdminGuilds />}
 
           {currentTab === 4 && <AdminReports />}
+
+          {currentTab === 5 && (
+            <Suspense
+              fallback={
+                <Box display="flex" justifyContent="center" p={4}>
+                  <CircularProgress />
+                </Box>
+              }
+            >
+              <WeaponCataloger />
+            </Suspense>
+          )}
         </Grid>
       </Grid>
     </Container>

@@ -16,6 +16,7 @@ import { useToast } from "../context/ToastContext";
 import { useProducts } from "../src/hooks/useProducts";
 import { Product, ViewState } from "../types";
 import { safeReadImageAsDataURL } from "../utils/imageValidation";
+import { calculateDynamicPrice } from "../utils/pricing";
 import DOMPurify from "isomorphic-dompurify";
 import { ArrowBack, NavigateNext } from "@mui/icons-material";
 
@@ -66,7 +67,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
   user,
   onProductClick,
 }) => {
-  const { addToCart } = useCart();
+  const { addToCart, items: cartItems } = useCart();
   const { showToast } = useToast();
   const queryClient = useQueryClient();
   const { data: products } = useProducts();
@@ -197,6 +198,26 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
       setDisplayImageUrl(activeProduct.image);
     }
   }, [activeProduct]);
+
+  // Dynamic Pricing Logic for Admin Edit Form
+  useEffect(() => {
+    if (!isEditing) return;
+
+    const rawSize = editForm.size || "";
+    const rawGrade = editForm.grade || "";
+    const rawCreatureType = editForm.creature_type || "";
+
+    const newPrice = calculateDynamicPrice(rawSize, rawGrade, rawCreatureType);
+
+    if (newPrice > 0 && newPrice !== editForm.price) {
+      setEditForm((prev) => ({
+        ...prev,
+        price: newPrice,
+        min_price: newPrice,
+        max_price: newPrice,
+      }));
+    }
+  }, [editForm.size, editForm.grade, editForm.creature_type, isEditing]);
 
   // Gallery Views Calculation
   const galleryViews = useMemo(() => {
@@ -535,9 +556,9 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
   if (error) return <Box>Error loading product</Box>;
 
   return (
-    <Container maxWidth="xl" sx={{ mt: 4, mb: 10 }}>
+    <Container maxWidth="xl" sx={{ mt: 0, mb: 10 }}>
       {/* Breadcrumbs & Back Button */}
-      <Box sx={{ mb: 3, pt: 8 }}>
+      <Box sx={{ mb: 3, pt: 2 }}>
         <Button
           startIcon={<ArrowBack />}
           onClick={() => setView(ViewState.CATALOG)}
@@ -620,9 +641,15 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
           onSetCurrentProductId={setCurrentProductId}
           onAddToCart={(p) => {
             addToCart(p);
-            showToast("¡Producto añadido al carrito!", "success");
+            const currentItem = cartItems.find((item) => item.id === p.id);
+            const newQty = (currentItem?.quantity || 0) + 1;
+            showToast(`${p.name} (x${newQty}) añadido al botín`, "success");
           }}
           onToggleWishlist={toggleWishlist}
+          cartCount={
+            cartItems.find((item) => item.id === activeProduct.id)?.quantity ||
+            0
+          }
         />
       </Grid>
 

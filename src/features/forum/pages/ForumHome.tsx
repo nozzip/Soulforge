@@ -214,7 +214,7 @@ const ForumHome: React.FC<ForumHomeProps> = ({
   }
 
   return (
-    <Container maxWidth="xl" sx={{ mt: 16, mb: 10 }}>
+    <Container maxWidth="xl" sx={{ mt: 4, mb: 10 }}>
       {/* Hero Banner */}
       <Box
         sx={{

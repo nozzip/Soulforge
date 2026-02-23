@@ -16,7 +16,7 @@ BEGIN
     ARRAY(SELECT DISTINCT trim(s) FROM products, unnest(string_to_array(size, '/')) AS s WHERE size IS NOT NULL AND trim(s) != '' ORDER BY 1),
     ARRAY(SELECT DISTINCT trim(designer) FROM products WHERE designer IS NOT NULL AND designer != '' ORDER BY 1),
     ARRAY(SELECT DISTINCT trim(creature_type) FROM products WHERE creature_type IS NOT NULL AND creature_type != '' ORDER BY 1),
-    ARRAY(SELECT DISTINCT trim(w) FROM products, unnest(string_to_array(weapon, '/')) AS w WHERE weapon IS NOT NULL AND trim(w) != '' ORDER BY 1),
+    ARRAY(SELECT DISTINCT trim(w) FROM products, unnest(string_to_array(weapon, ',')) AS w WHERE weapon IS NOT NULL AND trim(w) != '' ORDER BY 1),
     ARRAY(SELECT DISTINCT trim(universe) FROM products WHERE universe IS NOT NULL AND universe != '' ORDER BY 1);
 END;
 $$;
@@ -97,9 +97,9 @@ BEGIN
       -- Creature Types
       (array_length(filter_creature_types, 1) IS NULL OR trim(p.creature_type) = ANY(filter_creature_types))
       AND
-      -- Weapons
+      -- Weapons (Must match ALL selected filters - intersection logic)
       (array_length(filter_weapons, 1) IS NULL OR 
-       EXISTS (SELECT 1 FROM unnest(filter_weapons) w WHERE p.weapon ILIKE '%' || w || '%'))
+       (SELECT COUNT(*) FROM unnest(filter_weapons) w WHERE p.weapon ILIKE '%' || w || '%') = array_length(filter_weapons, 1))
       AND
       -- Universes
       (array_length(filter_universes, 1) IS NULL OR trim(p.universe) = ANY(filter_universes))
@@ -207,7 +207,7 @@ BEGIN
         (array_length(filter_creature_types, 1) IS NULL OR trim(p.creature_type) = ANY(filter_creature_types))
         AND
         (array_length(filter_weapons, 1) IS NULL OR 
-         EXISTS (SELECT 1 FROM unnest(filter_weapons) w WHERE p.weapon ILIKE '%' || w || '%'))
+         (SELECT COUNT(*) FROM unnest(filter_weapons) w WHERE p.weapon ILIKE '%' || w || '%') = array_length(filter_weapons, 1))
         AND
         (array_length(filter_universes, 1) IS NULL OR trim(p.universe) = ANY(filter_universes))
     ),

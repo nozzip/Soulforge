@@ -1,8 +1,13 @@
-import React, { useState } from 'react';
-import { useCart } from '../context/CartContext';
-import { supabase } from '../src/supabase';
-import { ViewState } from '../types';
-import { formatCurrency, formatCurrencyDecimal, formatARS, formatGP } from '../utils/currency.tsx';
+import React, { useState } from "react";
+import { useCart } from "../context/CartContext";
+import { supabase } from "../src/supabase";
+import { ViewState } from "../types";
+import {
+  formatCurrency,
+  formatCurrencyDecimal,
+  formatARS,
+  formatGP,
+} from "../utils/currency.tsx";
 import {
   Box,
   Container,
@@ -18,8 +23,8 @@ import {
   alpha,
   TextField,
   InputAdornment,
-  CircularProgress
-} from '@mui/material';
+  CircularProgress,
+} from "@mui/material";
 import {
   Inventory2,
   Add,
@@ -29,41 +34,52 @@ import {
   MonetizationOn,
   Lock,
   Payments,
-  WaterDrop
-} from '@mui/icons-material';
-import { SectionHeader } from '../components/StyledComponents';
+  WaterDrop,
+} from "@mui/icons-material";
+import { SectionHeader } from "../components/StyledComponents";
 
 interface CartProps {
   setView: (view: ViewState) => void;
 }
 
 const Cart: React.FC<CartProps> = ({ setView }) => {
-  const { items, updateQuantity, removeFromCart, totalPrice, discount, applyCoupon, removeCoupon, couponCode } = useCart();
+  const {
+    items,
+    updateQuantity,
+    removeFromCart,
+    totalPrice,
+    discount,
+    applyCoupon,
+    removeCoupon,
+    couponCode,
+  } = useCart();
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-  const [couponInput, setCouponInput] = useState('');
-  const [couponError, setCouponError] = useState('');
+  const [couponInput, setCouponInput] = useState("");
+  const [couponError, setCouponError] = useState("");
   const [checkingCoupon, setCheckingCoupon] = useState(false);
 
   const handleApplyCoupon = async () => {
     if (!couponInput.trim()) return;
     setCheckingCoupon(true);
-    setCouponError('');
+    setCouponError("");
 
     try {
-      const { data, error } = await supabase.rpc('check_coupon', { input_code: couponInput.trim() });
+      const { data, error } = await supabase.rpc("check_coupon", {
+        input_code: couponInput.trim(),
+      });
       if (error) throw error;
 
       if (data && data > 0) {
         applyCoupon(couponInput.trim(), data);
-        setCouponInput('');
+        setCouponInput("");
       } else {
-        setCouponError('Código inválido o expirado.');
+        setCouponError("Código inválido o expirado.");
       }
     } catch (err) {
       console.error(err);
-      setCouponError('Error al verificar el código.');
+      setCouponError("Error al verificar el código.");
     } finally {
       setCheckingCoupon(false);
     }
@@ -81,98 +97,236 @@ const Cart: React.FC<CartProps> = ({ setView }) => {
 
       <Grid container spacing={6}>
         {/* Cart Items */}
-        <Grid size={{ xs: 12, lg: 8 }} sx={{ position: 'relative' }}>
+        <Grid size={{ xs: 12, lg: 8 }} sx={{ position: "relative" }}>
           {/* Decorative Background for Desktop */}
-          <Box sx={{
-            display: { xs: 'none', sm: 'block' },
-            position: 'absolute', inset: 0,
-            borderRadius: 2,
-            border: '8px solid', borderColor: 'common.black',
-            background: (theme) => `linear-gradient(to bottom, ${theme.palette.background.paper}, ${theme.palette.background.default})`,
-            boxShadow: 'inset 0 0 100px rgba(0,0,0,0.8)',
-            zIndex: 0
-          }} />
+          <Box
+            sx={{
+              display: { xs: "none", sm: "block" },
+              position: "absolute",
+              inset: 0,
+              borderRadius: 2,
+              border: "8px solid",
+              borderColor: "common.black",
+              background: (theme) =>
+                `linear-gradient(to bottom, ${theme.palette.background.paper}, ${theme.palette.background.default})`,
+              boxShadow: "inset 0 0 100px rgba(0,0,0,0.8)",
+              zIndex: 0,
+            }}
+          />
 
           {/* Content Layer */}
-          <Box sx={{ position: 'relative', zIndex: 1, p: { sm: 4 } }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: 1, borderColor: (theme) => alpha(theme.palette.secondary.main, 0.2), pb: 2, mb: 4 }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 2, color: 'secondary.main' }}>
+          <Box sx={{ position: "relative", zIndex: 1, p: { sm: 4 } }}>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                borderBottom: 1,
+                borderColor: (theme) =>
+                  alpha(theme.palette.secondary.main, 0.2),
+                pb: 2,
+                mb: 4,
+              }}
+            >
+              <Typography
+                variant="subtitle1"
+                sx={{
+                  fontWeight: "bold",
+                  textTransform: "uppercase",
+                  letterSpacing: 2,
+                  color: "secondary.main",
+                }}
+              >
                 El Botín
               </Typography>
-              <Typography variant="caption" sx={{ fontStyle: 'italic', color: (theme) => alpha(theme.palette.secondary.main, 0.4) }}>
+              <Typography
+                variant="caption"
+                sx={{
+                  fontStyle: "italic",
+                  color: (theme) => alpha(theme.palette.secondary.main, 0.4),
+                }}
+              >
                 {items.length} objetos encontrados
               </Typography>
             </Box>
 
             {items.length === 0 ? (
-              <Box sx={{ textAlign: 'center', py: 6, bgcolor: { xs: (theme) => alpha(theme.palette.common.black, 0.2), sm: 'transparent' }, borderRadius: 1 }}>
-                <Typography color="grey.500" fontStyle="italic">Tu tesoro está vacío.</Typography>
-                <Button onClick={() => setView(ViewState.CATALOG)} sx={{ mt: 2, textDecoration: 'underline', color: 'secondary.main', '&:hover': { color: 'common.white' } }}>
+              <Box
+                sx={{
+                  textAlign: "center",
+                  py: 6,
+                  bgcolor: {
+                    xs: (theme) => alpha(theme.palette.common.black, 0.2),
+                    sm: "transparent",
+                  },
+                  borderRadius: 1,
+                }}
+              >
+                <Typography color="grey.500" fontStyle="italic">
+                  Tu tesoro está vacío.
+                </Typography>
+                <Button
+                  onClick={() => setView(ViewState.CATALOG)}
+                  sx={{
+                    mt: 2,
+                    textDecoration: "underline",
+                    color: "secondary.main",
+                    "&:hover": { color: "common.white" },
+                  }}
+                >
                   Volver a los Archivos
                 </Button>
               </Box>
             ) : (
               <Stack spacing={3}>
-                {items.map(item => (
+                {items.map((item) => (
                   <Paper
                     key={item.id}
                     elevation={0}
                     sx={{
-                      display: 'flex',
-                      flexDirection: { xs: 'column', sm: 'row' },
-                      alignItems: { xs: 'flex-start', sm: 'center' },
+                      display: "flex",
+                      flexDirection: { xs: "column", sm: "row" },
+                      alignItems: { xs: "flex-start", sm: "center" },
                       gap: 3,
                       p: { xs: 2, sm: 0 },
-                      bgcolor: { xs: 'rgba(0,0,0,0.2)', sm: 'transparent' },
+                      bgcolor: { xs: "rgba(0,0,0,0.2)", sm: "transparent" },
                       border: { xs: 1, sm: 0 },
-                      borderColor: (theme) => alpha(theme.palette.secondary.main, 0.1)
+                      borderColor: (theme) =>
+                        alpha(theme.palette.secondary.main, 0.1),
                     }}
                   >
-                    <Box sx={{
-                      width: { xs: 80, sm: 96 },
-                      height: { xs: 80, sm: 96 },
-                      borderRadius: 1,
-                      border: 1,
-                      borderColor: (theme) => alpha(theme.palette.secondary.main, 0.3),
-                      bgcolor: 'common.black',
-                      overflow: 'hidden',
-                      flexShrink: 0,
-                      boxShadow: (theme) => `0 0 10px ${alpha(theme.palette.secondary.main, 0.3)}`
-                    }}>
+                    <Box
+                      sx={{
+                        width: { xs: 80, sm: 96 },
+                        height: { xs: 80, sm: 96 },
+                        borderRadius: 1,
+                        border: 1,
+                        borderColor: (theme) =>
+                          alpha(theme.palette.secondary.main, 0.3),
+                        bgcolor: "common.black",
+                        overflow: "hidden",
+                        flexShrink: 0,
+                        boxShadow: (theme) =>
+                          `0 0 10px ${alpha(theme.palette.secondary.main, 0.3)}`,
+                      }}
+                    >
                       <Box
                         component="img"
                         src={item.image}
                         alt={item.name}
-                        sx={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.8, transition: 'opacity 0.3s', '&:hover': { opacity: 1 } }}
+                        sx={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                          opacity: 0.8,
+                          transition: "opacity 0.3s",
+                          "&:hover": { opacity: 1 },
+                        }}
                       />
                     </Box>
 
-                    <Box sx={{ flex: 1, width: '100%' }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <Box sx={{ flex: 1, width: "100%" }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "flex-start",
+                        }}
+                      >
                         <Box sx={{ pr: 2 }}>
-                          <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'common.white', fontStyle: 'italic', lineHeight: 1.2 }}>
+                          <Typography
+                            variant="h6"
+                            sx={{
+                              fontWeight: "bold",
+                              color: "common.white",
+                              fontStyle: "italic",
+                              lineHeight: 1.2,
+                            }}
+                          >
                             {item.name}
                           </Typography>
-                          <Typography variant="caption" sx={{ color: 'grey.500', textTransform: 'uppercase', letterSpacing: 1, display: 'block', mt: 0.5, mb: 1 }}>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: "grey.500",
+                              textTransform: "uppercase",
+                              letterSpacing: 1,
+                              display: "block",
+                              mt: 0.5,
+                              mb: 1,
+                            }}
+                          >
                             {item.size} • {item.category}
                           </Typography>
                         </Box>
                         {isMobile && (
-                          <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: 'secondary.main', whiteSpace: 'nowrap' }}>
+                          <Typography
+                            variant="subtitle1"
+                            sx={{
+                              fontWeight: "bold",
+                              color: "secondary.main",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
                             {formatCurrency(item.price * item.quantity)}
                           </Typography>
                         )}
                       </Box>
 
-                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: { xs: 'space-between', sm: 'flex-start' }, gap: 3, mt: { xs: 1, sm: 0 } }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', border: 1, borderColor: (theme) => alpha(theme.palette.secondary.main, 0.2), borderRadius: 1, bgcolor: (theme) => alpha(theme.palette.common.black, 0.5) }}>
-                          <IconButton size="small" onClick={() => updateQuantity(item.id, -1)} sx={{ color: 'secondary.main', '&:hover': { color: 'common.white' } }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: {
+                            xs: "space-between",
+                            sm: "flex-start",
+                          },
+                          gap: 3,
+                          mt: { xs: 1, sm: 0 },
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            border: 1,
+                            borderColor: (theme) =>
+                              alpha(theme.palette.secondary.main, 0.2),
+                            borderRadius: 1,
+                            bgcolor: (theme) =>
+                              alpha(theme.palette.common.black, 0.5),
+                          }}
+                        >
+                          <IconButton
+                            size="small"
+                            onClick={() => updateQuantity(item.id, -1)}
+                            sx={{
+                              color: "secondary.main",
+                              "&:hover": { color: "common.white" },
+                            }}
+                          >
                             <Remove fontSize="small" />
                           </IconButton>
-                          <Typography sx={{ px: 1, minWidth: 24, textAlign: 'center', fontWeight: 'bold', color: 'common.white', fontSize: '0.875rem' }}>
+                          <Typography
+                            sx={{
+                              px: 1,
+                              minWidth: 24,
+                              textAlign: "center",
+                              fontWeight: "bold",
+                              color: "common.white",
+                              fontSize: "0.875rem",
+                            }}
+                          >
                             {item.quantity}
                           </Typography>
-                          <IconButton size="small" onClick={() => updateQuantity(item.id, 1)} sx={{ color: 'secondary.main', '&:hover': { color: 'common.white' } }}>
+                          <IconButton
+                            size="small"
+                            onClick={() => updateQuantity(item.id, 1)}
+                            sx={{
+                              color: "secondary.main",
+                              "&:hover": { color: "common.white" },
+                            }}
+                          >
                             <Add fontSize="small" />
                           </IconButton>
                         </Box>
@@ -180,7 +334,13 @@ const Cart: React.FC<CartProps> = ({ setView }) => {
                           startIcon={<LinkOff />}
                           onClick={() => removeFromCart(item.id)}
                           size="small"
-                          sx={{ color: 'grey.500', textTransform: 'uppercase', fontWeight: 'bold', fontSize: '0.75rem', '&:hover': { color: 'primary.main' } }}
+                          sx={{
+                            color: "grey.500",
+                            textTransform: "uppercase",
+                            fontWeight: "bold",
+                            fontSize: "0.75rem",
+                            "&:hover": { color: "primary.main" },
+                          }}
                         >
                           Descartar
                         </Button>
@@ -188,8 +348,11 @@ const Cart: React.FC<CartProps> = ({ setView }) => {
                     </Box>
 
                     {!isMobile && (
-                      <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
-                        <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'secondary.main' }}>
+                      <Box sx={{ textAlign: "right", flexShrink: 0 }}>
+                        <Typography
+                          variant="h6"
+                          sx={{ fontWeight: "bold", color: "secondary.main" }}
+                        >
                           {formatCurrencyDecimal(item.price * item.quantity)}
                         </Typography>
                       </Box>
@@ -199,8 +362,32 @@ const Cart: React.FC<CartProps> = ({ setView }) => {
               </Stack>
             )}
 
-            <Box sx={{ mt: 6, pt: 4, borderTop: 1, borderColor: (theme) => alpha(theme.palette.secondary.main, 0.2), display: 'flex', justifyContent: 'center', color: (theme) => alpha(theme.palette.secondary.main, 0.5), fontStyle: 'italic' }}>
-              <Typography variant="caption">Tu inventario está protegido por guardas mágicas.</Typography>
+            <Box
+              sx={{
+                mt: 6,
+                pt: 6,
+                borderTop: 1,
+                borderColor: (theme) =>
+                  alpha(theme.palette.secondary.main, 0.2),
+                display: "flex",
+                justifyContent: "center",
+                textAlign: "center",
+              }}
+            >
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  fontStyle: "italic",
+                  color: "secondary.main",
+                  opacity: 0.9,
+                  maxWidth: 600,
+                  lineHeight: 1.6,
+                  letterSpacing: 1,
+                }}
+              >
+                "Si inscribes tu nombre en el Gran Registro, podrás seguir el
+                vuelo de tu grifo mensajero hasta tu fortaleza."
+              </Typography>
             </Box>
           </Box>
         </Grid>
@@ -208,25 +395,47 @@ const Cart: React.FC<CartProps> = ({ setView }) => {
         {/* Summary */}
         <Grid size={{ xs: 12, lg: 4 }}>
           <Stack spacing={3}>
-            <Paper sx={{
-              p: 3,
-              bgcolor: 'background.paper',
-              border: 2,
-              borderColor: 'secondary.main',
-              position: 'relative',
-              overflow: 'hidden',
-              boxShadow: 6
-            }}>
-              <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, height: 4, bgcolor: 'secondary.main' }} />
-              <Typography variant="h6" sx={{ fontWeight: 'bold', fontStyle: 'italic', mb: 3, display: 'flex', alignItems: 'center', gap: 1, color: 'common.white' }}>
-                <MonetizationOn sx={{ color: 'secondary.main' }} />
+            <Paper
+              sx={{
+                p: 3,
+                bgcolor: "background.paper",
+                border: 2,
+                borderColor: "secondary.main",
+                position: "relative",
+                overflow: "hidden",
+                boxShadow: 6,
+              }}
+            >
+              <Box
+                sx={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: 4,
+                  bgcolor: "secondary.main",
+                }}
+              />
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: "bold",
+                  fontStyle: "italic",
+                  mb: 3,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                  color: "common.white",
+                }}
+              >
+                <MonetizationOn sx={{ color: "secondary.main" }} />
                 Resumen del Tesoro
               </Typography>
 
               {/* Coupon Section */}
               <Box sx={{ mb: 3 }}>
                 {!couponCode ? (
-                  <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Box sx={{ display: "flex", gap: 1 }}>
                     <TextField
                       placeholder="Código Rúnico"
                       size="small"
@@ -237,11 +446,11 @@ const Cart: React.FC<CartProps> = ({ setView }) => {
                       helperText={couponError}
                       disabled={checkingCoupon}
                       sx={{
-                        '& .MuiOutlinedInput-root': {
-                          bgcolor: 'rgba(0,0,0,0.2)',
-                          fieldset: { borderColor: 'rgba(197, 160, 89, 0.3)' }
+                        "& .MuiOutlinedInput-root": {
+                          bgcolor: "rgba(0,0,0,0.2)",
+                          fieldset: { borderColor: "rgba(197, 160, 89, 0.3)" },
                         },
-                        '& .MuiFormHelperText-root': { color: 'error.main' }
+                        "& .MuiFormHelperText-root": { color: "error.main" },
                       }}
                     />
                     <Button
@@ -250,40 +459,149 @@ const Cart: React.FC<CartProps> = ({ setView }) => {
                       onClick={handleApplyCoupon}
                       disabled={checkingCoupon || !couponInput.trim()}
                     >
-                      {checkingCoupon ? <CircularProgress size={20} color="secondary" /> : 'Aplicar'}
+                      {checkingCoupon ? (
+                        <CircularProgress size={20} color="secondary" />
+                      ) : (
+                        "Aplicar"
+                      )}
                     </Button>
                   </Box>
                 ) : (
-                  <Paper variant="outlined" sx={{ p: 2, bgcolor: 'rgba(76, 175, 80, 0.1)', borderColor: 'success.main', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Paper
+                    variant="outlined"
+                    sx={{
+                      p: 2,
+                      bgcolor: "rgba(76, 175, 80, 0.1)",
+                      borderColor: "success.main",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
                     <Box>
-                      <Typography variant="subtitle2" color="success.main" fontWeight="bold">Cupón Aplicado</Typography>
-                      <Typography variant="caption" color="text.secondary">{couponCode} (-{discount}%)</Typography>
+                      <Typography
+                        variant="subtitle2"
+                        color="success.main"
+                        fontWeight="bold"
+                      >
+                        Cupón Aplicado
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {couponCode} (-{discount}%)
+                      </Typography>
                     </Box>
-                    <IconButton size="small" onClick={removeCoupon} color="error">
-                      <Typography variant="caption" sx={{ fontWeight: 'bold' }}>X</Typography>
+                    <IconButton
+                      size="small"
+                      onClick={removeCoupon}
+                      color="error"
+                    >
+                      <Typography variant="caption" sx={{ fontWeight: "bold" }}>
+                        X
+                      </Typography>
                     </IconButton>
                   </Paper>
                 )}
               </Box>
 
               <Stack spacing={2} sx={{ mb: 4 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <Typography variant="body2" sx={{ color: 'grey.500', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 'bold', minWidth: '120px' }}>Subtotal</Typography>
-                  <Box sx={{ textAlign: 'right' }}>
-                    <Typography variant="body2" sx={{ color: 'secondary.main', fontWeight: 'bold' }}>{formatARS(totalPrice)}</Typography>
-                    <Typography variant="caption" sx={{ color: (theme) => alpha(theme.palette.secondary.main, 0.4), fontSize: '0.65rem' }}>{formatGP(totalPrice, 2)}</Typography>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                  }}
+                >
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: "grey.500",
+                      textTransform: "uppercase",
+                      letterSpacing: 1,
+                      fontWeight: "bold",
+                      minWidth: "120px",
+                    }}
+                  >
+                    Subtotal
+                  </Typography>
+                  <Box sx={{ textAlign: "right" }}>
+                    <Typography
+                      variant="body2"
+                      sx={{ color: "secondary.main", fontWeight: "bold" }}
+                    >
+                      {formatARS(totalPrice)}
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: (theme) =>
+                          alpha(theme.palette.secondary.main, 0.4),
+                        fontSize: "0.65rem",
+                      }}
+                    >
+                      {formatGP(totalPrice, 2)}
+                    </Typography>
                   </Box>
                 </Box>
 
-
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pt: 2, mt: 1, borderTop: 1, borderColor: (theme) => alpha(theme.palette.secondary.main, 0.2) }}>
-                  <Typography variant="h5" sx={{ fontWeight: 'bold', fontStyle: 'italic', color: 'common.white', textTransform: 'uppercase', letterSpacing: 2 }}>Total</Typography>
-                  <Box sx={{ textAlign: 'right' }}>
-                    <Typography variant="h4" sx={{ fontWeight: 900, color: 'secondary.main', lineHeight: 1 }}>{formatARS(grandTotal)}</Typography>
-                    <Typography variant="caption" sx={{ color: (theme) => alpha(theme.palette.secondary.main, 0.5), fontWeight: 'bold', display: 'block', mt: 0.5 }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    pt: 2,
+                    mt: 1,
+                    borderTop: 1,
+                    borderColor: (theme) =>
+                      alpha(theme.palette.secondary.main, 0.2),
+                  }}
+                >
+                  <Typography
+                    variant="h5"
+                    sx={{
+                      fontWeight: "bold",
+                      fontStyle: "italic",
+                      color: "common.white",
+                      textTransform: "uppercase",
+                      letterSpacing: 2,
+                    }}
+                  >
+                    Total
+                  </Typography>
+                  <Box sx={{ textAlign: "right" }}>
+                    <Typography
+                      variant="h4"
+                      sx={{
+                        fontWeight: 900,
+                        color: "secondary.main",
+                        lineHeight: 1,
+                      }}
+                    >
+                      {formatARS(grandTotal)}
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: (theme) =>
+                          alpha(theme.palette.secondary.main, 0.5),
+                        fontWeight: "bold",
+                        display: "block",
+                        mt: 0.5,
+                      }}
+                    >
                       {formatGP(grandTotal, 2)}
                     </Typography>
-                    <Typography variant="caption" sx={{ color: (theme) => alpha(theme.palette.secondary.main, 0.3), textTransform: 'uppercase', fontSize: '0.6rem', display: 'block' }}>Equivalente en Oro</Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: (theme) =>
+                          alpha(theme.palette.secondary.main, 0.3),
+                        textTransform: "uppercase",
+                        fontSize: "0.6rem",
+                        display: "block",
+                      }}
+                    >
+                      Equivalente en Oro
+                    </Typography>
                   </Box>
                 </Box>
               </Stack>
@@ -298,30 +616,97 @@ const Cart: React.FC<CartProps> = ({ setView }) => {
                 startIcon={<Lock />}
                 sx={{
                   py: 2,
-                  fontWeight: 'bold',
+                  fontWeight: "bold",
                   letterSpacing: 2,
                   border: 1,
-                  borderColor: 'secondary.main',
-                  boxShadow: '0 0 15px rgba(150,0,24,0.4), inset 0 0 10px rgba(255,255,255,0.1)'
+                  borderColor: "secondary.main",
+                  boxShadow:
+                    "0 0 15px rgba(150,0,24,0.4), inset 0 0 10px rgba(255,255,255,0.1)",
                 }}
               >
                 Proceder al Pago Seguro
               </Button>
 
-              <Box sx={{ mt: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5 }}>
-                <Divider flexItem sx={{ borderColor: (theme) => alpha(theme.palette.secondary.main, 0.3), width: '100%' }} />
-                <Typography variant="caption" sx={{ color: 'grey.600', textTransform: 'uppercase', letterSpacing: 1 }}>Monedas Aceptadas</Typography>
-                <Box sx={{ display: 'flex', gap: 2, opacity: 0.5, color: 'common.white', alignItems: 'center' }}>
-                  <Payments sx={{ fontSize: '1.2rem' }} />
-                  <Typography variant="caption" sx={{ fontSize: '0.7rem', fontStyle: 'italic', color: 'red.400' }}>o</Typography>
-                  <WaterDrop sx={{ fontSize: '1rem', color: 'red.600' }} />
+              <Box
+                sx={{
+                  mt: 3,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 1.5,
+                }}
+              >
+                <Divider
+                  flexItem
+                  sx={{
+                    borderColor: (theme) =>
+                      alpha(theme.palette.secondary.main, 0.3),
+                    width: "100%",
+                  }}
+                />
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: "grey.600",
+                    textTransform: "uppercase",
+                    letterSpacing: 1,
+                  }}
+                >
+                  Monedas Aceptadas
+                </Typography>
+                <Box
+                  sx={{
+                    display: "flex",
+                    gap: 2,
+                    opacity: 0.5,
+                    color: "common.white",
+                    alignItems: "center",
+                  }}
+                >
+                  <Payments sx={{ fontSize: "1.2rem" }} />
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      fontSize: "0.7rem",
+                      fontStyle: "italic",
+                      color: "red.400",
+                    }}
+                  >
+                    o
+                  </Typography>
+                  <WaterDrop sx={{ fontSize: "1rem", color: "red.600" }} />
                 </Box>
               </Box>
             </Paper>
 
-            <Typography variant="body2" sx={{ p: 2, border: 1, borderColor: (theme) => alpha(theme.palette.secondary.main, 0.1), borderRadius: 1, fontStyle: 'italic', color: 'grey.600', textAlign: 'center', fontSize: '0.875rem' }}>
-              "Un aventurero sabio sabe cuándo retirarse y cuándo reclamar el premio."
-              <Box component="span" sx={{ display: 'block', mt: 0.5, fontSize: '0.625rem', textTransform: 'uppercase', letterSpacing: 1 }}>— El Dungeon Master</Box>
+            <Typography
+              variant="body2"
+              sx={{
+                p: 2,
+                border: 1,
+                borderColor: (theme) =>
+                  alpha(theme.palette.secondary.main, 0.1),
+                borderRadius: 1,
+                fontStyle: "italic",
+                color: "grey.600",
+                textAlign: "center",
+                fontSize: "0.875rem",
+              }}
+            >
+              "Un aventurero sabio sabe cuándo retirarse y cuándo reclamar el
+              premio."
+              <Box
+                component="span"
+                sx={{
+                  display: "block",
+                  mt: 0.5,
+                  fontSize: "0.625rem",
+                  textTransform: "uppercase",
+                  letterSpacing: 1,
+                }}
+              >
+                — El Dungeon Master
+              </Box>
             </Typography>
           </Stack>
         </Grid>

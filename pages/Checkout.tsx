@@ -113,9 +113,7 @@ const Checkout: React.FC<CheckoutProps> = ({ setView, userProfile }) => {
         setFormData((prev) => ({
           ...prev,
           name:
-            userProfile?.username ||
-            session.user.user_metadata.full_name ||
-            "",
+            userProfile?.username || session.user.user_metadata.full_name || "",
         }));
 
         // Load saved addresses
@@ -303,7 +301,7 @@ const Checkout: React.FC<CheckoutProps> = ({ setView, userProfile }) => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ pt: 16, pb: 6 }}>
+    <Container maxWidth="lg" sx={{ pt: 4, pb: 6 }}>
       <Grid container spacing={6}>
         {/* Form Section */}
         <Grid size={{ xs: 12, lg: 8 }}>

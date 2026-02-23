@@ -250,7 +250,16 @@ const NewAdventurerGuide: React.FC<NewAdventurerGuideProps> = ({ setView }) => {
         </Box>
 
         {/* Footer Logo */}
-        <Box sx={{ mt: 15, textAlign: "center", opacity: 0.7 }}>
+        <Box
+          sx={{
+            mt: 15,
+            textAlign: "center",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            opacity: 0.7,
+          }}
+        >
           <ThemedLogo width={200} />
         </Box>
       </Container>
