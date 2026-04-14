@@ -55,6 +55,16 @@ Este archivo registra las intervenciones de la IA, fallos, éxitos y arquitectur
 
 ---
 
+## 🟢 [ÉXITO] - 2026-04-14
+- **Tarea:** Corrección de dominio en metadatos de SEO.
+- **Acción:** 
+  - Se actualizó `public/sitemap.xml` y `public/robots.txt` para reflejar el dominio real del cliente: `www.soulforgeminiaturas.com.ar`.
+  - Esto es necesario para que Google Search Console pueda validar y procesar correctamente el sitemap.
+- **Modo:** Mejorar
+- **Commit:** `fix(Mejorar): actualizar dominio real en sitemap.xml y robots.txt para Google Search Console`
+
+---
+
 ## 🏛️ Arquitecturas Aprobadas
 
 ### 1. Lógica
