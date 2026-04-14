@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Box, Typography, Button, Container, IconButton } from "@mui/material";
 import { keyframes } from "@mui/material/styles";
+import { getOptimizedImageUrl } from "../../../utils/imageValidation";
 import {
   ChevronLeft,
   ChevronRight,
@@ -423,7 +424,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ setView, isAdmin }) => {
               >
                 <Typography
                   variant="h6"
-                  component="h2"
+                  component="p"
                   sx={{
                     fontStyle: "italic",
                     color: "secondary.main",
@@ -580,17 +581,16 @@ const HeroSection: React.FC<HeroSectionProps> = ({ setView, isAdmin }) => {
             }}
           >
             {slides.map((_, idx) => (
-              <Box
+              <IconButton
                 key={idx}
                 onClick={() => setCurrentSlide(idx)}
-                role="button"
                 aria-label={`Ir a la diapositiva ${idx + 1}`}
                 sx={{
-                  height: 6,
-                  borderRadius: 4,
-                  cursor: "pointer",
-                  transition: "all 0.5s",
+                  height: 8,
                   width: idx === currentSlide ? 32 : 8,
+                  p: 0,
+                  borderRadius: 4,
+                  transition: "all 0.5s",
                   bgcolor:
                     idx === currentSlide
                       ? "secondary.main"

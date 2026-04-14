@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, Container, Typography, Grid, keyframes } from "@mui/material";
+import { Box, Container, Typography, Grid, keyframes, IconButton } from "@mui/material";
 import { AutoAwesome, KeyboardArrowDown } from "@mui/icons-material";
 import { ViewState, Product } from "../../../types";
 import ScrollReveal from "./ScrollReveal";
