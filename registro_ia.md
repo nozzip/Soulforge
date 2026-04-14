@@ -23,6 +23,18 @@ Este archivo registra las intervenciones de la IA, fallos, éxitos y arquitectur
 
 ---
 
+## 🟢 [ÉXITO] - 2026-04-14
+- **Tarea:** Optimización de SEO.
+- **Acción:** 
+  - Se configuró el idioma principal en `es` en `index.html`.
+  - Se añadieron meta-etiquetas de descripción y keywords globales.
+  - Se crearon archivos `public/robots.txt` y `public/sitemap.xml`.
+  - Se implementaron datos estructurados (JSON-LD) en el componente `SEO` para mejorar la visibilidad de la tienda en Google.
+- **Modo:** Desarrollar
+- **Commit:** `feat(Desarrollar): mejorar SEO con sitemap, robots.txt, metadatos y datos estructurados`
+
+---
+
 ## 🏛️ Arquitecturas Aprobadas
 
 ### 1. Lógica
