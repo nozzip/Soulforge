@@ -17,14 +17,22 @@ export default defineConfig(({ mode }) => {
     },
     resolve: {
       alias: {
-        "@": path.resolve(__dirname, "."),
+        "@": path.resolve(__dirname, "./"),
       },
     },
     build: {
       rollupOptions: {
         output: {
           manualChunks: {
-            vendor: ["react", "react-dom", "framer-motion", "@emotion/react", "@emotion/styled"],
+            vendor: [
+              "react",
+              "react-dom",
+              "@emotion/react",
+              "@emotion/styled",
+              "@tanstack/react-query",
+              "react-helmet-async",
+              "lenis",
+            ],
             mui: ["@mui/material", "@mui/icons-material"],
           },
         },
