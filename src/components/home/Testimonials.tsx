@@ -102,11 +102,12 @@ const Testimonials: React.FC = () => {
               Ecos de la Forja
             </Typography>
             <Typography
-              variant="h3"
+              variant="h2"
               sx={{
                 fontWeight: "bold",
                 color: "common.white",
                 fontStyle: "italic",
+                fontSize: { xs: "2rem", md: "3rem" }
               }}
             >
               Pergaminos de Agradecimiento

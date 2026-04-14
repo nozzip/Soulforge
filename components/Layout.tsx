@@ -153,6 +153,7 @@ const Layout: React.FC<LayoutProps> = ({
                     href="https://www.instagram.com/soulforge.miniatures"
                     target="_blank"
                     rel="noopener noreferrer"
+                    aria-label="Seguir a Soulforge en Instagram"
                     sx={{
                       color: "secondary.main",
                       border: 1,
@@ -171,6 +172,7 @@ const Layout: React.FC<LayoutProps> = ({
                     href={`https://wa.me/543815621699?text=${encodeURIComponent("Saludos desde el portal de Soulforge. Necesito asistencia del Gremio...")}`}
                     target="_blank"
                     rel="noopener noreferrer"
+                    aria-label="Contactar por WhatsApp"
                     sx={{
                       color: "secondary.main",
                       border: 1,

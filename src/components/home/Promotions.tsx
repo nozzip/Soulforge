@@ -55,7 +55,7 @@ const Promotions: React.FC = () => {
                                 }}
                             >
                                 <Typography
-                                    variant="h4"
+                                    variant="h3"
                                     sx={{
                                         fontWeight: "bold",
                                         color: "common.white",

@@ -578,6 +578,7 @@ const Navbar: React.FC<NavbarProps> = ({
               >
                 <Button
                   onClick={() => setView(ViewState.HOME, { resetScroll: true })}
+                  aria-label="Volver al Inicio - Soulforge Miniaturas"
                   sx={{
                     color: "secondary.main",
                     display: "flex",
