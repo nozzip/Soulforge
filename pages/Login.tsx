@@ -112,7 +112,7 @@ const Login: React.FC<LoginProps> = ({ setView, onLogin }) => {
           width: "100vw",
           height: "100vh",
           backgroundImage:
-            "url(https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/sign/Soulforge%20-%20Misc/nozzip_a_fantasy_forest_--ar_8953_--profile_dehgnq4_--stylize_1_5b23a4ac-5a4a-42ee-bb78-6c774444151d.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV84MjAxNjBmNy1jMzIxLTRmMWUtYWEwOC04YzZkMTNkOTgyZTUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJTb3VsZm9yZ2UgLSBNaXNjL25venppcF9hX2ZhbnRhc3lfZm9yZXN0Xy0tYXJfODk1M18tLXByb2ZpbGVfZGVoZ25xNF8tLXN0eWxpemVfMV81YjIzYTRhYy01YTRhLTQyZWUtYmI3OC02Yzc3NDQ0NDE1MWQucG5nIiwiaWF0IjoxNzY5Mzc4Nzk3LCJleHAiOjE5MjcwNTg3OTd9.AldMF4YQdVveQNEZo0Pg-BiqdFlNNRdXbsLtvAylhjk)",
+            "url(https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/Soulforge%20-%20Misc/background.png)", // Actualizar con URL pública válida
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
