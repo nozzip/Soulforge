@@ -16,8 +16,8 @@ export const ThemedLogo: React.FC<ThemedLogoProps> = ({
   // Determine which logo to use based on theme
   const isWarhammer = theme.palette.primary.main === "#0ea5e9";
   const logoSrc = isWarhammer
-    ? `https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/guide/logo-warhammer.svg`
-    : `https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/guide/logo-fantasy.svg`;
+    ? `${SUPABASE_ASSETS_BASE}guide/logo-warhammer.svg`
+    : `${SUPABASE_ASSETS_BASE}guide/logo-fantasy.svg`;
 
   // Theme-based glow color
   const glowColor = isWarhammer

@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef } from "react";
 import { ViewState, Product, Profile } from "../types";
 import { useCart } from "../context/CartContext";
+import { SUPABASE_ASSETS_BASE } from "../constants";
 import {
   AppBar,
   Toolbar,
@@ -600,8 +601,8 @@ const Navbar: React.FC<NavbarProps> = ({
                       component="img"
                       src={
                         isWarhammer
-                          ? `https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/guide/logoTextoSolo.svg`
-                          : `https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/guide/logoTextoSolo_fantasy.svg`
+                          ? `${SUPABASE_ASSETS_BASE}guide/logoTextoSolo.svg`
+                          : `${SUPABASE_ASSETS_BASE}guide/logoTextoSolo_fantasy.svg`
                       }
                       alt="Soulforge"
                       sx={{

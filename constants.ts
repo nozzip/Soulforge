@@ -1,7 +1,9 @@
 import { Product } from './types';
 
-export const DEFAULT_AVATAR_URL = "https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/avatars/default.png";
-export const SUPABASE_ASSETS_BASE = "https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/";
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://ydcbptnxlslljccwedwi.supabase.co';
+
+export const DEFAULT_AVATAR_URL = `${supabaseUrl}/storage/v1/object/public/assets/avatars/default.png`;
+export const SUPABASE_ASSETS_BASE = `${supabaseUrl}/storage/v1/object/public/assets/`;
 
 
 export const PRODUCTS: Product[] = [
