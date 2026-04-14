@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://soulforge.cl/sitemap.xml # TODO: Reemplazar con el dominio real si es distinto

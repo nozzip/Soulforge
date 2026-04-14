@@ -30,6 +30,18 @@ const SEO: React.FC<SEOProps> = ({
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
       {image && <meta name="twitter:image" content={image} />}
+
+      {/* Structured Data (JSON-LD) */}
+      <script type="application/ld+json">
+        {JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": type === "website" ? "OnlineStore" : "Product",
+          "name": title,
+          "description": description,
+          "image": image,
+          "url": url || window.location.origin
+        })}
+      </script>
     </Helmet>
   );
 };
