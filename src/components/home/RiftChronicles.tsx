@@ -75,14 +75,8 @@ const RiftChronicles: React.FC<RiftChroniclesProps> = ({
                     bgcolor: "background.default",
                 }}
             >
-                <KeyboardArrowDown
-                    sx={{
-                        fontSize: 30,
-                        color: "secondary.main",
-                        animation: "bounce 2s infinite",
-                        cursor: "pointer",
-                        opacity: 0.6,
-                    }}
+                <IconButton
+                    aria-label="Deslizar hacia abajo a las Crónicas de la Brecha"
                     onClick={() => {
                         const nextSection = document.querySelector(
                             '[data-section="rift-chronicles"]'
@@ -91,7 +85,14 @@ const RiftChronicles: React.FC<RiftChroniclesProps> = ({
                             nextSection.scrollIntoView({ behavior: "smooth" });
                         }
                     }}
-                />
+                    sx={{
+                        color: "secondary.main",
+                        animation: "bounce 2s infinite",
+                        opacity: 0.6,
+                    }}
+                >
+                    <KeyboardArrowDown sx={{ fontSize: 30 }} />
+                </IconButton>
             </Box>
 
             <Box

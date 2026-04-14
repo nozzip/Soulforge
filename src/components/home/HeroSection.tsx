@@ -352,13 +352,13 @@ const HeroSection: React.FC<HeroSectionProps> = ({ setView, isAdmin }) => {
               }}
             >
               {/* Background Image */}
-              <Box
-                component="img"
-                src={slide.image_url}
-                alt={slide.title}
-                width="1920"
-                height="1080"
-                sx={{
+              <img
+                src={getOptimizedImageUrl(slide.image_url, 1280)}
+                alt={slide.title || "Miniatura destacada"}
+                width="1280"
+                height="720"
+                loading={idx === 0 ? "eager" : "lazy"}
+                style={{
                   position: "absolute",
                   inset: 0,
                   width: "100%",
@@ -366,10 +366,6 @@ const HeroSection: React.FC<HeroSectionProps> = ({ setView, isAdmin }) => {
                   objectFit: "cover",
                   zIndex: -1,
                 }}
-                {...({
-                  loading: idx === 0 ? "eager" : "lazy",
-                  fetchpriority: idx === 0 ? "high" : "auto",
-                } as any)}
               />
 
               {/* Gradient Overlay */}

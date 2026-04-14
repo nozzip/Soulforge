@@ -23,7 +23,7 @@ const WhatsAppButton: React.FC<WhatsAppButtonProps> = ({
     <Tooltip title="Contactar al Gremio vía WhatsApp" placement="left" arrow>
       <Fab
         color="primary"
-        aria-label="whatsapp"
+        aria-label="Abrir chat de asistencia técnica por WhatsApp"
         onClick={handleClick}
         sx={{
           position: "fixed",

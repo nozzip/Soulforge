@@ -99,9 +99,9 @@ const FeaturedCollections: React.FC<FeaturedCollectionsProps> = ({
                                 <Typography
                                     variant="subtitle2"
                                     sx={{
-                                        color: "secondary.main",
-                                        letterSpacing: "0.2em",
-                                        fontWeight: "bold",
+                                        color: "secondary.light",
+                                        letterSpacing: "0.25em",
+                                        fontWeight: 800,
                                         mb: 1,
                                     }}
                                 >
