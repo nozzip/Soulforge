@@ -121,12 +121,11 @@ export const getOptimizedImageUrl = (
   // NOTE: Optimization service (/render/image/) requires a paid plan. 
   // Returning original URL by default to avoid 404 errors on free tier.
   if (url.includes("/storage/v1/object/public/")) {
-    const optimizedUrl = url.replace(
-      "/storage/v1/object/public/",
-      "/storage/v1/render/image/public/",
-    );
-    // Usamos resize=contain para no deformar y calidad 80 como estándar de oro
-    return `${optimizedUrl}?width=${width}&resize=contain&quality=80&format=webp`;
+    /* 
+       Optimization service (/render/image/) is only available on Pro plans.
+       Reverting to original URL to restore site visibility.
+    */
+    return url;
   }
 
   return url;

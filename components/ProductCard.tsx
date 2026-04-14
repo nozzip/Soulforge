@@ -137,7 +137,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 : {},
           }}
           />
-        </Box>
 
         {/* Wishlist Button */}
         <IconButton
