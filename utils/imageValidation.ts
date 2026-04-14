@@ -118,13 +118,17 @@ export const getOptimizedImageUrl = (
   if (!url) return "/placeholder.jpg"; // Default placeholder
 
   // Check if it's a Supabase Storage URL
+  // NOTE: Optimization service (/render/image/) requires a paid plan. 
+  // Returning original URL by default to avoid 404 errors on free tier.
   if (url.includes("/storage/v1/object/public/")) {
-    // Replace /object/ with /render/image/
+    /*
     const optimizedUrl = url.replace(
       "/storage/v1/object/public/",
       "/storage/v1/render/image/public/",
     );
     return `${optimizedUrl}?width=${width}&resize=contain&quality=80`;
+    */
+    return url;
   }
 
   return url;
