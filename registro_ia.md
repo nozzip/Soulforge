@@ -35,6 +35,16 @@ Este archivo registra las intervenciones de la IA, fallos, éxitos y arquitectur
 
 ---
 
+## 🟢 [ÉXITO] - 2026-04-14
+- **Tarea:** Corrección de carga de imágenes y placeholders.
+- **Acción:** 
+  - Se generó e instaló un archivo `public/placeholder.jpg` para evitar errores 404 de recursos faltantes.
+  - Se desactivó temporalmente el servicio de optimización de imágenes de Supabase (`/render/image/`) en `utils/imageValidation.ts`, ya que este servicio requiere un plan de pago y estaba causando que las imágenes no se mostraran en el plan gratuito.
+- **Modo:** Mejorar
+- **Commit:** `fix(Mejorar): solucionar error 404 de placeholder y restaurar visibilidad de imágenes`
+
+---
+
 ## 🏛️ Arquitecturas Aprobadas
 
 ### 1. Lógica
