@@ -54,7 +54,7 @@ export const getSEOForView = (
         description:
           "Impresiones de resina de alta calidad para tus juegos de rol y wargames. Encuentra dragones, héroes, monstruos y mucho más.",
         image:
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuCOt5aQZidteyosgKEH6adeFrjY70HvrEfGe899g00U3xAIYG56c8fgeqBKxO8l7H88pIM9fvKCjOFj31ZRGXSNJMm0amjBByouYk2tQS9cJlO5tRXVypnfYTl4GOedXMMTeHteiT4YEek0yhThUIU-I3adq46F_jGdWXWA81N4fXwHAGu-qCKql3q3IOj_6RX7xJ3VDGhUy-IG7TOmabJh_2bG_B3XyQLiG6dKr1cd6iFYDBbZoCfADZlGEJy_eQT0j1kbKsuRM9c",
+          "https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/banners/home_banner.webp",
         url: baseUrl,
       };
 

@@ -1,0 +1,22 @@
+{
+  "short_name": "Soulforge",
+  "name": "Soulforge | Miniaturas de Resina Premium",
+  "icons": [
+    {
+      "src": "https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/guide/YunqueSolo.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any"
+    },
+    {
+      "src": "https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/guide/YunqueSolo.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "maskable"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#c5a059",
+  "background_color": "#121212"
+}
