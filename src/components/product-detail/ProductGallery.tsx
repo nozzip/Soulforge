@@ -146,11 +146,13 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
               position: "absolute",
               inset: 0,
               backgroundImage: `url("${getOptimizedImageUrl(displayImageUrl || "", 1200)}")`,
-              backgroundPosition: "center", // Initial position
-              backgroundSize: showZoom ? "200%" : "contain",
+              backgroundPosition: "center",
+              backgroundSize: showZoom ? "250%" : "contain", // Increased zoom factor slightly
               backgroundRepeat: "no-repeat",
-              transition:
-                "background-size 0.2s ease-out, background-position 0.1s ease-out",
+              bgcolor: "black", // Fallback background color
+              opacity: showZoom ? 1 : 0,
+              pointerEvents: "none",
+              transition: "opacity 0.2s ease-in-out, background-size 0.2s ease-out",
             }}
           />
 
