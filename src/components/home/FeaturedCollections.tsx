@@ -3,6 +3,7 @@ import { Box, Container, Typography, Button, Grid } from "@mui/material";
 import { ViewState, Product } from "../../../types";
 import { CornerFlourish, RuneDivider } from "../../../components/StyledComponents";
 import ScrollReveal from "./ScrollReveal";
+import { getOptimizedImageUrl } from "../../../utils/imageValidation";
 
 interface FeaturedCollectionsProps {
     products: Product[];
@@ -165,14 +166,29 @@ const FeaturedCollections: React.FC<FeaturedCollectionsProps> = ({
                                         }}
                                     >
                                         <Box
+                                            component="img"
                                             className="bg-image"
+                                            src={getOptimizedImageUrl(col.img, 600)}
+                                            alt={col.title}
+                                            width="600"
+                                            height="750"
+                                            loading="lazy"
+                                            decoding="async"
                                             sx={{
                                                 position: "absolute",
                                                 inset: 0,
-                                                backgroundImage: `${CollectionGradient}, url("${col.img}")`,
-                                                backgroundSize: "cover",
-                                                backgroundPosition: "center",
+                                                width: "100%",
+                                                height: "100%",
+                                                objectFit: "cover",
                                                 transition: "transform 0.7s",
+                                            }}
+                                        />
+                                        <Box 
+                                            sx={{
+                                                position: "absolute",
+                                                inset: 0,
+                                                background: CollectionGradient,
+                                                pointerEvents: "none"
                                             }}
                                         />
                                         <Box

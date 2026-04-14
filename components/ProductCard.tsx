@@ -115,26 +115,27 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         }}
       >
         <Box
+          component="img"
+          src={getOptimizedImageUrl(product.image, 300)}
+          alt={product.name}
+          width="300"
+          height="300"
+          loading="lazy"
+          decoding="async"
           sx={{
             position: "absolute",
             inset: 0,
-            backgroundImage: `url("${getOptimizedImageUrl(product.image, 400)}")`,
-            backgroundSize: "contain",
-            backgroundRepeat: "no-repeat",
-            backgroundPosition: "center",
-            backgroundColor: "#000", // Ensure decent background for letterboxing
+            width: "100%",
+            height: "100%",
+            objectFit: "contain",
+            backgroundColor: "#000",
             transition: "transform 0.5s",
+            zIndex: 0,
             "&:hover":
               !isGroupingMode && !isUngroupingMode
                 ? { transform: "scale(1.05)" }
                 : {},
           }}
-        >
-          {/* SEO-friendly hidden image */}
-          <img
-            src={getOptimizedImageUrl(product.image, 400)}
-            alt={`Miniatura de ${product.name} - ${product.category}`}
-            style={{ display: "none" }}
           />
         </Box>
 

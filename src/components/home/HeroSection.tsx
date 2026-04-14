@@ -354,11 +354,12 @@ const HeroSection: React.FC<HeroSectionProps> = ({ setView, isAdmin }) => {
             >
               {/* Background Image */}
               <img
-                src={getOptimizedImageUrl(slide.image_url, 1280)}
+                src={getOptimizedImageUrl(slide.image_url, 800)}
                 alt={slide.title || "Miniatura destacada"}
-                width="1280"
-                height="720"
+                width="800"
+                height="450"
                 loading={idx === 0 ? "eager" : "lazy"}
+                decoding="async"
                 style={{
                   position: "absolute",
                   inset: 0,
