@@ -1,18 +1,18 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://www.soulforgeminiaturas.com.ar/</loc>
+    <loc>https://soulforgeminiaturas.com.ar/</loc>
     <lastmod>2026-04-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://www.soulforgeminiaturas.com.ar/catalog</loc>
+    <loc>https://soulforgeminiaturas.com.ar/catalog</loc>
     <lastmod>2026-04-14</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://www.soulforgeminiaturas.com.ar/login</loc>
+    <loc>https://soulforgeminiaturas.com.ar/login</loc>
     <lastmod>2026-04-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
