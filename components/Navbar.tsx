@@ -153,7 +153,11 @@ interface HideOnScrollProps {
 }
 
 function HideOnScroll({ children }: HideOnScrollProps) {
-  const trigger = useScrollTrigger();
+  // Añadimos un umbral para evitar que el trigger se dispare demasiado seguido
+  const trigger = useScrollTrigger({
+    threshold: 100,
+    disableHysteresis: true,
+  });
 
   return (
     <Slide appear={false} direction="down" in={!trigger}>
