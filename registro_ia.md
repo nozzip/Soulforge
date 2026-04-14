@@ -45,6 +45,16 @@ Este archivo registra las intervenciones de la IA, fallos, éxitos y arquitectur
 
 ---
 
+## 🟢 [ÉXITO] - 2026-04-14
+- **Tarea:** Refactorización de URLs de assets de Supabase.
+- **Acción:** 
+  - Se identificaron URLs harcodeadas con un ID de proyecto específico (`ydcbptnxlslljccwedwi`) en `constants.ts`, `Navbar.tsx` y `ThemedLogo.tsx`.
+  - Se modificaron para que dependan dinámicamente de `VITE_SUPABASE_URL` configurado en el `.env.local`. Esto asegura que los logos, avatares y assets base funcionen siempre en el servidor de Supabase actual sin necesidad de cambios manuales en el código.
+- **Modo:** Mejorar
+- **Commit:** `fix(Mejorar): hacer que las URLs de assets sean dinámicas para evitar errores en proyectos distintos`
+
+---
+
 ## 🏛️ Arquitecturas Aprobadas
 
 ### 1. Lógica
