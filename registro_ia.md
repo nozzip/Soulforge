@@ -75,6 +75,18 @@ Este archivo registra las intervenciones de la IA, fallos, éxitos y arquitectur
 
 ---
 
+## 🟢 [ÉXITO] - 2026-04-14
+- **Tarea:** Implementación de SEO Élite y optimización de arquitectura.
+- **Acción:** 
+  - **Canonical Tags:** Se añadió soporte para etiquetas canónicas dinámicas en el componente `SEO.tsx` para evitar penalizaciones por contenido duplicado.
+  - **Accesibilidad y SEO de Imágenes:** Se añadió una etiqueta `<img>` oculta con texto `alt` descriptivo en `ProductCard.tsx` para que Google Imágenes procese correctamente los productos.
+  - **Jerarquía de Encabezados:** Se corrigió el `HeroSection.tsx` para asegurar que solo exista un `<h1>` por página (en el primer slide del carousel).
+  - **Centralización de Assets:** Se refactorizaron las URLs de banners y máscaras en `constants.ts`, eliminando todas las dependencias harcodeadas de proyectos anteriores.
+- **Modo:** Mejorar
+- **Commit:** `feat(Mejorar): implementar mejoras de SEO élite y centralización de assets`
+
+---
+
 ## 🏛️ Arquitecturas Aprobadas
 
 ### 1. Lógica

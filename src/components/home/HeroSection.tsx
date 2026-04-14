@@ -15,6 +15,7 @@ import {
 } from "@mui/icons-material";
 import { ViewState } from "../../../types";
 import { supabase } from "@/src/supabase";
+import { SUPABASE_BANNER_BASE } from "../../../constants";
 import {
   Dialog,
   DialogTitle,
@@ -42,13 +43,10 @@ interface HeroSlide {
   sort_order: number;
 }
 
-const SUPABASE_BANNER_BASE =
-  "https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/banners/";
-
 const DEFAULT_SLIDES: HeroSlide[] = [
   {
     id: "1",
-    image_url: `https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/banners/home_banner_pathfinder.webp`,
+    image_url: `${SUPABASE_BANNER_BASE}home_banner_pathfinder.webp`,
     subtitle: "Dungeons & Dragons",
     title: "Aventuras ",
     title_highlight: "Épicas",
@@ -59,7 +57,7 @@ const DEFAULT_SLIDES: HeroSlide[] = [
   },
   {
     id: "2",
-    image_url: `https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/banners/home_banner_dnd.webp`,
+    image_url: `${SUPABASE_BANNER_BASE}home_banner_dnd.webp`,
     subtitle: "Pathfinder",
     title: "Senda del ",
     title_highlight: "Explorador",
@@ -70,7 +68,7 @@ const DEFAULT_SLIDES: HeroSlide[] = [
   },
   {
     id: "3",
-    image_url: `https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/banners/home_banner_warhammer.webp`,
+    image_url: `${SUPABASE_BANNER_BASE}home_banner_warhammer.webp`,
     subtitle: "Warhammer 40k",
     title: "En el ",
     title_highlight: "Futuro Sombrío",
@@ -81,7 +79,7 @@ const DEFAULT_SLIDES: HeroSlide[] = [
   },
   {
     id: "4",
-    image_url: `https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/banners/home_banner_anime.webp`,
+    image_url: `${SUPABASE_BANNER_BASE}home_banner_anime.webp`,
     subtitle: "Colección Anime",
     title: "Héroes de ",
     title_highlight: "Leyenda",
@@ -92,7 +90,7 @@ const DEFAULT_SLIDES: HeroSlide[] = [
   },
   {
     id: "5",
-    image_url: `https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/banners/home_banner_starwars.webp`,
+    image_url: `${SUPABASE_BANNER_BASE}home_banner_starwars.webp`,
     subtitle: "Star Wars",
     title: "Una Galaxia ",
     title_highlight: "Lejana",
@@ -448,7 +446,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ setView, isAdmin }) => {
                 </Typography>
                 <Typography
                   variant="h2"
-                  component="h1"
+                  component={idx === 0 ? "h1" : "h2"}
                   sx={{
                     fontWeight: 900,
                     color: "common.white",

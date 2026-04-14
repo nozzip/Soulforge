@@ -129,7 +129,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 ? { transform: "scale(1.05)" }
                 : {},
           }}
-        />
+        >
+          {/* SEO-friendly hidden image */}
+          <img
+            src={getOptimizedImageUrl(product.image, 400)}
+            alt={`Miniatura de ${product.name} - ${product.category}`}
+            style={{ display: "none" }}
+          />
+        </Box>
 
         {/* Wishlist Button */}
         <IconButton

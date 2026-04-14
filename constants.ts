@@ -4,6 +4,8 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://ydcbptnxlslljc
 
 export const DEFAULT_AVATAR_URL = `${supabaseUrl}/storage/v1/object/public/assets/avatars/default.png`;
 export const SUPABASE_ASSETS_BASE = `${supabaseUrl}/storage/v1/object/public/assets/`;
+export const SUPABASE_BANNER_BASE = `${supabaseUrl}/storage/v1/object/public/assets/banners/`;
+export const SUPABASE_MASKS_BASE = `${supabaseUrl}/storage/v1/object/public/assets/masks/`;
 
 
 export const PRODUCTS: Product[] = [

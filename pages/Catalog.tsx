@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useCallback, useRef, memo } from "react";
 import { Product, ViewState } from "../types";
 import { useCart } from "../context/CartContext";
 import { formatProductPrice } from "../utils/currency.tsx";
+import { SUPABASE_BANNER_BASE, SUPABASE_MASKS_BASE } from "../constants";
 import { useCatalogProducts } from "@/src/hooks/useCatalogProducts";
 import {
   useDeleteProduct,
@@ -392,7 +393,7 @@ const Catalog: React.FC<CatalogProps> = ({
           height: { xs: 350, md: 900 }, // Reduced height for Catalog compared to Guide
           position: "relative",
           backgroundImage:
-            "url(https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/banners/catalogo_banner.webp)",
+            `url(${SUPABASE_BANNER_BASE}catalogo_banner.webp)`,
           backgroundSize: "cover",
           backgroundPosition: "center",
           display: "flex",
@@ -400,9 +401,9 @@ const Catalog: React.FC<CatalogProps> = ({
           justifyContent: "center",
           // WATERCOLOR MASK EFFECT
           maskImage:
-            "url(https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/masks/my-mask.png), linear-gradient(to bottom, black 50%, transparent 100%)",
+            `url(${SUPABASE_MASKS_BASE}my-mask.png), linear-gradient(to bottom, black 50%, transparent 100%)`,
           WebkitMaskImage:
-            "url(https://ydcbptnxlslljccwedwi.supabase.co/storage/v1/object/public/assets/masks/my-mask.png), linear-gradient(to bottom, black 50%, transparent 100%)",
+            `url(${SUPABASE_MASKS_BASE}my-mask.png), linear-gradient(to bottom, black 50%, transparent 100%)`,
           maskSize: "100% 100%, 100% 100%",
           WebkitMaskSize: "100% 100%, 100% 100%",
           maskPosition: "center bottom, center",

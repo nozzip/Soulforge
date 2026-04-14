@@ -26,6 +26,7 @@ const SEO: React.FC<SEOProps> = ({
       <meta property="og:type" content={type} />
       {image && <meta property="og:image" content={image} />}
       {url && <meta property="og:url" content={url} />}
+      <link rel="canonical" href={url || window.location.href} />
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
