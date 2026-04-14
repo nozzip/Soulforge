@@ -108,21 +108,23 @@ const FeaturedCollections: React.FC<FeaturedCollectionsProps> = ({
                                     BÓVEDAS CURADAS
                                 </Typography>
                                 <Typography
-                                    variant="h3"
+                                    variant="h2"
                                     sx={{
                                         fontWeight: "bold",
                                         color: "common.white",
                                         display: { xs: "none", sm: "block" },
+                                        fontSize: "3rem"
                                     }}
                                 >
                                     Colecciones Destacadas
                                 </Typography>
                                 <Typography
-                                    variant="h3"
+                                    variant="h2"
                                     sx={{
                                         fontWeight: "bold",
                                         color: "common.white",
                                         display: { xs: "block", sm: "none" },
+                                        fontSize: "2.5rem"
                                     }}
                                 >
                                     Destacado
@@ -184,12 +186,20 @@ const FeaturedCollections: React.FC<FeaturedCollectionsProps> = ({
                                             }}
                                         >
                                             <Typography
-                                                variant="h4"
+                                                variant="h3"
                                                 sx={{
-                                                    fontWeight: "bold",
                                                     color: "common.white",
                                                     fontStyle: "italic",
-                                                    mb: 1,
+                                                    fontWeight: "bold",
+                                                    mb: 2,
+                                                    fontSize: {
+                                                        xs: col.title.length > 20 ? "1.5rem" : "1.75rem",
+                                                        md: col.title.length > 20 ? "1.85rem" : "2.125rem",
+                                                    },
+                                                    minHeight: { xs: "3.5rem", md: "5.5rem" },
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
                                                 }}
                                             >
                                                 {col.title}

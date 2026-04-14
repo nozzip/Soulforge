@@ -700,6 +700,7 @@ const Navbar: React.FC<NavbarProps> = ({
                                         <Box
                                           component="img"
                                           src={product.image}
+                                          alt={product.name}
                                           sx={{
                                             width: 40,
                                             height: 40,
@@ -885,7 +886,11 @@ const Navbar: React.FC<NavbarProps> = ({
                       }
                       arrow
                     >
-                      <IconButton onClick={onToggleTheme} color="inherit">
+                      <IconButton 
+                        onClick={onToggleTheme} 
+                        color="inherit"
+                        aria-label={isWarhammer ? "Cambiar a modo Fantasía" : "Cambiar a modo Grimdark"}
+                      >
                         {isWarhammer ? <ConstructionIcon /> : <TokenIcon />}
                       </IconButton>
                     </Tooltip>
@@ -894,6 +899,7 @@ const Navbar: React.FC<NavbarProps> = ({
                       <IconButton
                         onClick={() => setView(ViewState.CART)}
                         color="inherit"
+                        aria-label={`Ver tu botín: ${totalItems} objetos`}
                       >
                         <Badge badgeContent={totalItems} color="primary">
                           <TreasureChestIcon />
@@ -910,6 +916,7 @@ const Navbar: React.FC<NavbarProps> = ({
                       >
                         <IconButton
                           onClick={handleOpenUserMenu}
+                          aria-label={user ? "Mi Cuenta" : "Iniciar Sesión"}
                           sx={{
                             p: 0, // Profile images look better without padding adjustment if they are avatars
                             ml: 1,

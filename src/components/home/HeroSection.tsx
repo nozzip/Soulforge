@@ -357,6 +357,8 @@ const HeroSection: React.FC<HeroSectionProps> = ({ setView, isAdmin }) => {
                   component: "img",
                   src: slide.image_url,
                   alt: slide.title,
+                  width: "1920",
+                  height: "1080",
                   sx: {
                     position: "absolute",
                     inset: 0,
@@ -587,6 +589,8 @@ const HeroSection: React.FC<HeroSectionProps> = ({ setView, isAdmin }) => {
               <Box
                 key={idx}
                 onClick={() => setCurrentSlide(idx)}
+                role="button"
+                aria-label={`Ir a la diapositiva ${idx + 1}`}
                 sx={{
                   height: 6,
                   borderRadius: 4,

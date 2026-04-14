@@ -20,5 +20,16 @@ export default defineConfig(({ mode }) => {
         "@": path.resolve(__dirname, "."),
       },
     },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            vendor: ["react", "react-dom", "framer-motion", "@emotion/react", "@emotion/styled"],
+            mui: ["@mui/material", "@mui/icons-material"],
+          },
+        },
+      },
+      chunkSizeWarningLimit: 1000,
+    },
   };
 });

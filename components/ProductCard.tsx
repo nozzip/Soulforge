@@ -145,6 +145,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             onToggleWishlist(product.id);
           }}
           disabled={isUngroupingMode}
+          aria-label={isWishlisted ? "Quitar de favoritos" : "Añadir a favoritos"}
           sx={{
             position: "absolute",
             top: 8,
@@ -306,6 +307,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                     onDeleteProduct(product.id);
                   }
                 }}
+                aria-label={`Eliminar ${product.name} del archivo`}
                 sx={{
                   color: "error.main",
                   bgcolor: alpha(theme.palette.error.main, 0.1),
@@ -323,6 +325,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                   e.stopPropagation();
                   onAddToCart(product);
                 }}
+                aria-label={`Añadir ${product.name} al carrito`}
                 color="primary"
                 sx={{
                   bgcolor: "primary.dark",

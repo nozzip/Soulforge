@@ -260,7 +260,7 @@ const RiftChronicles: React.FC<RiftChroniclesProps> = ({
                                                 </Box>
                                             </Typography>
                                             <Typography
-                                                variant="h4"
+                                                variant="h3"
                                                 sx={{
                                                     color: "common.white",
                                                     fontStyle: "italic",
