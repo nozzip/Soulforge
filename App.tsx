@@ -24,6 +24,7 @@ import {
   LFGBoard,
 } from "@/src/features/forum";
 import { useCatalogMetadata } from "./src/hooks/useCatalogMetadata";
+import { useProducts } from "./src/hooks/useProducts";
 import { useQueryClient } from "@tanstack/react-query";
 import Profile from "./pages/Profile";
 import EditorTest from "./pages/EditorTest";
@@ -56,11 +57,54 @@ const App: React.FC = () => {
     string | null
   >(null);
 
+  // URL Routing Sync
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("token")) {
-      setCurrentView(ViewState.FEEDBACK);
-    }
+    const handleLocationChange = () => {
+      const path = window.location.pathname.replace(/^\/|\/$/g, "");
+      const params = new URLSearchParams(window.location.search);
+
+      // Priority 1: Feedback token
+      if (params.get("token")) {
+        setCurrentView(ViewState.FEEDBACK);
+        return;
+      }
+
+      // Priority 2: Path mapping
+      const pathMap: Record<string, ViewState> = {
+        "": ViewState.HOME,
+        "catalog": ViewState.CATALOG,
+        "cart": ViewState.CART,
+        "checkout": ViewState.CHECKOUT,
+        "login": ViewState.LOGIN,
+        "signup": ViewState.SIGNUP,
+        "wishlist": ViewState.WISHLIST,
+        "orders": ViewState.ORDERS,
+        "forum": ViewState.FORUM_HOME,
+        "guide": ViewState.NEW_ADVENTURER,
+        "how-to-buy": ViewState.HOW_TO_BUY,
+        "profile": ViewState.PROFILE,
+      };
+
+      // Special case for product detail: product/id
+      if (path.startsWith("product/")) {
+        const id = path.split("/")[1];
+        if (id) {
+          setSelectedProductId(id);
+          setCurrentView(ViewState.PRODUCT_DETAIL);
+          return;
+        }
+      }
+
+      const matchedView = pathMap[path];
+      if (matchedView) {
+        setCurrentView(matchedView);
+      }
+    };
+
+    window.addEventListener("popstate", handleLocationChange);
+    handleLocationChange(); // Initial check
+
+    return () => window.removeEventListener("popstate", handleLocationChange);
   }, []);
 
   // Scroll persistence for main views
@@ -347,6 +391,31 @@ const App: React.FC = () => {
       setGlobalSearchQuery("");
       setCatalogState((prev) => ({ ...prev, page: 1 }));
     }
+
+    // Sync URL
+    const viewToPath: Partial<Record<ViewState, string>> = {
+      [ViewState.HOME]: "/",
+      [ViewState.CATALOG]: "/catalog",
+      [ViewState.CART]: "/cart",
+      [ViewState.CHECKOUT]: "/checkout",
+      [ViewState.LOGIN]: "/login",
+      [ViewState.SIGNUP]: "/signup",
+      [ViewState.WISHLIST]: "/wishlist",
+      [ViewState.ORDERS]: "/orders",
+      [ViewState.FORUM_HOME]: "/forum",
+      [ViewState.NEW_ADVENTURER]: "/guide",
+      [ViewState.HOW_TO_BUY]: "/how-to-buy",
+      [ViewState.PROFILE]: "/profile",
+    };
+
+    let newPath = viewToPath[view] || "/";
+    if (view === ViewState.PRODUCT_DETAIL && selectedProductId) {
+      newPath = `/product/${selectedProductId}`;
+    }
+
+    if (window.location.pathname !== newPath) {
+      window.history.pushState({ view }, "", newPath);
+    }
   };
 
   const handleSetView = (
@@ -386,9 +455,16 @@ const App: React.FC = () => {
     setCurrentView(ViewState.CATALOG);
   };
 
-  // Update SEO metadata when view or product changes
   // Update SEO metadata when view changes
-  const seoData = getSEOForView(currentView, null); // Default SEO for views. Pages can override.
+  const { data: products } = useProducts();
+  const currentProduct = useMemo(() => {
+    if (currentView === ViewState.PRODUCT_DETAIL && selectedProductId && products) {
+      return products.find((p) => p.id === selectedProductId) || null;
+    }
+    return null;
+  }, [currentView, selectedProductId, products]);
+
+  const seoData = getSEOForView(currentView, currentProduct);
 
   const handleLogin = (newUser: User) => {
     setUser(newUser);
@@ -694,7 +770,11 @@ const App: React.FC = () => {
       <ThemeProvider theme={isWarhammer ? warhammerTheme : fantasyTheme}>
         <CssBaseline />
         <SmoothScroll>
-          <SEO {...seoData} />
+          <SEO
+            {...seoData}
+            product={currentProduct}
+            category={currentProduct?.category || (currentView === ViewState.CATALOG ? "Catálogo" : undefined)}
+          />
 
           <CartProvider>
             <ToastProvider>

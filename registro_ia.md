@@ -87,6 +87,18 @@ Este archivo registra las intervenciones de la IA, fallos, éxitos y arquitectur
 
 ---
 
+## 🟢 [ÉXITO] - 2026-04-14
+- **Tarea:** Implementación de SEO Pro (Sincronización de URLs y Esquemas Enriquecidos).
+- **Acción:** 
+  - **URL Synchronization:** Se implementó un sistema de ruteo manual en `App.tsx` que sincroniza el `ViewState` con la barra de direcciones del navegador mediante `pushState`. Esto permite enlaces profundos (deeplinks) y que Google indexe páginas individuales del catálogo.
+  - **JSON-LD Enriquecido:** Se mejoró el componente `SEO.tsx` para emitir datos estructurados de tipo `Product` con precio, moneda y disponibilidad cuando hay un producto activo.
+  - **Breadcrumb List Schema:** Se añadió soporte para el esquema `BreadcrumbList`, permitiendo que los resultados en Google muestren rutas de navegación integradas.
+  - **Deep Linking:** La aplicación ahora resuelve la vista correcta basándose en el path de la URL al cargar (ej. `/product/id` abre el detalle del producto).
+- **Modo:** Desarrollar
+- **Commit:** `feat(Desarrollar): sincronizar URLs y enriquecer esquemas JSON-LD para SEO Pro`
+
+---
+
 ## 🏛️ Arquitecturas Aprobadas
 
 ### 1. Lógica
