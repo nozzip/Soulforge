@@ -65,6 +65,16 @@ Este archivo registra las intervenciones de la IA, fallos, éxitos y arquitectur
 
 ---
 
+## 🟢 [ÉXITO] - 2026-04-14
+- **Tarea:** Ajuste de sitemap para dominio sin `www`.
+- **Acción:** 
+  - Se eliminó el prefijo `www.` de las URLs en `public/sitemap.xml` y `public/robots.txt`.
+  - Esta acción se realizó para que el sitemap coincida exactamente con la propiedad configurada en Google Search Console (`soulforgeminiaturas.com.ar`), evitando errores de validación de ruta.
+- **Modo:** Mejorar
+- **Commit:** `fix(Mejorar): ajustar sitemap.xml y robots.txt al dominio sin www para coincidir con Search Console`
+
+---
+
 ## 🏛️ Arquitecturas Aprobadas
 
 ### 1. Lógica
